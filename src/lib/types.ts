@@ -2,7 +2,7 @@ export type Biome = {
   id: string;
   name: string;
   description: string;
-  enemies: Enemy[];
+  enemies: Monster[];
   imageUrl: string;
 };
 
@@ -23,32 +23,24 @@ export type Item = {
     dexterity: number;
     intelligence: number;
   };
-  stats: {
-    damage: number;
-    staminaCost: number;
-  };
+  damage: string;
 };
 
-export type Enemy = {
+export type Monster = {
   id: string;
   name: string;
+  description: string;
   health: number;
-  attacks: EnemyAttack[];
+  attacks: string[];
   xp: number;
   gold: number;
   items: Item[];
-};
-
-export type EnemyAttack = {
-  name: string;
-  damage: number;
-  cost: number;
+  probability: number;
 };
 
 export type PlayerStats = {
   level: number;
   health: number;
-  stamina: number;
   magic: number;
   strength: number;
   dexterity: number;
