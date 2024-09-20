@@ -48,7 +48,7 @@ export function LoginScreen() {
                   ...context.gameState.player,
                   name: playerName,
                 },
-                has_started: true,
+                state: "loading",
               });
             }}
           >

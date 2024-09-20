@@ -18,7 +18,7 @@ export type PlayerState = {
 };
 
 export type GameState = {
-  has_started: boolean;
+  state: "login" | "loading" | "main";
   world: WorldState;
   player: PlayerState;
 };
