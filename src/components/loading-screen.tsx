@@ -1,12 +1,14 @@
 "use client";
 
 import { GameStateContext } from "@/app/context/game_state";
-import { useContext, useEffect, useState } from "react";
+import { setupWorld } from "@/app/loading/creation";
+import { useContext, useEffect, useRef, useState } from "react";
 
 export function LoadingScreen() {
   const ctx = useContext(GameStateContext);
   const [activeDot, setActiveDot] = useState(0);
   const totalDots = 5;
+  const isCreatingWorld = useRef(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -17,12 +19,32 @@ export function LoadingScreen() {
   }, []);
 
   useEffect(() => {
-    setTimeout(() => {
-      ctx?.setGameState({
-        ...ctx.gameState,
-        state: "main",
-      });
-    }, 3000);
+    async function setupGame(cancel: AbortController) {
+      if (ctx == null || isCreatingWorld.current) {
+        return;
+      }
+      isCreatingWorld.current = true;
+
+      try {
+        await setupWorld(ctx.gameState, ctx.setGameState, cancel);
+        ctx.setGameState({
+          ...ctx.gameState,
+          state: "main",
+        });
+      } catch (e) {
+        console.error(e);
+        ctx?.setGameState({
+          ...ctx.gameState,
+          state: "error",
+        });
+      }
+    }
+    const cancel = new AbortController();
+    setupGame(cancel);
+
+    return () => {
+      cancel.abort();
+    };
   }, [ctx]);
 
   return (

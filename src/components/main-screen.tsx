@@ -51,7 +51,6 @@ export function MainScreen() {
           </Tabs>
         </div>
       </div>
-
       <Input
         type="text"
         placeholder="Enter your command..."
