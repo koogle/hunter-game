@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,9 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { GameStateContext } from "@/app/context/game_state";
 
 export function LoginScreen() {
   const [playerName, setPlayerName] = useState("");
+  const context = useContext(GameStateContext);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-white text-black font-mono">
@@ -37,8 +39,18 @@ export function LoginScreen() {
         </CardContent>
         <CardFooter>
           <Button
+            disabled={playerName.trim().length === 0}
             className="w-full bg-black text-white hover:bg-gray-800 rounded-none font-bold"
-            onClick={() => {}}
+            onClick={() => {
+              context?.setGameState({
+                ...context.gameState,
+                player: {
+                  ...context.gameState.player,
+                  name: playerName,
+                },
+                has_started: true,
+              });
+            }}
           >
             BEGIN JOURNEY
           </Button>

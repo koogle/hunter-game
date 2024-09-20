@@ -1,7 +1,7 @@
 import { GameState } from "@/lib/state";
 import React, { createContext, useState, useEffect } from "react";
 
-const GameStateContext = createContext<
+export const GameStateContext = createContext<
   | {
       gameState: GameState;
       setGameState: React.Dispatch<React.SetStateAction<GameState>>;
