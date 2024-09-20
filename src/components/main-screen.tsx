@@ -51,16 +51,15 @@ export function MainScreen() {
           </Tabs>
         </div>
       </div>
-      <div className="border border-black p-2">
-        <Input
-          type="text"
-          placeholder="Enter your command..."
-          value={command}
-          onChange={(e) => setCommand(e.target.value)}
-          onKeyDown={handleCommand}
-          className="bg-white border-none text-black placeholder-gray-500 focus:ring-0"
-        />
-      </div>
+
+      <Input
+        type="text"
+        placeholder="Enter your command..."
+        value={command}
+        onChange={(e) => setCommand(e.target.value)}
+        onKeyDown={handleCommand}
+        className="bg-white border-black border-[1px] text-black placeholder-gray-500 rounded-none focus:ring-2 focus:ring-black"
+      />
     </div>
   );
 }
