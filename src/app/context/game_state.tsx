@@ -1,3 +1,5 @@
+"use client";
+
 import { GameState } from "@/lib/state";
 import React, { createContext, useState, useEffect } from "react";
 
@@ -13,38 +15,48 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [gameState, setGameState] = useState<GameState>(() => {
-    const savedState = localStorage.getItem("state");
-    return savedState
-      ? JSON.parse(savedState)
-      : {
-          world: {
-            map: [],
-            quests: [],
-            items: [],
-            enemies: [],
-          },
-          player: {
-            stats: {
-              health: 10,
-              stamina: 5,
-              magic: 5,
-              strength: 5,
-              dexterity: 5,
-              intelligence: 5,
-              level: 1,
-              luck: 5,
-            },
-            name: "",
-            questProgress: {},
-            location: { x: 0, y: 0 },
-            inventory: [],
-          },
-        };
+    // Default state
+    const defaultState: GameState = {
+      world: {
+        map: [],
+        quests: [],
+        items: [],
+        enemies: [],
+        biomes: [],
+      },
+      player: {
+        stats: {
+          health: 10,
+          stamina: 5,
+          magic: 5,
+          strength: 5,
+          dexterity: 5,
+          intelligence: 5,
+          level: 1,
+          luck: 5,
+        },
+        name: "",
+        questProgress: {},
+        location: { x: 0, y: 0 },
+        inventory: [],
+      },
+      state: "login",
+    };
+
+    // Only access localStorage on the client side
+    if (typeof window !== "undefined") {
+      const savedState = window.localStorage.getItem("state");
+      return savedState ? JSON.parse(savedState) : defaultState;
+    }
+
+    return defaultState;
   });
 
   useEffect(() => {
-    // Save to localStorage whenever state changes
-    localStorage.setItem("gameState", JSON.stringify(gameState));
+    // Save to localStorage whenever state changes (client-side only)
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("gameState", JSON.stringify(gameState));
+    }
   }, [gameState]);
 
   return (
