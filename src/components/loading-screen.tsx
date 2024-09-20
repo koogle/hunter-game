@@ -3,7 +3,7 @@
 import { GameStateContext } from "@/app/context/game_state";
 import { useContext, useEffect, useState } from "react";
 
-export function LoadingScreenComponent() {
+export function LoadingScreen() {
   const ctx = useContext(GameStateContext);
   const [activeDot, setActiveDot] = useState(0);
   const totalDots = 5;
