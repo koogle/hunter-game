@@ -4,7 +4,6 @@ import { useContext, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GameStateContext } from "@/app/context/game_state";
-import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 
 export function MainScreen() {
   const [command, setCommand] = useState("");
@@ -98,7 +97,7 @@ const Stats = () => {
         <span className="font-bold">{stats?.level}</span>
       </li>
       {Object.entries(stats || {})
-        .filter(([attribute, _]) => attribute !== "level")
+        .filter(([attribute]) => attribute !== "level")
         .map(([attribute, value], index) => (
           <li
             key={index}
