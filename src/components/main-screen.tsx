@@ -4,10 +4,27 @@ import { useContext, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GameStateContext } from "@/app/context/game_state";
+import { GameState } from "@/lib/state";
 
 export function MainScreen() {
+  const ctx = useContext(GameStateContext);
+
+  if (ctx == null) {
+    return <div>Loading...</div>;
+  }
+
+  return <LoadedMainScreen gameState={ctx.gameState} />;
+}
+
+export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
+  const biomeId =
+    gameState.world.map[gameState.player.location.y][
+      gameState.player.location.x
+    ];
+  const biome = gameState.world.biomes.find((biome) => biome.id === biomeId);
+
   const [command, setCommand] = useState("");
-  const [gameText, setGameText] = useState(".");
+  // const [gameText, setGameText] = useState(".");
 
   const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -21,7 +38,10 @@ export function MainScreen() {
     <div className="flex flex-col h-screen bg-white text-black font-mono p-4 space-y-4">
       <div className="flex flex-1 space-x-4">
         <div className="flex-1 border border-black p-4 overflow-auto">
-          <p>{gameText}</p>
+          <p>
+            You are in the <b>{biome?.name}</b>
+          </p>
+          <p>{biome?.description}</p>
         </div>
         <div className="flex flex-col w-64 space-y-4">
           <div className="border border-black p-4 h-48">
