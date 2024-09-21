@@ -27,7 +27,6 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
       player: {
         stats: {
           health: 10,
-          stamina: 5,
           magic: 5,
           strength: 5,
           dexterity: 5,
@@ -53,6 +52,8 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   useEffect(() => {
+    console.log("updating save state", window.localStorage);
+
     // Save to localStorage whenever state changes (client-side only)
     if (typeof window !== "undefined") {
       window.localStorage.setItem("gameState", JSON.stringify(gameState));
