@@ -1,8 +1,9 @@
 "use server";
 
-import { createOpenAI, openai } from "@ai-sdk/openai";
+// import { createOpenAI, openai } from "@ai-sdk/openai";
 import { CoreMessage, generateObject, Schema } from "ai";
 import { z } from "zod";
+import { ollama } from "ollama-ai-provider";
 
 export async function createObject<OBJECT>({
   messages,
@@ -12,7 +13,7 @@ export async function createObject<OBJECT>({
   schema: z.Schema<OBJECT, z.ZodTypeDef, any> | Schema<OBJECT>;
 }) {
   return generateObject({
-    model: openai("gpt-4o-mini"),
+    model: ollama("llama3.1"),
     schema,
     messages,
   });
