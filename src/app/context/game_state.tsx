@@ -11,6 +11,8 @@ export const GameStateContext = createContext<
   | undefined
 >(undefined);
 
+const LOCAL_STORAGE_KEY = "HUNTER_GAME_STATE";
+
 export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -44,19 +46,19 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Only access localStorage on the client side
     if (typeof window !== "undefined") {
-      const savedState = window.localStorage.getItem("state");
-      return savedState ? JSON.parse(savedState) : defaultState;
+      const savedState = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedState != null) {
+        console.log("Returning loaded state");
+        return JSON.parse(savedState);
+      }
     }
-
     return defaultState;
   });
 
   useEffect(() => {
-    console.log("updating save state", window.localStorage);
-
     // Save to localStorage whenever state changes (client-side only)
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("gameState", JSON.stringify(gameState));
+      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(gameState));
     }
   }, [gameState]);
 
