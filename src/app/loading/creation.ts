@@ -42,7 +42,7 @@ Biomes can range from mundane to fantastical.
 The existing biomes are:
 ${biomes.map((b) => " - " + b.name).join("\n")}
 
-Please do not repeat existing biomes`,
+Do not repeat existing biomes and ensure that the new biome could be placed next to the existing ones.`,
             },
           ],
           schema: jsonSchema,
