@@ -1,12 +1,19 @@
 "use client";
 
 import { GameState } from "@/lib/state";
-import React, { createContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 
 export const GameStateContext = createContext<
   | {
       gameState: GameState;
       setGameState: React.Dispatch<React.SetStateAction<GameState>>;
+      clearGameState: () => void;
     }
   | undefined
 >(undefined);
@@ -16,9 +23,8 @@ const LOCAL_STORAGE_KEY = "HUNTER_GAME_STATE";
 export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [gameState, setGameState] = useState<GameState>(() => {
-    // Default state
-    const defaultState: GameState = {
+  const defaultState: GameState = useMemo(
+    () => ({
       world: {
         map: [],
         quests: [],
@@ -42,8 +48,11 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
         inventory: [],
       },
       state: "login",
-    };
+    }),
+    []
+  );
 
+  const [gameState, setGameState] = useState<GameState>(() => {
     // Only access localStorage on the client side
     if (typeof window !== "undefined") {
       const savedState = window.localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -62,8 +71,14 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [gameState]);
 
+  const clearGameState = useCallback(() => {
+    setGameState({ ...defaultState });
+  }, [defaultState]);
+
   return (
-    <GameStateContext.Provider value={{ gameState, setGameState }}>
+    <GameStateContext.Provider
+      value={{ gameState, setGameState, clearGameState }}
+    >
       {children}
     </GameStateContext.Provider>
   );

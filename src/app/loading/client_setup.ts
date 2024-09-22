@@ -2,8 +2,11 @@
 
 import { GameState } from "@/lib/state";
 import { Monster } from "@/lib/types";
-import { createBiomes, createMap, createMonsters } from "./creation";
-import { randomInt } from "crypto";
+import { createBiomes, createMonsters } from "./creation";
+
+function randomInt(min: number, max: number) {
+  return min + Math.round(Math.random() * (max - min));
+}
 
 export const setupWorld = async (
   baseGameState: GameState,
@@ -16,6 +19,7 @@ export const setupWorld = async (
   const numberOfBiomes = randomInt(3, 8);
   setMessage(`Creating ${numberOfBiomes} biomes...`);
   const rawBiomes = await createBiomes(numberOfBiomes);
+  console.log(rawBiomes);
 
   setMessage("Populating biomes...");
 
@@ -35,7 +39,7 @@ export const setupWorld = async (
             numberOfMonsters
           );
         }
-        console.log(monsters);
+        console.log(biome.name, monsters);
 
         gameState.world.biomes.push({
           id: crypto.randomUUID(),
@@ -47,15 +51,24 @@ export const setupWorld = async (
       }
     )
   );
+
   setMessage("Laying out the world...");
   const mapSize = 10;
 
-  gameState.world.map = await createMap(
-    gameState.world.biomes,
-    rawBiomes.map((biome) => biome.dangerous),
-    rawBiomes.map((biome) => biome.rarity),
-    mapSize
-  );
+  gameState.world.map = [];
+  for (let rowIndex = 0; rowIndex < mapSize; rowIndex++) {
+    const row: string[] = [];
+
+    for (let colIndex = 0; colIndex < mapSize; colIndex++) {
+      row.push(
+        gameState.world.biomes[
+          Math.floor(Math.random() * gameState.world.biomes.length)
+        ].id
+      );
+    }
+    gameState.world.map.push(row);
+  }
+
   setMessage("Ready, putting you in the game...");
 
   gameState.state = "main";

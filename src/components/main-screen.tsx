@@ -1,10 +1,12 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GameStateContext } from "@/app/context/game_state";
 import { GameState } from "@/lib/state";
+import { Biome } from "@/lib/types";
+import { Button } from "./ui/button";
 
 export function MainScreen() {
   const ctx = useContext(GameStateContext);
@@ -21,6 +23,12 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
     gameState.world.map[gameState.player.location.y][
       gameState.player.location.x
     ];
+
+  const biomesById = useMemo(() => {
+    const map: { [id: string]: Biome } = {};
+    gameState.world.biomes.forEach((b) => (map[b.id] = b));
+    return map;
+  }, [gameState.world.biomes]);
   const biome = gameState.world.biomes.find((biome) => biome.id === biomeId);
 
   const [command, setCommand] = useState("");
@@ -29,7 +37,7 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
   const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       // Process the command here
-      setGameText(`You tried to ${command}. Nothing happens... yet.`);
+      //setGameText(`You tried to ${command}. Nothing happens... yet.`);
       setCommand("");
     }
   };
@@ -44,11 +52,26 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
           <p>{biome?.description}</p>
         </div>
         <div className="flex flex-col w-64 space-y-4">
-          <div className="border border-black p-4 h-48">
-            <div className="w-full h-32 bg-gray-200 mt-2"></div>
+          <div className="border border-black p-2 h-48">
+            <div className="w-full h-32 bg-gray-200 mt-2">
+              <div className="flex text-xs flex-col gap-1">
+                {gameState.world.map.map((row, idx) => (
+                  <div key={idx} className="flex gap-1">
+                    {row.map((e) => (
+                      <p
+                        className="text-ellipsis max-w-10 max-h-4 overflow-hidden"
+                        key={`${idx}-${e}`}
+                      >
+                        {biomesById[e]?.name}
+                      </p>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <Tabs defaultValue="inventory" className="border h-full border-black">
-            <TabsList className="w-full grid grid-cols-2">
+            <TabsList className="w-full grid grid-cols-3">
               <TabsTrigger
                 value="inventory"
                 className="data-[state=active]:bg-black data-[state=active]:text-white"
@@ -61,12 +84,22 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
               >
                 Stats
               </TabsTrigger>
+              <TabsTrigger
+                value="config"
+                className=" data-[state=active]:bg-black data-[state=active]:text-white"
+              >
+                ...
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="inventory" className="p-4">
               <Inventory />
             </TabsContent>
             <TabsContent value="stats" className="p-4">
               <Stats />
+            </TabsContent>
+
+            <TabsContent value="config" className="p-4">
+              <Config />
             </TabsContent>
           </Tabs>
         </div>
@@ -126,5 +159,15 @@ const Stats = () => {
           </li>
         ))}
     </ul>
+  );
+};
+
+const Config = () => {
+  const ctx = useContext(GameStateContext);
+
+  return (
+    <div className="flex-col flex w-full">
+      <Button onClick={() => ctx?.clearGameState()}>Clear local storage</Button>
+    </div>
   );
 };

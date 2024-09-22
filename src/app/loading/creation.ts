@@ -35,8 +35,14 @@ export async function createBiomes(
             },
             {
               role: "user",
-              content:
-                "Create a that fits a medival middle european fantasy setting. The biome should have a name, description, rarity and danger level. Biomes can range from mundane to fantastical.",
+              content: `Create a that fits a medival middle european fantasy setting.
+The biome should have a name, description, rarity and danger level.
+Biomes can range from mundane to fantastical.
+
+The existing biomes are:
+${biomes.map((b) => " - " + b.name).join("\n")}
+
+Please do not repeat existing biomes`,
             },
           ],
           schema: jsonSchema,
