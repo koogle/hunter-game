@@ -3,6 +3,7 @@
 import { GameState } from "@/lib/state";
 import { Monster } from "@/lib/types";
 import { createBiomes, createMap, createMonsters } from "./creation";
+import { randomInt } from "crypto";
 
 export const setupWorld = async (
   baseGameState: GameState,
@@ -12,9 +13,10 @@ export const setupWorld = async (
 ) => {
   const gameState: GameState = { ...baseGameState };
 
-  setMessage("Creating biome...");
-  const rawBiomes = await createBiomes();
-  console.log(rawBiomes);
+  const numberOfBiomes = randomInt(3, 8);
+  setMessage(`Creating ${numberOfBiomes} biomes...`);
+  const rawBiomes = await createBiomes(numberOfBiomes);
+
   setMessage("Populating biomes...");
 
   await Promise.all(
@@ -24,9 +26,14 @@ export const setupWorld = async (
         description: string;
         dangerous: boolean;
       }) => {
+        const numberOfMonsters = randomInt(1, 5);
         let monsters: Monster[] = [];
         if (biome.dangerous) {
-          monsters = await createMonsters(biome.name, biome.description);
+          monsters = await createMonsters(
+            biome.name,
+            biome.description,
+            numberOfMonsters
+          );
         }
         console.log(monsters);
 

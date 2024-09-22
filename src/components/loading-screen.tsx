@@ -36,10 +36,6 @@ export function LoadingScreen() {
           cancel,
           setLoadingMessage
         );
-        /*ctx.setGameState({
-          ...ctx.gameState,
-          state: "main",
-        });*/
       } catch (e) {
         console.error(e);
         ctx?.setGameState({

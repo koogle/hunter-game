@@ -1,8 +1,9 @@
 "use server";
 
-import { Biome, Monster } from "@/lib/types";
+import { Biome, Item, Monster } from "@/lib/types";
 import { createObject } from "./llm";
 import { z } from "zod";
+import { randomInt } from "crypto";
 
 interface CreatedBiome {
   name: string;
@@ -11,39 +12,46 @@ interface CreatedBiome {
   rarity: string;
 }
 
-export async function createBiomes(): Promise<CreatedBiome[]> {
+export async function createBiomes(
+  numberBiomes: number
+): Promise<CreatedBiome[]> {
   const jsonSchema = z.object({
-    biomes: z.array(
-      z.object({
-        name: z.string(),
-        description: z.string(),
-        dangerous: z.boolean(),
-        rarity: z.string(),
-      })
-    ),
+    name: z.string(),
+    description: z.string(),
+    dangerous: z.boolean(),
+    rarity: z.string(),
   });
+  const biomes: CreatedBiome[] = [];
 
-  const biomes = await createObject({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a expert Dungeon Master for a text based RPG. You are asked to create a world biomes. There should be biomes that are not dangerous where the player can rest.",
-      },
-      {
-        role: "user",
-        content:
-          "Create up to 10 biomes that fit a medival middle european fantasy setting. The biomes should have a name, description, rarity and danger level. There should be some biomes that are simple such as forests and some that are more intriguing such as an abonded church or a graveyard.",
-      },
-    ],
-    schema: jsonSchema,
-  });
-  return biomes.object.biomes;
+  for (let index = 0; index < numberBiomes; index++) {
+    biomes.push(
+      (
+        await createObject({
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a expert Dungeon Master for a text based RPG. You are asked to create a world biomes. There should be biomes that are not dangerous where the player can rest.",
+            },
+            {
+              role: "user",
+              content:
+                "Create a that fits a medival middle european fantasy setting. The biome should have a name, description, rarity and danger level. Biomes can range from mundane to fantastical.",
+            },
+          ],
+          schema: jsonSchema,
+        })
+      ).object
+    );
+  }
+
+  return biomes;
 }
 
 export async function createMonsters(
   biomeName: string,
-  biomeDescription: string
+  biomeDescription: string,
+  numberMonsters: number
 ): Promise<Monster[]> {
   const itemSchema = z.object({
     name: z.string(),
@@ -57,44 +65,83 @@ export async function createMonsters(
     }),
   });
 
-  const jsonSchema = z.object({
-    monsters: z.array(
-      z.object({
-        name: z.string(),
-        description: z.string(),
-        attacks: z.array(z.string()),
-        items: z.array(itemSchema),
-        health: z.number(),
-        xp: z.number(),
-        gold: z.number(),
-        probability: z.number(),
-      })
-    ),
+  const monsterSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    attacks: z.array(z.string()),
+    health: z.number(),
+    xp: z.number(),
+    gold: z.number(),
+    probability: z.number(),
   });
 
-  const response = await createObject({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a expert Dungeon Master for a text based RPG. You are asked to create monsters for a biome. Assume that the player is level 1 - 10. Try to find a balance between strong and week monster, and have some be very strong and more attack focused and some be more weak.",
-      },
-      {
-        role: "user",
-        content: `Create up to 3-5 enemies for the biome with name ${biomeName} and description ${biomeDescription}. Create also items the enemies can drop and a description of attacks they can use.`,
-      },
-    ],
-    schema: jsonSchema,
-  });
+  const rawMonsters: Monster[] = [];
 
-  return response.object.monsters.map((m) => ({
-    ...m,
-    id: crypto.randomUUID(),
-    items: m.items.map((i) => ({
-      ...i,
-      id: crypto.randomUUID(),
-    })),
-  }));
+  for (let index = 0; index < numberMonsters; index++) {
+    let existingMonsterNames = "";
+    if (index > 1) {
+      existingMonsterNames =
+        "\nThe following monsters already exist in the biome:" +
+        rawMonsters.map((m) => m.name).join(",");
+    }
+
+    const m = await createObject({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a expert Dungeon Master for a text based RPG. You are asked to create monsters for a biome. Assume that the player is level 1 - 10. Try to find a balance between strong and week monster, and have some be very strong and more attack focused and some be more weak.",
+        },
+        {
+          role: "user",
+          content:
+            `Create a monster for a biome with name ${biomeName} and description ${biomeDescription}.
+Create the monster with a set of attacks at minimum 1 but at maximum 5.
+The stronger the monster is the lower the probability of encountering it when being on a biome.` +
+            existingMonsterNames,
+        },
+      ],
+      schema: monsterSchema,
+    });
+
+    const nItems = randomInt(1, 4);
+    const monsterStats = Object.entries(m)
+      .map(([key, val]) => key + `:\t` + val.toString())
+      .join("\n");
+
+    const items: Item[] = [];
+    for (let itemIndex = 0; itemIndex < nItems; itemIndex++) {
+      let existingsItems = "";
+      if (index > 1) {
+        existingsItems =
+          "\nThe following items already exist on the monster:" +
+          items.map((m) => m.name).join(",");
+      }
+
+      const i = await createObject({
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a expert Dungeon Master for a text based RPG. You are asked to create monsters for a biome. Assume that the player is level 1 - 10. Try to find a balance between strong and week monster, and have some be very strong and more attack focused and some be more weak.",
+          },
+          {
+            role: "user",
+            content:
+              `Create an item that would be dropped by monster with the following properites ${monsterStats}
+in the biome with name ${biomeName} - ${biomeDescription}.` + existingsItems,
+          },
+        ],
+        schema: itemSchema,
+      });
+
+      items.push({ ...i.object, id: crypto.randomUUID() });
+    }
+
+    rawMonsters.push({ ...m.object, id: crypto.randomUUID(), items });
+  }
+
+  return rawMonsters;
 }
 
 export async function createMap(
