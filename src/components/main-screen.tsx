@@ -7,7 +7,6 @@ import { GameStateContext } from "@/app/context/game_state";
 import { GameState } from "@/lib/state";
 import { Biome } from "@/lib/types";
 import { Button } from "./ui/button";
-import { checkIfTrue } from "@/app/loading/llm";
 
 export function MainScreen() {
   const ctx = useContext(GameStateContext);
