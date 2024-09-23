@@ -21,7 +21,11 @@ export async function createObject<OBJECT>({
   });
 }
 
-export async function checkIfTrue(question: string, message: string): boolean {
+export async function checkIfTrue(
+  gameState: string,
+  question: string,
+  message: string
+): Promise<boolean> {
   const resp = await generateObject({
     model,
     schema: z.object({
@@ -29,6 +33,12 @@ export async function checkIfTrue(question: string, message: string): boolean {
       reasoning: z.array(z.string()),
     }),
     messages: [
+      {
+        role: "system",
+        content:
+          "You are an expert dangeon master in a text based role playing game. The game state is:" +
+          gameState,
+      },
       {
         role: "user",
         content: `Check if the question ${question} is true for the following message\'${message}\'`,

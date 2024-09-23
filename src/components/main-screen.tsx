@@ -7,6 +7,7 @@ import { GameStateContext } from "@/app/context/game_state";
 import { GameState } from "@/lib/state";
 import { Biome } from "@/lib/types";
 import { Button } from "./ui/button";
+import { checkIfTrue } from "@/app/loading/llm";
 
 export function MainScreen() {
   const ctx = useContext(GameStateContext);
@@ -37,6 +38,9 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
   const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       // Process the command here
+
+      //checkIfTrue("Is this an action or question that makes sense in the context of an Role Playing Game")
+
       //setGameText(`You tried to ${command}. Nothing happens... yet.`);
       setCommand("");
     }
