@@ -1,11 +1,14 @@
 "use server";
 
-// import { createOpenAI, openai } from "@ai-sdk/openai";
 import { CoreMessage, generateObject, Schema } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
-import { ollama } from "ollama-ai-provider";
 
-const model = ollama("llama3.1");
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY ?? "",
+});
+
+const model = openai("gpt-4o-mini");
 
 export async function createObject<OBJECT>({
   messages,
