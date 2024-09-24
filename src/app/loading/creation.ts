@@ -184,6 +184,6 @@ export async function createMap(
     ],
     schema: jsonSchema,
   });
-  console.log("created map", response.object.map);
+
   return response.object.map;
 }

@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GameStateContext } from "@/app/context/game_state";
 import { GameState } from "@/lib/state";
-import { Biome } from "@/lib/types";
+import { Biome, GameStateChange } from "@/lib/types";
 import { Button } from "./ui/button";
-import { formatGameState } from "@/lib/utils";
-import { checkIfValid } from "@/app/loading/llm";
+import { formatGameState, formatInteractionHistory } from "@/lib/utils";
+import { processCommand } from "@/app/loading/llm";
 import { genBiomeImage } from "@/app/loading/fal";
 import { Loading } from "./ui/loading";
 
@@ -35,6 +35,10 @@ export function LoadedMainScreen({
   setGameState: (gameState: GameState) => void;
 }) {
   const [isLoading, setIsLoading] = useState(false);
+
+  const [interactionHistory, setInteractionHistory] = useState<
+    { userRequest: string; dmResponse: string }[]
+  >([]);
   const biomeId =
     gameState.world.map[gameState.player.location.y][
       gameState.player.location.x
@@ -54,24 +58,28 @@ export function LoadedMainScreen({
   const handleCommand = useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
-        // Process the command here
         setIsLoading(true);
-        //const [isValid, response] = await checkIfValid(
-        //  formatGameState(gameState),
-        //  command
-        //);
 
-        /*if (!isValid) {
-          setGameText("command: " + command + "\n" + response);
-        } else {
-          setGameText("");
-        }*/
+        const gameStateChange = await processCommand(
+          formatGameState(gameState),
+          formatInteractionHistory(interactionHistory),
+          command
+        );
 
-        setIsLoading(false);
+        setGameText(`> ${command}\n\n${gameStateChange.dmAnswer}`);
         setCommand("");
+        processGameStateChange(gameStateChange, gameState, setGameState);
+        setInteractionHistory((prevHistory) => {
+          const newHistory = [
+            ...prevHistory,
+            { userRequest: command, dmResponse: gameStateChange.dmAnswer },
+          ];
+          return newHistory.slice(-10);
+        });
+        setIsLoading(false);
       }
     },
-    [command, gameState]
+    [command, gameState, interactionHistory, setGameState]
   );
 
   const updateImage = useCallback(
@@ -147,7 +155,8 @@ export function LoadedMainScreen({
       <Input
         type="text"
         placeholder="Enter your command..."
-        value={command}
+        value={isLoading ? "" : command}
+        disabled={isLoading}
         onChange={(e) => setCommand(e.target.value)}
         onKeyDown={handleCommand}
         className="bg-white border-black border-[1px] text-black placeholder-gray-500 rounded-none focus:ring-2 focus:ring-black"
@@ -261,3 +270,91 @@ const GeneratedImage = ({
     </div>
   );
 };
+
+function processGameStateChange(
+  gameStateChange: GameStateChange,
+  gameState: GameState,
+  setGameState: (gameState: GameState) => void
+) {
+  const state = { ...gameState };
+
+  if (gameStateChange.itemChange != null) {
+    switch (gameStateChange.itemChange.itemAction) {
+      case "add":
+        state.player.inventory.push({
+          id: crypto.randomUUID(),
+          name: gameStateChange.itemChange.itemName,
+          description: gameStateChange.itemChange.descriptionChange ?? "",
+          dropRate: gameStateChange.itemChange.dropRate ?? 0,
+          requirements: {
+            strength: gameStateChange.itemChange.requirements?.strength ?? 0,
+            dexterity: gameStateChange.itemChange.requirements?.dexterity ?? 0,
+            intelligence:
+              gameStateChange.itemChange.requirements?.intelligence ?? 0,
+          },
+          damage: gameStateChange.itemChange.damage ?? "",
+        });
+        break;
+      case "remove":
+        state.player.inventory = state.player.inventory.filter(
+          (item) => item.name !== gameStateChange.itemChange?.itemName
+        );
+        break;
+      case "change":
+        state.player.inventory = state.player.inventory.map((item) => {
+          if (item.name === gameStateChange.itemChange?.itemName) {
+            return {
+              ...item,
+              description:
+                gameStateChange.itemChange.descriptionChange ??
+                item.description,
+              dropRate: gameStateChange.itemChange.dropRate ?? item.dropRate,
+              requirements: {
+                strength:
+                  gameStateChange.itemChange.requirements?.strength ??
+                  item.requirements.strength,
+                dexterity:
+                  gameStateChange.itemChange.requirements?.dexterity ??
+                  item.requirements.dexterity,
+                intelligence:
+                  gameStateChange.itemChange.requirements?.intelligence ??
+                  item.requirements.intelligence,
+              },
+              damage: gameStateChange.itemChange.damage ?? item.damage,
+            };
+          }
+          return item;
+        });
+        break;
+    }
+  }
+
+  const questChange = gameStateChange.questChange;
+  if (questChange != null) {
+    const quest = state.world.quests.find(
+      (q) => q.name === questChange.questName
+    );
+    if (quest != null) {
+      state.player.questProgress[quest.id] = questChange.isCompleted ?? false;
+
+      quest.isCompleted = questChange.isCompleted ?? false;
+      quest.description = questChange.descriptionChange ?? quest.description;
+    }
+  }
+
+  if (gameStateChange.locationChange != null) {
+    state.player.location.x =
+      gameStateChange.locationChange.x ?? state.player.location.x;
+    state.player.location.y =
+      gameStateChange.locationChange.y ?? state.player.location.y;
+  }
+
+  if (gameStateChange.playerStatsChange != null) {
+    state.player.stats = {
+      ...state.player.stats,
+      ...gameStateChange.playerStatsChange,
+    };
+  }
+
+  setGameState(state);
+}

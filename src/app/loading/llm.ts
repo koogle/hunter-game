@@ -3,12 +3,13 @@
 import { CoreMessage, generateObject, Schema } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
+import { GameStateChange } from "@/lib/types";
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY ?? "",
 });
 
-const model = openai("gpt-4o-mini");
+const model = openai("gpt-4o");
 
 export async function createObject<OBJECT>({
   messages,
@@ -65,53 +66,59 @@ Avoid the word "you" in your response.
 
 export async function processCommand(
   formattedGameState: string,
-  command: string
-): Promise<[string, string]> {
+  formattedInteractionHistory: string,
+  userRequest: string
+): Promise<GameStateChange> {
   const resp = await generateObject({
     model,
     schema: z.object({
-      actionType: z.enum(["move", "interact", "ask", "take", "fight", "craft"]),
+      actionCategory: z.enum([
+        "move",
+        "interact",
+        "ask",
+        "take",
+        "fight",
+        "craft",
+      ]),
       dmAnswer: z.string(),
       reasoning: z.array(z.string()),
-      locationChange: z.optional(
-        z.object({
-          x: z.number(),
-          y: z.number(),
+      locationChange: z
+        .object({
+          x: z.optional(z.number()),
+          y: z.optional(z.number()),
         })
-      ),
-      questChange: z.optional(
-        z.object({
-          name: z.string(),
-          descriptionChange: z.optional(z.string()),
-          isCompleted: z.optional(z.boolean()),
+        .optional(),
+      questChange: z
+        .object({
+          questName: z.string(),
+          descriptionChange: z.string().optional(),
+          isCompleted: z.boolean().optional(),
         })
-      ),
-      itemChange: z.optional(
-        z.object({
-          isAdded: z.boolean(),
-          name: z.string(),
-          descriptionChange: z.optional(z.string()),
-          dropRate: z.optional(z.number()),
-          requirements: z.optional(
-            z.object({
-              strength: z.number(),
-              dexterity: z.number(),
-              intelligence: z.number(),
-            })
-          ),
-          damage: z.optional(z.string()),
+        .optional(),
+      itemChange: z
+        .object({
+          itemAction: z.enum(["add", "remove", "change"]).optional(),
+          itemName: z.string(),
+          descriptionChange: z.string().optional(),
+          dropRate: z.number().optional(),
+          requirements: z.object({
+            strength: z.number(),
+            dexterity: z.number(),
+            intelligence: z.number(),
+          }),
+          damage: z.string().optional(),
         })
-      ),
-      playerStatsChange: z.optional(
-        z.object({
-          health: z.optional(z.number()),
-          magic: z.optional(z.number()),
-          strength: z.optional(z.number()),
-          dexterity: z.optional(z.number()),
-          intelligence: z.optional(z.number()),
-          luck: z.optional(z.number()),
+        .optional(),
+      playerStatsChange: z
+        .object({
+          health: z.number().optional(),
+          magic: z.number().optional(),
+          strength: z.number().optional(),
+          dexterity: z.number().optional(),
+          intelligence: z.number().optional(),
+          luck: z.number().optional(),
         })
-      ),
+        .optional(),
     }),
     messages: [
       {
@@ -137,10 +144,15 @@ If the user asks about what they can do give them a short list of actions they c
       },
       {
         role: "user",
-        content: `The user command is '${command}'`,
+        content: `The interaction history is:
+${formattedInteractionHistory}`,
+      },
+      {
+        role: "user",
+        content: `The user request is: '${userRequest}'`,
       },
     ],
   });
-  console.log(resp.object);
-  return [resp.object.actionType, resp.object.dmAnswer];
+
+  return resp.object;
 }

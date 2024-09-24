@@ -70,3 +70,14 @@ ${yaml.dump(state.world.quests)}
   console.log(gameState);
   return gameState;
 }
+
+export function formatInteractionHistory(
+  interactionHistory: { userRequest: string; dmResponse: string }[]
+) {
+  return interactionHistory
+    .map(
+      (interaction) =>
+        `User: ${interaction.userRequest}\nDM: ${interaction.dmResponse}`
+    )
+    .join("\n");
+}

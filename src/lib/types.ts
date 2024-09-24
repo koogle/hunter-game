@@ -47,3 +47,38 @@ export type PlayerStats = {
   intelligence: number;
   luck: number;
 };
+
+export interface GameStateChange {
+  actionCategory: "move" | "interact" | "ask" | "take" | "fight" | "craft";
+  dmAnswer: string;
+  reasoning: string[];
+  locationChange?: {
+    x?: number;
+    y?: number;
+  };
+  questChange?: {
+    questName: string;
+    descriptionChange?: string;
+    isCompleted?: boolean;
+  };
+  itemChange?: {
+    itemAction?: "add" | "remove" | "change";
+    itemName: string;
+    descriptionChange?: string;
+    dropRate?: number;
+    requirements?: {
+      strength?: number;
+      dexterity?: number;
+      intelligence?: number;
+    };
+    damage?: string;
+  };
+  playerStatsChange?: {
+    health?: number;
+    magic?: number;
+    strength?: number;
+    dexterity?: number;
+    intelligence?: number;
+    luck?: number;
+  };
+}
