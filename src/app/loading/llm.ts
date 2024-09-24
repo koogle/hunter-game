@@ -40,15 +40,17 @@ export async function checkIfValid(
         role: "system",
         content:
           "You are an expert dangeon master in a text based role playing game. The current state of the game is\n" +
-          formattedGameState,
+          formattedGameState +
+          "\n\n" +
+          "The user can be cheeky, but should not be allowed to break the game or get items that they do not have or move to places they cannot go. Handle typos and other mispellings and assume the user is typing as fast as they can.",
       },
       {
         role: "user",
-        content: `Check if the command '${command}' is a valid for the current state of the game. The user can be cheeky, but should not be allowed to break the game or get items that they do not have or move to places they cannot go.`,
+        content: `Check if the command '${command}' is a valid for the current state of the game.`,
       },
       {
         role: "user",
-        content: `If the question is false come up with a clever answer that would make the user happy but makes it clear they should try something else. `,
+        content: `If the question is false come up with a clever answer that would make the user happy but makes it clear they should try something else.`,
       },
     ],
   });

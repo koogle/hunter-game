@@ -23,6 +23,7 @@ const LOCAL_STORAGE_KEY = "HUNTER_GAME_STATE";
 export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const [isReady, setIsReady] = useState(false);
   const defaultState: GameState = useMemo(
     () => ({
       world: {
@@ -54,22 +55,27 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [gameState, setGameState] = useState<GameState>(() => {
     // Only access localStorage on the client side
-    if (typeof window !== "undefined") {
-      const savedState = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedState != null) {
-        console.log("Returning loaded state");
-        return JSON.parse(savedState);
-      }
-    }
+
     return defaultState;
   });
 
+  // Doing this with use effect to avoid hydration errors
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedState = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedState != null) {
+        setGameState(JSON.parse(savedState));
+      }
+    }
+    setIsReady(true);
+  }, []);
+
   useEffect(() => {
     // Save to localStorage whenever state changes (client-side only)
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isReady) {
       window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(gameState));
     }
-  }, [gameState]);
+  }, [gameState, isReady]);
 
   const clearGameState = useCallback(() => {
     setGameState({ ...defaultState });
