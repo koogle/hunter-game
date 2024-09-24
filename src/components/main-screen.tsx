@@ -55,18 +55,17 @@ export function LoadedMainScreen({
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
         // Process the command here
-        console.log("command", command);
         setIsLoading(true);
-        const [isValid, response] = await checkIfValid(
-          formatGameState(gameState),
-          command
-        );
+        //const [isValid, response] = await checkIfValid(
+        //  formatGameState(gameState),
+        //  command
+        //);
 
-        if (!isValid) {
+        /*if (!isValid) {
           setGameText("command: " + command + "\n" + response);
         } else {
           setGameText("");
-        }
+        }*/
 
         setIsLoading(false);
         setCommand("");

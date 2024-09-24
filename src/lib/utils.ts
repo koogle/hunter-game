@@ -23,14 +23,19 @@ export function formatGameState(state: GameState) {
 
   for (let dx = -1; dx <= 1; dx++) {
     for (let dy = -1; dy <= 1; dy++) {
-      if (dx === 0 && dy === 0) continue; // Skip the current location
-
       const newX = x + dx;
       const newY = y + dy;
+      const biome = state.world.map[newX][newY];
 
       // Check if the new coordinates are within the map boundaries
-      if (newX >= 0 && newX < mapWidth && newY >= 0 && newY < mapHeight) {
-        surroundingBiomes[dy + 1][dx + 1] = state.world.map[newX][newY];
+      if (
+        newX >= 0 &&
+        newX < mapWidth &&
+        newY >= 0 &&
+        newY < mapHeight &&
+        biome != null
+      ) {
+        surroundingBiomes[dy + 1][dx + 1] = biome;
       }
     }
   }
@@ -56,10 +61,8 @@ ${yaml.dump(state.player)}
 The current biome is
 ${yaml.dump(currentBiome)}
 
-The map of biomes looks like 
+The biomes around the player looks like this, with the player in the center:
 ${formattedSurroundingBiomes}
-
-with the player in the center.
 
 The quests are
 ${yaml.dump(state.world.quests)}
