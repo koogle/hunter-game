@@ -25,8 +25,8 @@ export function formatGameState(state: GameState) {
     for (let dy = -1; dy <= 1; dy++) {
       const newX = x + dx;
       const newY = y + dy;
-      const biome = state.world.map[newX][newY];
-
+      const biomeId = state.world.map[newX][newY];
+      const biome = state.world.biomes.find((b) => b.id === biomeId);
       // Check if the new coordinates are within the map boundaries
       if (
         newX >= 0 &&
@@ -35,7 +35,7 @@ export function formatGameState(state: GameState) {
         newY < mapHeight &&
         biome != null
       ) {
-        surroundingBiomes[dy + 1][dx + 1] = biome;
+        surroundingBiomes[dy + 1][dx + 1] = biome.name;
       }
     }
   }

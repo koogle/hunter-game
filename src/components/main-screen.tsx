@@ -355,6 +355,9 @@ function processGameStateChange(
       ...gameStateChange.playerStatsChange,
     };
   }
+  console.log(gameStateChange);
+
+  console.log(state);
 
   setGameState(state);
 }
