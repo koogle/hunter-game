@@ -11,6 +11,7 @@ import { formatGameState } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { checkIfValid } from "@/app/loading/llm";
 import { genBiomeImage } from "@/app/loading/fal";
+import { Loading } from "./ui/loading";
 
 export function MainScreen() {
   const ctx = useContext(GameStateContext);
@@ -19,10 +20,21 @@ export function MainScreen() {
     return <div>Loading...</div>;
   }
 
-  return <LoadedMainScreen gameState={ctx.gameState} />;
+  return (
+    <LoadedMainScreen
+      gameState={ctx.gameState}
+      setGameState={ctx.setGameState}
+    />
+  );
 }
 
-export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
+export function LoadedMainScreen({
+  gameState,
+  setGameState,
+}: {
+  gameState: GameState;
+  setGameState: (gameState: GameState) => void;
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const biomeId =
     gameState.world.map[gameState.player.location.y][
@@ -64,6 +76,18 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
     [command, gameState]
   );
 
+  const updateImage = useCallback(
+    (image: string | undefined) => {
+      const state = { ...gameState };
+      const biome = state.world.biomes.find((b) => b.id === biomeId);
+      if (biome != null) {
+        biome.imageUrl = image;
+        setGameState(state);
+      }
+    },
+    [biomeId, gameState, setGameState]
+  );
+
   return (
     <div className="flex flex-col h-screen bg-white text-black font-mono p-4 space-y-4">
       <div className="flex flex-1 space-x-4">
@@ -75,41 +99,7 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
             <p>{biome?.description}</p>
             <div className="flex w-full border-t border-black"></div>
             {isLoading ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{
-                  duration: 0.5,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                }}
-              >
-                <span>.</span>
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{
-                    delay: 0.2,
-                    duration: 0.5,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                  }}
-                >
-                  .
-                </motion.span>
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{
-                    delay: 0.4,
-                    duration: 0.5,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                  }}
-                >
-                  .
-                </motion.span>
-              </motion.div>
+              <Loading />
             ) : (
               <p className="whitespace-pre-line">{gameText}</p>
             )}
@@ -118,7 +108,7 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
         <div className="flex flex-col w-64 space-y-4">
           <div className="border border-black p-2 h-48">
             <div className="w-full h-32 bg-gray-200 mt-2">
-              <GeneratedImage biome={biome} />
+              <GeneratedImage biome={biome} updateImage={updateImage} />
             </div>
           </div>
           <Tabs defaultValue="inventory" className="border h-full border-black">
@@ -222,29 +212,47 @@ const Config = () => {
   );
 };
 
-const GeneratedImage = ({ biome }: { biome: Biome | undefined }) => {
-  const [image, setImage] = useState<string | null>(null);
+const GeneratedImage = ({
+  biome,
+  updateImage,
+}: {
+  biome: Biome | undefined;
+  updateImage: (image: string | undefined) => void;
+}) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    setIsLoading(true);
-    if (biome != null) {
-      genBiomeImage(biome.name, biome.description).then((url) => {
-        setImage(url ?? null);
+    const generateImage = async () => {
+      if (
+        isLoading ||
+        biome == null ||
+        (biome.imageUrl != null && biome.imageUrl.length > 0)
+      ) {
+        return;
+      }
+      setIsLoading(true);
+      if (biome != null) {
+        const url = await genBiomeImage(biome.name, biome.description);
+        if (url != null) {
+          updateImage(url);
+        }
         setIsLoading(false);
-      });
-    }
+      }
+    };
+
+    generateImage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [biome]);
 
   return (
     <div className="w-full h-full">
       {isLoading ? (
         <div className="w-full h-full flex items-center justify-center">
-          Loading...
+          <Loading />
         </div>
       ) : (
         <img
-          src={image ?? undefined}
+          src={biome?.imageUrl}
           alt={`Biome: ${biome?.name}`}
           className="w-full h-full object-cover"
         />

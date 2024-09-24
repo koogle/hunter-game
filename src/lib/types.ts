@@ -3,7 +3,7 @@ export type Biome = {
   name: string;
   description: string;
   enemies: Monster[];
-  imageUrl: string;
+  imageUrl?: string;
 };
 
 export type Quest = {
