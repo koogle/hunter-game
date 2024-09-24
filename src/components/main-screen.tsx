@@ -1,12 +1,14 @@
 "use client";
 
-import { useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GameStateContext } from "@/app/context/game_state";
 import { GameState } from "@/lib/state";
 import { Biome } from "@/lib/types";
 import { Button } from "./ui/button";
+import { formatGameState } from "@/lib/utils";
+import { checkIfTrue, checkIfValid } from "@/app/loading/llm";
 
 export function MainScreen() {
   const ctx = useContext(GameStateContext);
@@ -32,27 +34,40 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
   const biome = gameState.world.biomes.find((biome) => biome.id === biomeId);
 
   const [command, setCommand] = useState("");
+
+  const [gameText, setGameText] = useState("...");
+  useEffect(() => {
+    setGameText(`You are in the ${biome?.name}
+      
+${biome?.description}
+`);
+  }, [biome]);
   // const [gameText, setGameText] = useState(".");
 
-  const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      // Process the command here
+  const handleCommand = useCallback(
+    async (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        // Process the command here
+        const [isValid, response] = await checkIfValid(
+          formatGameState(gameState),
+          command
+        );
 
-      //checkIfTrue("Is this an action or question that makes sense in the context of an Role Playing Game")
+        if (!isValid) {
+          setGameText(response);
+        }
 
-      //setGameText(`You tried to ${command}. Nothing happens... yet.`);
-      setCommand("");
-    }
-  };
+        setCommand("");
+      }
+    },
+    [command, gameState]
+  );
 
   return (
     <div className="flex flex-col h-screen bg-white text-black font-mono p-4 space-y-4">
       <div className="flex flex-1 space-x-4">
         <div className="flex-1 border border-black p-4 overflow-auto">
-          <p>
-            You are in the <b>{biome?.name}</b>
-          </p>
-          <p>{biome?.description}</p>
+          {gameText}
         </div>
         <div className="flex flex-col w-64 space-y-4">
           <div className="border border-black p-2 h-48">
