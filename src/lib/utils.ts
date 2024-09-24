@@ -14,7 +14,11 @@ export function formatGameState(state: GameState) {
   const mapHeight = state.world.map[0].length;
   const { x, y } = state.player.location;
 
-  const surroundingBiomes = [];
+  const surroundingBiomes = [
+    [null, null, null],
+    [null, null, null],
+    [null, null, null],
+  ];
 
   for (let dx = -1; dx <= 1; dx++) {
     for (let dy = -1; dy <= 1; dy++) {
@@ -25,14 +29,24 @@ export function formatGameState(state: GameState) {
 
       // Check if the new coordinates are within the map boundaries
       if (newX >= 0 && newX < mapWidth && newY >= 0 && newY < mapHeight) {
-        surroundingBiomes.push(
-          state.world.biomes.find(
-            (biome) => biome.name === state.world.map[newX][newY]
-          )
-        );
+        surroundingBiomes[dy + 1][dx + 1] = state.world.map[newX][newY];
       }
     }
   }
+
+  const formattedSurroundingBiomes = `
+            N
+     ${surroundingBiomes[0][0] || " "} | ${surroundingBiomes[0][1] || " "} | ${
+    surroundingBiomes[0][2] || " "
+  }
+W  ${surroundingBiomes[1][0] || " "} | ${surroundingBiomes[1][1] || " "} | ${
+    surroundingBiomes[1][2] || " "
+  }  E
+     ${surroundingBiomes[2][0] || " "} | ${surroundingBiomes[2][1] || " "} | ${
+    surroundingBiomes[2][2] || " "
+  }
+            S
+  `;
 
   return `
 The player state is
@@ -41,8 +55,10 @@ ${JSON.stringify(state.player)}
 The current biome is
 ${JSON.stringify(currentBiome)}
 
-The surrounding biomes are
-${JSON.stringify(surroundingBiomes)}
+The map of biomes looks like 
+${formattedSurroundingBiomes}
+
+with the player in the center.
 
 The quests are
 ${JSON.stringify(state.world.quests)}
