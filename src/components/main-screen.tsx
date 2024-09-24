@@ -8,7 +8,9 @@ import { GameState } from "@/lib/state";
 import { Biome } from "@/lib/types";
 import { Button } from "./ui/button";
 import { formatGameState } from "@/lib/utils";
-import { checkIfTrue, checkIfValid } from "@/app/loading/llm";
+import { motion } from "framer-motion";
+import { checkIfValid } from "@/app/loading/llm";
+import { genBiomeImage } from "@/app/loading/fal";
 
 export function MainScreen() {
   const ctx = useContext(GameStateContext);
@@ -21,6 +23,7 @@ export function MainScreen() {
 }
 
 export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
+  const [isLoading, setIsLoading] = useState(false);
   const biomeId =
     gameState.world.map[gameState.player.location.y][
       gameState.player.location.x
@@ -36,27 +39,25 @@ export function LoadedMainScreen({ gameState }: { gameState: GameState }) {
   const [command, setCommand] = useState("");
 
   const [gameText, setGameText] = useState("...");
-  useEffect(() => {
-    setGameText(`You are in the ${biome?.name}
-      
-${biome?.description}
-`);
-  }, [biome]);
-  // const [gameText, setGameText] = useState(".");
 
   const handleCommand = useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
         // Process the command here
+        console.log("command", command);
+        setIsLoading(true);
         const [isValid, response] = await checkIfValid(
           formatGameState(gameState),
           command
         );
 
         if (!isValid) {
-          setGameText(response);
+          setGameText("command: " + command + "\n" + response);
+        } else {
+          setGameText("");
         }
 
+        setIsLoading(false);
         setCommand("");
       }
     },
@@ -67,29 +68,61 @@ ${biome?.description}
     <div className="flex flex-col h-screen bg-white text-black font-mono p-4 space-y-4">
       <div className="flex flex-1 space-x-4">
         <div className="flex-1 border border-black p-4 overflow-auto">
-          {gameText}
+          <div className="flex flex-col gap-2">
+            <p>
+              You are in the <b>{biome?.name}</b>
+            </p>
+            <p>{biome?.description}</p>
+            <div className="flex w-full border-t border-black"></div>
+            {isLoading ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  duration: 0.5,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                }}
+              >
+                <span>.</span>
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{
+                    delay: 0.2,
+                    duration: 0.5,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                  }}
+                >
+                  .
+                </motion.span>
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{
+                    delay: 0.4,
+                    duration: 0.5,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                  }}
+                >
+                  .
+                </motion.span>
+              </motion.div>
+            ) : (
+              <p className="whitespace-pre-line">{gameText}</p>
+            )}
+          </div>
         </div>
         <div className="flex flex-col w-64 space-y-4">
           <div className="border border-black p-2 h-48">
             <div className="w-full h-32 bg-gray-200 mt-2">
-              <div className="flex text-xs flex-col gap-1">
-                {gameState.world.map.map((row, idx) => (
-                  <div key={idx} className="flex gap-1">
-                    {row.map((e) => (
-                      <p
-                        className="text-ellipsis max-w-10 max-h-4 overflow-hidden"
-                        key={`${idx}-${e}`}
-                      >
-                        {biomesById[e]?.name}
-                      </p>
-                    ))}
-                  </div>
-                ))}
-              </div>
+              <GeneratedImage biome={biome} />
             </div>
           </div>
           <Tabs defaultValue="inventory" className="border h-full border-black">
-            <TabsList className="w-full grid grid-cols-3">
+            <TabsList className="w-full grid grid-cols-[1fr_1fr_auto]">
               <TabsTrigger
                 value="inventory"
                 className="data-[state=active]:bg-black data-[state=active]:text-white"
@@ -104,9 +137,9 @@ ${biome?.description}
               </TabsTrigger>
               <TabsTrigger
                 value="config"
-                className=" data-[state=active]:bg-black data-[state=active]:text-white"
+                className="data-[state=active]:bg-black data-[state=active]:text-white w-8"
               >
-                ...
+                ⋮
               </TabsTrigger>
             </TabsList>
             <TabsContent value="inventory" className="p-4">
@@ -115,7 +148,6 @@ ${biome?.description}
             <TabsContent value="stats" className="p-4">
               <Stats />
             </TabsContent>
-
             <TabsContent value="config" className="p-4">
               <Config />
             </TabsContent>
@@ -186,6 +218,37 @@ const Config = () => {
   return (
     <div className="flex-col flex w-full">
       <Button onClick={() => ctx?.clearGameState()}>Clear local storage</Button>
+    </div>
+  );
+};
+
+const GeneratedImage = ({ biome }: { biome: Biome | undefined }) => {
+  const [image, setImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    if (biome != null) {
+      genBiomeImage(biome.name, biome.description).then((url) => {
+        setImage(url ?? null);
+        setIsLoading(false);
+      });
+    }
+  }, [biome]);
+
+  return (
+    <div className="w-full h-full">
+      {isLoading ? (
+        <div className="w-full h-full flex items-center justify-center">
+          Loading...
+        </div>
+      ) : (
+        <img
+          src={image ?? undefined}
+          alt={`Biome: ${biome?.name}`}
+          className="w-full h-full object-cover"
+        />
+      )}
     </div>
   );
 };
