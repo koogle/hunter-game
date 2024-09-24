@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import * as yaml from "js-yaml";
 import { GameState } from "./state";
 
 export function cn(...inputs: ClassValue[]) {
@@ -48,12 +49,12 @@ W  ${surroundingBiomes[1][0] || " "} | ${surroundingBiomes[1][1] || " "} | ${
             S
   `;
 
-  return `
+  const gameState = `
 The player state is
-${JSON.stringify(state.player)}
+${yaml.dump(state.player)}
 
 The current biome is
-${JSON.stringify(currentBiome)}
+${yaml.dump(currentBiome)}
 
 The map of biomes looks like 
 ${formattedSurroundingBiomes}
@@ -61,6 +62,8 @@ ${formattedSurroundingBiomes}
 with the player in the center.
 
 The quests are
-${JSON.stringify(state.world.quests)}
+${yaml.dump(state.world.quests)}
 `;
+  console.log(gameState);
+  return gameState;
 }
