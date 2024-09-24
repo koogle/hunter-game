@@ -8,7 +8,6 @@ import { GameState } from "@/lib/state";
 import { Biome } from "@/lib/types";
 import { Button } from "./ui/button";
 import { formatGameState } from "@/lib/utils";
-import { motion } from "framer-motion";
 import { checkIfValid } from "@/app/loading/llm";
 import { genBiomeImage } from "@/app/loading/fal";
 import { Loading } from "./ui/loading";
@@ -46,11 +45,11 @@ export function LoadedMainScreen({
     gameState.world.biomes.forEach((b) => (map[b.id] = b));
     return map;
   }, [gameState.world.biomes]);
-  const biome = gameState.world.biomes.find((biome) => biome.id === biomeId);
+  const biome = biomesById[biomeId];
 
   const [command, setCommand] = useState("");
 
-  const [gameText, setGameText] = useState("...");
+  const [gameText, setGameText] = useState("");
 
   const handleCommand = useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -97,7 +96,9 @@ export function LoadedMainScreen({
               You are in the <b>{biome?.name}</b>
             </p>
             <p>{biome?.description}</p>
-            <div className="flex w-full border-t border-black"></div>
+            {gameText.length > 0 && (
+              <div className="flex w-full border-t border-black"></div>
+            )}
             {isLoading ? (
               <Loading />
             ) : (
@@ -105,9 +106,9 @@ export function LoadedMainScreen({
             )}
           </div>
         </div>
-        <div className="flex flex-col w-64 space-y-4">
-          <div className="border border-black p-2 h-48">
-            <div className="w-full h-32 bg-gray-200 mt-2">
+        <div className="flex flex-col w-96 space-y-4">
+          <div className="border border-black p-2 h-64">
+            <div className="w-full h-full bg-gray-200">
               <GeneratedImage biome={biome} updateImage={updateImage} />
             </div>
           </div>
@@ -251,6 +252,7 @@ const GeneratedImage = ({
           <Loading />
         </div>
       ) : (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={biome?.imageUrl}
           alt={`Biome: ${biome?.name}`}
