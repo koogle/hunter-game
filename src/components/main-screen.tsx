@@ -137,8 +137,22 @@ export function LoadedMainScreen({
         </div>
         <div className="flex flex-col w-96 space-y-4">
           <div className="border border-black p-2 h-64">
-            <div className="w-full h-full bg-gray-200">
-              <GeneratedImage element={biome} updateImage={updateImage} />
+            <div className="w-full h-full bg-gray-200 flex justify-center items-center">
+              {gameState.world.currentMonster ? (
+                <>
+                  <div className="w-1/2 h-full">
+                    <GeneratedImage element={biome} updateImage={updateImage} />
+                  </div>
+                  <div className="w-1/2 h-full">
+                    <GeneratedImage
+                      element={gameState.world.currentMonster}
+                      updateImage={updateImage}
+                    />
+                  </div>
+                </>
+              ) : (
+                <GeneratedImage element={biome} updateImage={updateImage} />
+              )}
             </div>
           </div>
           <Tabs defaultValue="inventory" className="border h-full border-black">

@@ -231,7 +231,7 @@ If the user is fighting a monster, then the monster action is: '${resp.object.mo
 
   return {
     actionCategory: resp.object.actionCategory,
-    dmAnswer: resp.object.dmAnswer,
+    dmAnswer: resp.object.dmAnswer + resp.object.monsterAction || "",
     ...stateChangeResponse.object,
   };
 }
