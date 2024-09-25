@@ -24,7 +24,7 @@ export const setupWorld = async (
   setMessage("Populating biomes...");
 
   await Promise.all(
-    rawBiomes.map(
+    (rawBiomes || []).map(
       async (biome: {
         name: string;
         description: string;
