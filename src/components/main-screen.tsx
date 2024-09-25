@@ -13,7 +13,7 @@ import {
   processGameStateChange,
 } from "@/lib/utils";
 import { processCommand } from "@/app/loading/llm";
-import { genBiomeImage } from "@/app/loading/fal";
+import { genBiomeImage, genMonsterImage } from "@/app/loading/fal";
 import { Loading } from "./ui/loading";
 
 export function MainScreen() {
@@ -85,12 +85,25 @@ export function LoadedMainScreen({
   );
 
   const updateImage = useCallback(
-    (image: string | undefined) => {
+    (image: string | undefined, isMonster: boolean) => {
       const state = { ...gameState };
-      const biome = state.world.biomes.find((b) => b.id === biomeId);
-      if (biome != null) {
-        biome.imageUrl = image;
-        setGameState(state);
+      if (isMonster) {
+        if (state.world.currentMonster != null) {
+          state.world.currentMonster.imageUrl = image;
+        }
+        const biome = state.world.biomes.find((b) => b.id === biomeId);
+        const monster = biome?.monsters.find(
+          (m) => m.id === state.world.currentMonster?.id
+        );
+        if (monster != null) {
+          monster.imageUrl = image;
+        }
+      } else {
+        const biome = state.world.biomes.find((b) => b.id === biomeId);
+        if (biome != null) {
+          biome.imageUrl = image;
+          setGameState(state);
+        }
       }
     },
     [biomeId, gameState, setGameState]
@@ -125,7 +138,7 @@ export function LoadedMainScreen({
         <div className="flex flex-col w-96 space-y-4">
           <div className="border border-black p-2 h-64">
             <div className="w-full h-full bg-gray-200">
-              <GeneratedImage obj={biome} updateImage={updateImage} />
+              <GeneratedImage element={biome} updateImage={updateImage} />
             </div>
           </div>
           <Tabs defaultValue="inventory" className="border h-full border-black">
@@ -235,7 +248,7 @@ const GeneratedImage = ({
   updateImage,
 }: {
   element: Monster | Biome | undefined;
-  updateImage: (image: string | undefined) => void;
+  updateImage: (image: string | undefined, isMonster: boolean) => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -260,7 +273,7 @@ const GeneratedImage = ({
         }
 
         if (url != null) {
-          updateImage(url);
+          updateImage(url, "attacks" in element);
         }
         setIsLoading(false);
       }
@@ -268,7 +281,7 @@ const GeneratedImage = ({
 
     generateImage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [biome]);
+  }, [element]);
 
   return (
     <div className="w-full h-full">
@@ -279,8 +292,8 @@ const GeneratedImage = ({
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={biome?.imageUrl}
-          alt={`Biome: ${biome?.name}`}
+          src={element?.imageUrl}
+          alt={`${element?.name}`}
           className="w-full h-full object-cover"
         />
       )}
