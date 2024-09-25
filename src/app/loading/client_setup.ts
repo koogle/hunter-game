@@ -2,7 +2,7 @@
 
 import { GameState } from "@/lib/state";
 import { Monster } from "@/lib/types";
-import { createBiomes, createMonsters } from "./creation";
+import { createBiomes, createMap, createMonsters } from "./creation";
 
 function randomInt(min: number, max: number) {
   return min + Math.round(Math.random() * (max - min));
@@ -45,7 +45,7 @@ export const setupWorld = async (
           id: crypto.randomUUID(),
           name: biome.name,
           description: biome.description,
-          enemies: monsters,
+          monsters: monsters,
           imageUrl: "",
         });
       }
@@ -55,8 +55,13 @@ export const setupWorld = async (
   setMessage("Laying out the world...");
   const mapSize = 10;
 
-  gameState.world.map = [];
-  for (let rowIndex = 0; rowIndex < mapSize; rowIndex++) {
+  gameState.world.map = await createMap(
+    gameState.world.biomes,
+    gameState.world.biomes.map((biome) => biome.monsters.length > 0),
+    gameState.world.biomes.map((biome) => biome.name),
+    mapSize
+  );
+  /*for (let rowIndex = 0; rowIndex < mapSize; rowIndex++) {
     const row: string[] = [];
 
     for (let colIndex = 0; colIndex < mapSize; colIndex++) {
@@ -67,7 +72,7 @@ export const setupWorld = async (
       );
     }
     gameState.world.map.push(row);
-  }
+  }*/
 
   setMessage("Ready, putting you in the game...");
 

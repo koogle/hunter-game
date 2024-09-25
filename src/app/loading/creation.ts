@@ -31,7 +31,7 @@ export async function createBiomes(
             {
               role: "system",
               content:
-                "You are a expert Dungeon Master for a text based RPG. You are asked to create a world biomes. There should be biomes that are not dangerous where the player can rest.",
+                "You are a expert Dungeon Master for a text based RPG. You are asked to create a world biomes. There should be biomes that are not dangerous where the player can rest. Ensure there are more dangerous biomes than not dangerous ones",
             },
             {
               role: "user",
