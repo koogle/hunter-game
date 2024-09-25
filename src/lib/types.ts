@@ -36,6 +36,7 @@ export type Monster = {
   gold: number;
   items: Item[];
   probability: number;
+  imageUrl?: string;
 };
 
 export type PlayerStats = {

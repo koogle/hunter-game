@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GameStateContext } from "@/app/context/game_state";
 import { GameState } from "@/lib/state";
-import { Biome, GameStateChange } from "@/lib/types";
+import { Biome, GameStateChange, Monster } from "@/lib/types";
 import { Button } from "./ui/button";
 import {
   formatGameState,
@@ -125,7 +125,7 @@ export function LoadedMainScreen({
         <div className="flex flex-col w-96 space-y-4">
           <div className="border border-black p-2 h-64">
             <div className="w-full h-full bg-gray-200">
-              <GeneratedImage biome={biome} updateImage={updateImage} />
+              <GeneratedImage obj={biome} updateImage={updateImage} />
             </div>
           </div>
           <Tabs defaultValue="inventory" className="border h-full border-black">
@@ -231,10 +231,10 @@ const Config = () => {
 };
 
 const GeneratedImage = ({
-  biome,
+  element,
   updateImage,
 }: {
-  biome: Biome | undefined;
+  element: Monster | Biome | undefined;
   updateImage: (image: string | undefined) => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -243,14 +243,22 @@ const GeneratedImage = ({
     const generateImage = async () => {
       if (
         isLoading ||
-        biome == null ||
-        (biome.imageUrl != null && biome.imageUrl.length > 0)
+        element == null ||
+        (element.imageUrl != null && element.imageUrl.length > 0)
       ) {
         return;
       }
       setIsLoading(true);
-      if (biome != null) {
-        const url = await genBiomeImage(biome.name, biome.description);
+      if (element != null) {
+        let url: string | undefined;
+        if ("attacks" in element) {
+          // This is a Monster
+          url = await genMonsterImage(element.name, element.description);
+        } else if ("monsters" in element) {
+          // This is a Biome
+          url = await genBiomeImage(element.name, element.description);
+        }
+
         if (url != null) {
           updateImage(url);
         }
