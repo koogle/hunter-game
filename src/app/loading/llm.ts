@@ -9,7 +9,7 @@ const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY ?? "",
 });
 
-const model = openai("gpt-4o");
+const model = openai("gpt-4o-mini");
 
 export async function createObject<OBJECT>({
   messages,

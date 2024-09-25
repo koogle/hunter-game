@@ -187,7 +187,11 @@ export function processGameStateChange(
         b.id ===
         state.world.map[state.player.location.y][state.player.location.x]
     );
-    if (newBiome != null && newBiome.monsters.length > 0) {
+    if (
+      newBiome != null &&
+      newBiome.monsters != null &&
+      newBiome.monsters.length > 0
+    ) {
       const randomMonster = newBiome.monsters.find(
         (m) => m.probability > Math.random()
       );
@@ -237,6 +241,7 @@ export function processGameStateChange(
         (gameStateChange.monsterChange.healthChange ?? 0);
     }
   }
+  console.log(gameStateChange);
 
   setGameState(state);
 }

@@ -16,7 +16,7 @@ export const setupWorld = async (
 ) => {
   const gameState: GameState = { ...baseGameState };
 
-  const numberOfBiomes = randomInt(3, 8);
+  const numberOfBiomes = randomInt(5, 12);
   setMessage(`Creating ${numberOfBiomes} biomes...`);
   const rawBiomes = await createBiomes(numberOfBiomes);
   console.log(rawBiomes);
