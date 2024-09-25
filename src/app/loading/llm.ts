@@ -50,6 +50,7 @@ If the user asks about what they can do give them a short list of actions they c
 Avoid the word "you" in your response.
 
 If the user is fighting a monster, then they can only take actions related to the fight. They cannot move to other biomes or move left or right.
+The monster will attack the user after the user's turn. Return both a response for the user action and the
 `,
       },
       {
@@ -83,6 +84,7 @@ export async function processCommand(
         "craft",
       ]),
       dmAnswer: z.string(),
+      monsterAction: z.string().optional(),
       reasoning: z.array(z.string()),
     }),
     messages: [
@@ -100,10 +102,11 @@ The user can ask about the player stats.
 The user can ask about the quests.
 The user can ask about the items.
 The user can ask about the biome they are in.
+If the user is fighting a monster, then they can only take actions related to the fight. They cannot move to other biomes or move left or right.
 If they are fighting a monster they can use their tools and interact with the monster.
 The fight with the monster are turn based and you should emulate the monster behaviour with its different attacks and narrate the fight.
 The monsters can flee or stay their ground.
-The user cannot move to a different biome if they are fighting a monster.
+The monster will attack the user after the user's turn. Return both a response for the user action and the
 
 Ensure that the user does not perform illegal actions or breaks the game.
 Be flexible to typos and other mispellings and assume the user is typing as fast as they can.
@@ -142,7 +145,7 @@ ${formattedInteractionHistory}`,
       .optional(),
     questChange: z
       .object({
-        questName: z.string(),
+        questName: z.string().optional(),
         descriptionChange: z.string().optional(),
         isCompleted: z.boolean().optional(),
       })
@@ -215,7 +218,10 @@ ${formattedInteractionHistory}`,
         role: "user",
         content: `The user request was: '${userRequest}'
 The category of action the Dungeon Master chose was: '${resp.object.actionCategory}'
-The Dungeon Master answer was: '${resp.object.dmAnswer}'`,
+The Dungeon Master answer was: '${resp.object.dmAnswer}'
+
+If the user is fighting a monster, then the monster action is: '${resp.object.monsterAction}'
+`,
       },
     ],
   });

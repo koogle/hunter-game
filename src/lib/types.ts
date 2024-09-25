@@ -65,7 +65,7 @@ export interface GameStateChange {
       | "northeast";
   };
   questChange?: {
-    questName: string;
+    questName?: string;
     descriptionChange?: string;
     isCompleted?: boolean;
   };
