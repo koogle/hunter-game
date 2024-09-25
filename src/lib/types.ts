@@ -2,7 +2,7 @@ export type Biome = {
   id: string;
   name: string;
   description: string;
-  enemies: Monster[];
+  monsters: Monster[];
   imageUrl?: string;
 };
 
@@ -46,6 +46,8 @@ export type PlayerStats = {
   dexterity: number;
   intelligence: number;
   luck: number;
+  xp: number;
+  gold: number;
 };
 
 export interface GameStateChange {
@@ -59,6 +61,10 @@ export interface GameStateChange {
     questName: string;
     descriptionChange?: string;
     isCompleted?: boolean;
+  };
+  monsterChange?: {
+    healthChange?: number;
+    isDefeated?: boolean;
   };
   itemChanges?: {
     itemAction?: "add" | "remove" | "change";
@@ -76,9 +82,11 @@ export interface GameStateChange {
     health?: number;
     level?: number;
     magic?: number;
+    gold?: number;
     strength?: number;
     dexterity?: number;
     intelligence?: number;
     luck?: number;
+    xp?: number;
   };
 }

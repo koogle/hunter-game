@@ -39,10 +39,10 @@ export function LoadedMainScreen({
   setGameState: (gameState: GameState) => void;
 }) {
   const [isLoading, setIsLoading] = useState(false);
-
   const [interactionHistory, setInteractionHistory] = useState<
     { userRequest: string; dmResponse: string }[]
   >([]);
+  const [monsterText, setMonsterText] = useState("");
   const biomeId =
     gameState.world.map[gameState.player.location.y][
       gameState.player.location.x
@@ -54,9 +54,7 @@ export function LoadedMainScreen({
     return map;
   }, [gameState.world.biomes]);
   const biome = biomesById[biomeId];
-
   const [command, setCommand] = useState("");
-
   const [gameText, setGameText] = useState("");
 
   const handleCommand = useCallback(
@@ -110,6 +108,13 @@ export function LoadedMainScreen({
             {gameText.length > 0 && (
               <div className="flex w-full border-t border-black"></div>
             )}
+            {gameState.world.currentMonster != null && (
+              <div>
+                You are being attacked by a{" "}
+                <b>{gameState.world.currentMonster.name}!</b>
+                <p>{gameState.world.currentMonster.description}</p>
+              </div>
+            )}
             {isLoading ? (
               <Loading />
             ) : (
@@ -158,7 +163,7 @@ export function LoadedMainScreen({
       </div>
       <Input
         type="text"
-        placeholder="Enter your command..."
+        placeholder="What are you doing..."
         value={isLoading ? "" : command}
         disabled={isLoading}
         onChange={(e) => setCommand(e.target.value)}

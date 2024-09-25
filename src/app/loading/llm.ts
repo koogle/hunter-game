@@ -156,6 +156,14 @@ ${formattedInteractionHistory}`,
         intelligence: z.number().optional(),
         luck: z.number().optional(),
         level: z.number().optional(),
+        gold: z.number().optional(),
+        xp: z.number().optional(),
+      })
+      .optional(),
+    monsterChange: z
+      .object({
+        healthChange: z.number().optional(),
+        isDefeated: z.boolean().optional(),
       })
       .optional(),
   });

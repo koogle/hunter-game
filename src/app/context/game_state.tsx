@@ -42,6 +42,8 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({
           intelligence: 5,
           level: 1,
           luck: 5,
+          gold: 0,
+          xp: 0,
         },
         name: "",
         questProgress: {},

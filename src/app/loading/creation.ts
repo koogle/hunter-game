@@ -102,7 +102,8 @@ export async function createMonsters(
           role: "user",
           content:
             `Create a monster for a biome with name ${biomeName} and description ${biomeDescription}.
-Create the monster with a set of attacks at minimum 1 but at maximum 5.
+Create the monster with a set of attacks.
+The probability of encountering the monster should be between 0 and 0.9.
 The stronger the monster is the lower the probability of encountering it when being on a biome.` +
             existingMonsterNames,
         },

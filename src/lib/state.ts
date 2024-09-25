@@ -1,4 +1,4 @@
-import { Biome, Quest, Item, PlayerStats } from "./types";
+import { Biome, Quest, Item, PlayerStats, Monster } from "./types";
 
 export type WorldState = {
   // Maps to biomes
@@ -6,6 +6,7 @@ export type WorldState = {
   biomes: Biome[];
   quests: Quest[];
   items: Item[];
+  currentMonster?: Monster;
 };
 
 export type PlayerState = {

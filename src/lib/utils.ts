@@ -47,6 +47,12 @@ export function formatGameState(state: GameState) {
     });
   });
 
+  const monsterState = state.world.currentMonster
+    ? `The player is currently fighting a ${
+        state.world.currentMonster.name
+      } with the following stats:\n${yaml.dump(state.world.currentMonster)}\n`
+    : "There is no monster in the current biome";
+
   const gameState = `
 The player state is ${yaml.dump(state.player)}
 The coordinates of the player are X:${state.player.location.x} Y:${
@@ -68,8 +74,9 @@ The player is currently in the ${yaml.dump(
 ${biome?.description}
 The quests are
 ${yaml.dump(state.world.quests)}
+
+${monsterState}
 `;
-  console.log(gameState);
   return gameState;
 }
 
@@ -174,6 +181,20 @@ export function processGameStateChange(
       ),
       state.world.map[0].length - 1
     );
+
+    const newBiome = state.world.biomes.find(
+      (b) =>
+        b.id ===
+        state.world.map[state.player.location.y][state.player.location.x]
+    );
+    if (newBiome != null && newBiome.monsters.length > 0) {
+      const randomMonster = newBiome.monsters.find(
+        (m) => m.probability > Math.random()
+      );
+      if (randomMonster != null) {
+        state.world.currentMonster = randomMonster;
+      }
+    }
   }
 
   if (gameStateChange.playerStatsChange != null) {
@@ -198,7 +219,23 @@ export function processGameStateChange(
       level:
         state.player.stats.level +
         (gameStateChange.playerStatsChange.level ?? 0),
+      gold:
+        state.player.stats.gold + (gameStateChange.playerStatsChange.gold ?? 0),
+      xp: state.player.stats.xp + (gameStateChange.playerStatsChange.xp ?? 0),
     };
+  }
+
+  if (
+    state.world.currentMonster != null &&
+    gameStateChange.monsterChange != null
+  ) {
+    if (gameStateChange.monsterChange.isDefeated ?? false) {
+      state.world.currentMonster = undefined;
+    } else {
+      state.world.currentMonster.health =
+        state.world.currentMonster.health +
+        (gameStateChange.monsterChange.healthChange ?? 0);
+    }
   }
 
   setGameState(state);
