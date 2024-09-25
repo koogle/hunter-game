@@ -343,10 +343,22 @@ function processGameStateChange(
   }
 
   if (gameStateChange.locationChange != null) {
-    state.player.location.x =
-      gameStateChange.locationChange.x ?? state.player.location.x;
-    state.player.location.y =
-      gameStateChange.locationChange.y ?? state.player.location.y;
+    state.player.location.x = Math.min(
+      Math.max(
+        0,
+        state.player.location.x +
+          (gameStateChange.locationChange.xRelativeChange ?? 0)
+      ),
+      state.world.map.length - 1
+    );
+    state.player.location.y = Math.min(
+      Math.max(
+        0,
+        state.player.location.y +
+          (gameStateChange.locationChange.yRelativeChange ?? 0)
+      ),
+      state.world.map[0].length - 1
+    );
   }
 
   if (gameStateChange.playerStatsChange != null) {

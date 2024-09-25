@@ -53,8 +53,8 @@ export interface GameStateChange {
   dmAnswer: string;
   reasoning: string[];
   locationChange?: {
-    x?: number;
-    y?: number;
+    xRelativeChange?: number;
+    yRelativeChange?: number;
   };
   questChange?: {
     questName: string;

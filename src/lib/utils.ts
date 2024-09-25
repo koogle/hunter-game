@@ -8,62 +8,63 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatGameState(state: GameState) {
-  const currentBiome =
-    state.world.map[state.player.location.x][state.player.location.y];
+  const biome = state.world.biomes.find(
+    (b) =>
+      b.id === state.world.map[state.player.location.y][state.player.location.x]
+  );
 
-  const mapWidth = state.world.map.length;
-  const mapHeight = state.world.map[0].length;
-  const { x, y } = state.player.location;
+  const playerX = state.player.location.x;
+  const playerY = state.player.location.y;
 
   const surroundingBiomes = [
-    [null, null, null],
-    [null, null, null],
-    [null, null, null],
+    [
+      state.world.map[playerY - 1]?.[playerX - 1],
+      state.world.map[playerY - 1]?.[playerX],
+      state.world.map[playerY - 1]?.[playerX + 1],
+    ],
+    [
+      state.world.map[playerY]?.[playerX - 1],
+      "<Player>",
+      state.world.map[playerY]?.[playerX + 1],
+    ],
+    [
+      state.world.map[playerY + 1]?.[playerX - 1],
+      state.world.map[playerY + 1]?.[playerX],
+      state.world.map[playerY + 1]?.[playerX + 1],
+    ],
   ];
 
-  for (let dx = -1; dx <= 1; dx++) {
-    for (let dy = -1; dy <= 1; dy++) {
-      const newX = x + dx;
-      const newY = y + dy;
-      const biomeId = state.world.map[newX][newY];
-      const biome = state.world.biomes.find((b) => b.id === biomeId);
-      // Check if the new coordinates are within the map boundaries
-      if (
-        newX >= 0 &&
-        newX < mapWidth &&
-        newY >= 0 &&
-        newY < mapHeight &&
-        biome != null
-      ) {
-        surroundingBiomes[dy + 1][dx + 1] = biome.name;
+  const biomes = surroundingBiomes.map((biome) => {
+    return biome.map((b) => {
+      if (b === "<Player>") {
+        return "<Player>";
       }
-    }
-  }
-
-  const formattedSurroundingBiomes = `
-            N
-     ${surroundingBiomes[0][0] || " "} | ${surroundingBiomes[0][1] || " "} | ${
-    surroundingBiomes[0][2] || " "
-  }
-W  ${surroundingBiomes[1][0] || " "} | ${surroundingBiomes[1][1] || " "} | ${
-    surroundingBiomes[1][2] || " "
-  }  E
-     ${surroundingBiomes[2][0] || " "} | ${surroundingBiomes[2][1] || " "} | ${
-    surroundingBiomes[2][2] || " "
-  }
-            S
-  `;
+      return (
+        state.world.biomes.find((biome) => biome.id === b)?.name ??
+        "<< Unavailable >>"
+      );
+    });
+  });
 
   const gameState = `
-The player state is
-${yaml.dump(state.player)}
+The player state is ${yaml.dump(state.player)}
+The coordinates of the player are X:${state.player.location.x} Y:${
+    state.player.location.y
+  }
+The X coordinate is for West to East movement
+and Y is for North to South movement
 
-The current biome is
-${yaml.dump(currentBiome)}
+The map around the player is:
+        N
+  ${biomes[0].join("\t\t|\t\t")}
+W ${biomes[1].join("\t\t|\t\t")} E
+  ${biomes[2].join("\t\t|\t\t")}
+        S   
 
-The biomes around the player looks like this, with the player in the center:
-${formattedSurroundingBiomes}
-
+The player is currently in the ${yaml.dump(
+    biome?.name
+  )} biome with the description
+${biome?.description}
 The quests are
 ${yaml.dump(state.world.quests)}
 `;

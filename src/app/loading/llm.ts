@@ -84,8 +84,8 @@ export async function processCommand(
       reasoning: z.array(z.string()),
       locationChange: z
         .object({
-          x: z.optional(z.number()),
-          y: z.optional(z.number()),
+          xRelativeChange: z.optional(z.number()),
+          yRelativeChange: z.optional(z.number()),
         })
         .optional(),
       questChange: z
