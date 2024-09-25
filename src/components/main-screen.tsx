@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GameStateContext } from "@/app/context/game_state";
 import { GameState } from "@/lib/state";
-import { Biome, GameStateChange, Monster } from "@/lib/types";
+import { Biome, Monster } from "@/lib/types";
 import { Button } from "./ui/button";
 import {
   formatGameState,
@@ -42,7 +42,7 @@ export function LoadedMainScreen({
   const [interactionHistory, setInteractionHistory] = useState<
     { userRequest: string; dmResponse: string }[]
   >([]);
-  const [monsterText, setMonsterText] = useState("");
+
   const biomeId =
     gameState.world.map[gameState.player.location.y][
       gameState.player.location.x
@@ -121,10 +121,13 @@ export function LoadedMainScreen({
             {gameText.length > 0 && (
               <div className="flex w-full border-t border-black"></div>
             )}
+
             {gameState.world.currentMonster != null && (
               <div>
+                <br />
                 You are being attacked by a{" "}
                 <b>{gameState.world.currentMonster.name}!</b>
+                <br />
                 <p>{gameState.world.currentMonster.description}</p>
               </div>
             )}

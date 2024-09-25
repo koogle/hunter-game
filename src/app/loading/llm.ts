@@ -17,6 +17,7 @@ export async function createObject<OBJECT>({
   temperature = 0.1,
 }: {
   messages: CoreMessage[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schema: z.Schema<OBJECT, z.ZodTypeDef, any> | Schema<OBJECT>;
   temperature?: number;
 }) {
