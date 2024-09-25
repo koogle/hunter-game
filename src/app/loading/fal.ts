@@ -15,7 +15,11 @@ export async function genBiomeImage(
 
   try {
     imageCache.set(name, "");
-    const result = await fal.subscribe("fal-ai/flux/schnell", {
+    const result: {
+      images: {
+        url: string;
+      }[];
+    } = await fal.subscribe("fal-ai/flux/schnell", {
       input: {
         prompt: `Create an image of a biome for the purpose of a text based role playing game in the style of magic the gathering cards. The biome is called ${name} and the description is ${description}`,
       },
@@ -46,7 +50,11 @@ export async function genMonsterImage(
 
   try {
     imageCache.set(name, "");
-    const result = await fal.subscribe("fal-ai/flux/schnell", {
+    const result: {
+      images: {
+        url: string;
+      }[];
+    } = await fal.subscribe("fal-ai/flux/schnell", {
       input: {
         prompt: `Create an image of a monster for the purpose of a text based role playing game in the style of magic the gathering cards. The monster is called ${name} and the description is ${description}`,
       },
