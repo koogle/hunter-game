@@ -53,9 +53,16 @@ export type PlayerStats = {
 export interface GameStateChange {
   actionCategory: "move" | "interact" | "ask" | "take" | "fight" | "craft";
   dmAnswer: string;
-  locationChange?: {
-    xRelativeChange?: number;
-    yRelativeChange?: number;
+  playerLocationChange?: {
+    direction?:
+      | "north"
+      | "south"
+      | "east"
+      | "west"
+      | "southwest"
+      | "southeast"
+      | "northwest"
+      | "northeast";
   };
   questChange?: {
     questName: string;

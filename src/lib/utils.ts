@@ -164,22 +164,47 @@ export function processGameStateChange(
     }
   }
 
-  if (gameStateChange.locationChange != null) {
+  if (gameStateChange.playerLocationChange != null) {
+    let xDiv = 0;
+    let yDiv = 0;
+    switch (gameStateChange.playerLocationChange.direction) {
+      case "north":
+        yDiv = 1;
+        break;
+      case "south":
+        yDiv = -1;
+        break;
+      case "east":
+        xDiv = 1;
+        break;
+      case "west":
+        xDiv = -1;
+        break;
+      case "northwest":
+        xDiv = -1;
+        yDiv = 1;
+        break;
+      case "northeast":
+        xDiv = 1;
+        yDiv = 1;
+        break;
+      case "southwest":
+        xDiv = -1;
+        yDiv = -1;
+        break;
+      case "southeast":
+        xDiv = 1;
+        yDiv = -1;
+        break;
+    }
+
     state.player.location.x = Math.min(
-      Math.max(
-        0,
-        state.player.location.x +
-          (gameStateChange.locationChange.xRelativeChange ?? 0)
-      ),
-      state.world.map.length - 1
+      Math.max(0, state.player.location.x + xDiv),
+      state.world.map[0].length - 1
     );
     state.player.location.y = Math.min(
-      Math.max(
-        0,
-        state.player.location.y +
-          (gameStateChange.locationChange.yRelativeChange ?? 0)
-      ),
-      state.world.map[0].length - 1
+      Math.max(0, state.player.location.y + yDiv),
+      state.world.map.length - 1
     );
 
     const newBiome = state.world.biomes.find(
@@ -192,9 +217,7 @@ export function processGameStateChange(
       newBiome.monsters != null &&
       newBiome.monsters.length > 0
     ) {
-      const randomMonster = newBiome.monsters.find(
-        (m) => m.probability > Math.random()
-      );
+      const randomMonster = newBiome.monsters.find((m) => m.probability > 0);
       if (randomMonster != null) {
         state.world.currentMonster = randomMonster;
       }

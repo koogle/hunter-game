@@ -48,6 +48,8 @@ Not every action of the user needs to have a purpose and they can just interact 
 Mirror the tone of a magic the gathering card in terms of description mixed with Neil Geiman. Do not be patronizing and do not be too wordy.
 If the user asks about what they can do give them a short list of actions they can take.
 Avoid the word "you" in your response.
+
+If the user is fighting a monster, then they can only take actions related to the fight. They cannot move to other biomes or move left or right.
 `,
       },
       {
@@ -98,6 +100,10 @@ The user can ask about the player stats.
 The user can ask about the quests.
 The user can ask about the items.
 The user can ask about the biome they are in.
+If they are fighting a monster they can use their tools and interact with the monster.
+The fight with the monster are turn based and you should emulate the monster behaviour with its different attacks and narrate the fight.
+The monsters can flee or stay their ground.
+The user cannot move to a different biome if they are fighting a monster.
 
 Ensure that the user does not perform illegal actions or breaks the game.
 Be flexible to typos and other mispellings and assume the user is typing as fast as they can.
@@ -118,10 +124,20 @@ ${formattedInteractionHistory}`,
   });
 
   const stateChangeSchema = z.object({
-    locationChange: z
+    playerLocationChange: z
       .object({
-        xRelativeChange: z.optional(z.number()),
-        yRelativeChange: z.optional(z.number()),
+        direction: z
+          .enum([
+            "north",
+            "south",
+            "east",
+            "west",
+            "southwest",
+            "southeast",
+            "northwest",
+            "northeast",
+          ])
+          .optional(),
       })
       .optional(),
     questChange: z
@@ -184,7 +200,11 @@ For example,
  - if the user picks up or changes an item or even many items
  - if the user moves
  - if the user completes a quest
- - if the user levels up or their attributes change based on interaction with the world`,
+ - if the user levels up or their attributes change based on interaction with the world
+ - if the user is fighting a monster and the monster is defeated
+ - if the user is fighting a monster and the monster flees
+ - if the user is fighting a monster and the monster is inflicting damage on the user or vice versa
+`,
       },
       {
         role: "user",
