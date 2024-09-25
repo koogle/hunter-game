@@ -113,7 +113,7 @@ The stronger the monster is the lower the probability of encountering it when be
 
     const nItems = randomInt(1, 4);
     const monsterStats = Object.entries(m)
-      .map(([key, val]) => key + `:\t` + val.toString())
+      .map(([key, val]) => key + `:\t` + val?.toString())
       .join("\n");
 
     const items: Item[] = [];

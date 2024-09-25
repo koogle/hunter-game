@@ -1,6 +1,8 @@
 "use client";
 
+import { GameStateContext } from "@/app/context/game_state";
 import { Button } from "@/components/ui/button";
+import { useContext } from "react";
 
 interface ErrorScreenProps {
   message: string;
@@ -13,6 +15,8 @@ export function ErrorScreen({
   onRetry,
   onMainMenu,
 }: ErrorScreenProps) {
+  const ctx = useContext(GameStateContext);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white text-black font-mono p-4">
       <div className="border border-black p-8 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] max-w-md w-full">
@@ -27,7 +31,16 @@ export function ErrorScreen({
               Retry
             </Button>
           )}
-          {onMainMenu && (
+
+          {!onMainMenu && (
+            <Button
+              onClick={() => ctx?.clearGameState()}
+              className="w-full bg-black text-white hover:bg-gray-800 rounded-none"
+            >
+              Clear state
+            </Button>
+          )}
+          {!onMainMenu && (
             <Button
               onClick={onMainMenu}
               className="w-full bg-black text-white hover:bg-gray-800 rounded-none"

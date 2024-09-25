@@ -55,13 +55,14 @@ export const setupWorld = async (
   setMessage("Laying out the world...");
   const mapSize = 10;
 
-  gameState.world.map = await createMap(
+  gameState.world.map = []; /* await createMap(
     gameState.world.biomes,
     gameState.world.biomes.map((biome) => biome.monsters.length > 0),
     gameState.world.biomes.map((biome) => biome.name),
     mapSize
   );
-  /*for (let rowIndex = 0; rowIndex < mapSize; rowIndex++) {
+  */
+  for (let rowIndex = 0; rowIndex < mapSize; rowIndex++) {
     const row: string[] = [];
 
     for (let colIndex = 0; colIndex < mapSize; colIndex++) {
@@ -72,7 +73,7 @@ export const setupWorld = async (
       );
     }
     gameState.world.map.push(row);
-  }*/
+  }
 
   setMessage("Ready, putting you in the game...");
 
