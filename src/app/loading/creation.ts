@@ -27,6 +27,7 @@ export async function createBiomes(
     biomes.push(
       (
         await createObject({
+          temperature: 0.3,
           messages: [
             {
               role: "system",
@@ -92,6 +93,7 @@ export async function createMonsters(
     }
 
     const m = await createObject({
+      temperature: 0.3,
       messages: [
         {
           role: "system",

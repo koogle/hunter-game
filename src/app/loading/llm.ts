@@ -14,11 +14,14 @@ const model = openai("gpt-4o-mini");
 export async function createObject<OBJECT>({
   messages,
   schema,
+  temperature = 0.1,
 }: {
   messages: CoreMessage[];
   schema: z.Schema<OBJECT, z.ZodTypeDef, any> | Schema<OBJECT>;
+  temperature?: number;
 }) {
   return generateObject({
+    temperature,
     model,
     schema,
     messages,
