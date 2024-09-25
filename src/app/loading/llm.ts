@@ -26,6 +26,7 @@ export async function createObject<OBJECT>({
     model,
     schema,
     messages,
+    experimental_telemetry: { isEnabled: true },
   });
 }
 
