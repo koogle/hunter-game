@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as yaml from "js-yaml";
 import { GameState } from "./state";
+import { GameStateChange } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -81,4 +82,104 @@ export function formatInteractionHistory(
         `User: ${interaction.userRequest}\nDM: ${interaction.dmResponse}`
     )
     .join("\n");
+}
+
+export function processGameStateChange(
+  gameStateChange: GameStateChange,
+  gameState: GameState,
+  setGameState: (gameState: GameState) => void
+) {
+  const state = { ...gameState };
+
+  if (gameStateChange.itemChange != null) {
+    switch (gameStateChange.itemChange.itemAction) {
+      case "add":
+        state.player.inventory.push({
+          id: crypto.randomUUID(),
+          name: gameStateChange.itemChange.itemName,
+          description: gameStateChange.itemChange.descriptionChange ?? "",
+          dropRate: gameStateChange.itemChange.dropRate ?? 0,
+          requirements: {
+            strength: gameStateChange.itemChange.requirements?.strength ?? 0,
+            dexterity: gameStateChange.itemChange.requirements?.dexterity ?? 0,
+            intelligence:
+              gameStateChange.itemChange.requirements?.intelligence ?? 0,
+          },
+          damage: gameStateChange.itemChange.damage ?? "",
+        });
+        break;
+      case "remove":
+        state.player.inventory = state.player.inventory.filter(
+          (item) => item.name !== gameStateChange.itemChange?.itemName
+        );
+        break;
+      case "change":
+        state.player.inventory = state.player.inventory.map((item) => {
+          if (item.name === gameStateChange.itemChange?.itemName) {
+            return {
+              ...item,
+              description:
+                gameStateChange.itemChange.descriptionChange ??
+                item.description,
+              dropRate: gameStateChange.itemChange.dropRate ?? item.dropRate,
+              requirements: {
+                strength:
+                  gameStateChange.itemChange.requirements?.strength ??
+                  item.requirements.strength,
+                dexterity:
+                  gameStateChange.itemChange.requirements?.dexterity ??
+                  item.requirements.dexterity,
+                intelligence:
+                  gameStateChange.itemChange.requirements?.intelligence ??
+                  item.requirements.intelligence,
+              },
+              damage: gameStateChange.itemChange.damage ?? item.damage,
+            };
+          }
+          return item;
+        });
+        break;
+    }
+  }
+
+  const questChange = gameStateChange.questChange;
+  if (questChange != null) {
+    const quest = state.world.quests.find(
+      (q) => q.name === questChange.questName
+    );
+    if (quest != null) {
+      state.player.questProgress[quest.id] = questChange.isCompleted ?? false;
+
+      quest.isCompleted = questChange.isCompleted ?? false;
+      quest.description = questChange.descriptionChange ?? quest.description;
+    }
+  }
+
+  if (gameStateChange.locationChange != null) {
+    state.player.location.x = Math.min(
+      Math.max(
+        0,
+        state.player.location.x +
+          (gameStateChange.locationChange.xRelativeChange ?? 0)
+      ),
+      state.world.map.length - 1
+    );
+    state.player.location.y = Math.min(
+      Math.max(
+        0,
+        state.player.location.y +
+          (gameStateChange.locationChange.yRelativeChange ?? 0)
+      ),
+      state.world.map[0].length - 1
+    );
+  }
+
+  if (gameStateChange.playerStatsChange != null) {
+    state.player.stats = {
+      ...state.player.stats,
+      ...gameStateChange.playerStatsChange,
+    };
+  }
+
+  setGameState(state);
 }

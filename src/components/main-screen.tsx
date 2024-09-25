@@ -7,7 +7,11 @@ import { GameStateContext } from "@/app/context/game_state";
 import { GameState } from "@/lib/state";
 import { Biome, GameStateChange } from "@/lib/types";
 import { Button } from "./ui/button";
-import { formatGameState, formatInteractionHistory } from "@/lib/utils";
+import {
+  formatGameState,
+  formatInteractionHistory,
+  processGameStateChange,
+} from "@/lib/utils";
 import { processCommand } from "@/app/loading/llm";
 import { genBiomeImage } from "@/app/loading/fal";
 import { Loading } from "./ui/loading";
@@ -270,106 +274,3 @@ const GeneratedImage = ({
     </div>
   );
 };
-
-function processGameStateChange(
-  gameStateChange: GameStateChange,
-  gameState: GameState,
-  setGameState: (gameState: GameState) => void
-) {
-  const state = { ...gameState };
-
-  if (gameStateChange.itemChange != null) {
-    switch (gameStateChange.itemChange.itemAction) {
-      case "add":
-        state.player.inventory.push({
-          id: crypto.randomUUID(),
-          name: gameStateChange.itemChange.itemName,
-          description: gameStateChange.itemChange.descriptionChange ?? "",
-          dropRate: gameStateChange.itemChange.dropRate ?? 0,
-          requirements: {
-            strength: gameStateChange.itemChange.requirements?.strength ?? 0,
-            dexterity: gameStateChange.itemChange.requirements?.dexterity ?? 0,
-            intelligence:
-              gameStateChange.itemChange.requirements?.intelligence ?? 0,
-          },
-          damage: gameStateChange.itemChange.damage ?? "",
-        });
-        break;
-      case "remove":
-        state.player.inventory = state.player.inventory.filter(
-          (item) => item.name !== gameStateChange.itemChange?.itemName
-        );
-        break;
-      case "change":
-        state.player.inventory = state.player.inventory.map((item) => {
-          if (item.name === gameStateChange.itemChange?.itemName) {
-            return {
-              ...item,
-              description:
-                gameStateChange.itemChange.descriptionChange ??
-                item.description,
-              dropRate: gameStateChange.itemChange.dropRate ?? item.dropRate,
-              requirements: {
-                strength:
-                  gameStateChange.itemChange.requirements?.strength ??
-                  item.requirements.strength,
-                dexterity:
-                  gameStateChange.itemChange.requirements?.dexterity ??
-                  item.requirements.dexterity,
-                intelligence:
-                  gameStateChange.itemChange.requirements?.intelligence ??
-                  item.requirements.intelligence,
-              },
-              damage: gameStateChange.itemChange.damage ?? item.damage,
-            };
-          }
-          return item;
-        });
-        break;
-    }
-  }
-
-  const questChange = gameStateChange.questChange;
-  if (questChange != null) {
-    const quest = state.world.quests.find(
-      (q) => q.name === questChange.questName
-    );
-    if (quest != null) {
-      state.player.questProgress[quest.id] = questChange.isCompleted ?? false;
-
-      quest.isCompleted = questChange.isCompleted ?? false;
-      quest.description = questChange.descriptionChange ?? quest.description;
-    }
-  }
-
-  if (gameStateChange.locationChange != null) {
-    state.player.location.x = Math.min(
-      Math.max(
-        0,
-        state.player.location.x +
-          (gameStateChange.locationChange.xRelativeChange ?? 0)
-      ),
-      state.world.map.length - 1
-    );
-    state.player.location.y = Math.min(
-      Math.max(
-        0,
-        state.player.location.y +
-          (gameStateChange.locationChange.yRelativeChange ?? 0)
-      ),
-      state.world.map[0].length - 1
-    );
-  }
-
-  if (gameStateChange.playerStatsChange != null) {
-    state.player.stats = {
-      ...state.player.stats,
-      ...gameStateChange.playerStatsChange,
-    };
-  }
-  console.log(gameStateChange);
-
-  console.log(state);
-
-  setGameState(state);
-}
