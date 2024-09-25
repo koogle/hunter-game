@@ -91,55 +91,57 @@ export function processGameStateChange(
 ) {
   const state = { ...gameState };
 
-  if (gameStateChange.itemChange != null) {
-    switch (gameStateChange.itemChange.itemAction) {
-      case "add":
-        state.player.inventory.push({
-          id: crypto.randomUUID(),
-          name: gameStateChange.itemChange.itemName,
-          description: gameStateChange.itemChange.descriptionChange ?? "",
-          dropRate: gameStateChange.itemChange.dropRate ?? 0,
-          requirements: {
-            strength: gameStateChange.itemChange.requirements?.strength ?? 0,
-            dexterity: gameStateChange.itemChange.requirements?.dexterity ?? 0,
-            intelligence:
-              gameStateChange.itemChange.requirements?.intelligence ?? 0,
-          },
-          damage: gameStateChange.itemChange.damage ?? "",
-        });
-        break;
-      case "remove":
-        state.player.inventory = state.player.inventory.filter(
-          (item) => item.name !== gameStateChange.itemChange?.itemName
-        );
-        break;
-      case "change":
-        state.player.inventory = state.player.inventory.map((item) => {
-          if (item.name === gameStateChange.itemChange?.itemName) {
-            return {
-              ...item,
-              description:
-                gameStateChange.itemChange.descriptionChange ??
-                item.description,
-              dropRate: gameStateChange.itemChange.dropRate ?? item.dropRate,
-              requirements: {
-                strength:
-                  gameStateChange.itemChange.requirements?.strength ??
-                  item.requirements.strength,
-                dexterity:
-                  gameStateChange.itemChange.requirements?.dexterity ??
-                  item.requirements.dexterity,
-                intelligence:
-                  gameStateChange.itemChange.requirements?.intelligence ??
-                  item.requirements.intelligence,
-              },
-              damage: gameStateChange.itemChange.damage ?? item.damage,
-            };
+  if (gameStateChange.itemChanges != null) {
+    gameStateChange.itemChanges.forEach((itemChange) => {
+      switch (itemChange.itemAction) {
+        case "add":
+          state.player.inventory.push({
+            id: crypto.randomUUID(),
+            name: itemChange.itemName,
+            description: itemChange.descriptionChange ?? "",
+            dropRate: itemChange.dropRate ?? 0,
+            requirements: {
+              strength: itemChange.requirements?.strength ?? 0,
+              dexterity: itemChange.requirements?.dexterity ?? 0,
+              intelligence: itemChange.requirements?.intelligence ?? 0,
+            },
+            damage: itemChange.damage ?? "",
+          });
+          break;
+        case "remove":
+          const itemIndex = state.player.inventory.findIndex(
+            (item) => item.name === itemChange.itemName
+          );
+          if (itemIndex !== -1) {
+            state.player.inventory.splice(itemIndex, 1);
           }
-          return item;
-        });
-        break;
-    }
+          break;
+        case "change":
+          state.player.inventory = state.player.inventory.map((item) => {
+            if (item.name === itemChange.itemName) {
+              return {
+                ...item,
+                description: itemChange.descriptionChange ?? item.description,
+                dropRate: itemChange.dropRate ?? item.dropRate,
+                requirements: {
+                  strength:
+                    itemChange.requirements?.strength ??
+                    item.requirements.strength,
+                  dexterity:
+                    itemChange.requirements?.dexterity ??
+                    item.requirements.dexterity,
+                  intelligence:
+                    itemChange.requirements?.intelligence ??
+                    item.requirements.intelligence,
+                },
+                damage: itemChange.damage ?? item.damage,
+              };
+            }
+            return item;
+          });
+          break;
+      }
+    });
   }
 
   const questChange = gameStateChange.questChange;
@@ -176,8 +178,26 @@ export function processGameStateChange(
 
   if (gameStateChange.playerStatsChange != null) {
     state.player.stats = {
-      ...state.player.stats,
-      ...gameStateChange.playerStatsChange,
+      health:
+        state.player.stats.health +
+        (gameStateChange.playerStatsChange.health ?? 0),
+      magic:
+        state.player.stats.magic +
+        (gameStateChange.playerStatsChange.magic ?? 0),
+      strength:
+        state.player.stats.strength +
+        (gameStateChange.playerStatsChange.strength ?? 0),
+      dexterity:
+        state.player.stats.dexterity +
+        (gameStateChange.playerStatsChange.dexterity ?? 0),
+      intelligence:
+        state.player.stats.intelligence +
+        (gameStateChange.playerStatsChange.intelligence ?? 0),
+      luck:
+        state.player.stats.luck + (gameStateChange.playerStatsChange.luck ?? 0),
+      level:
+        state.player.stats.level +
+        (gameStateChange.playerStatsChange.level ?? 0),
     };
   }
 

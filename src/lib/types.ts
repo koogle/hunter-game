@@ -60,7 +60,7 @@ export interface GameStateChange {
     descriptionChange?: string;
     isCompleted?: boolean;
   };
-  itemChange?: {
+  itemChanges?: {
     itemAction?: "add" | "remove" | "change";
     itemName: string;
     descriptionChange?: string;
@@ -71,9 +71,10 @@ export interface GameStateChange {
       intelligence?: number;
     };
     damage?: string;
-  };
+  }[];
   playerStatsChange?: {
     health?: number;
+    level?: number;
     magic?: number;
     strength?: number;
     dexterity?: number;

@@ -131,19 +131,21 @@ ${formattedInteractionHistory}`,
         isCompleted: z.boolean().optional(),
       })
       .optional(),
-    itemChange: z
-      .object({
-        itemAction: z.enum(["add", "remove", "change"]).optional(),
-        itemName: z.string(),
-        descriptionChange: z.string().optional(),
-        dropRate: z.number().optional(),
-        requirements: z.object({
-          strength: z.number(),
-          dexterity: z.number(),
-          intelligence: z.number(),
-        }),
-        damage: z.string().optional(),
-      })
+    itemChanges: z
+      .array(
+        z.object({
+          itemAction: z.enum(["add", "remove", "change"]).optional(),
+          itemName: z.string(),
+          descriptionChange: z.string().optional(),
+          dropRate: z.number().optional(),
+          requirements: z.object({
+            strength: z.number(),
+            dexterity: z.number(),
+            intelligence: z.number(),
+          }),
+          damage: z.string().optional(),
+        })
+      )
       .optional(),
     playerStatsChange: z
       .object({
@@ -153,6 +155,7 @@ ${formattedInteractionHistory}`,
         dexterity: z.number().optional(),
         intelligence: z.number().optional(),
         luck: z.number().optional(),
+        level: z.number().optional(),
       })
       .optional(),
   });
@@ -170,10 +173,10 @@ ${formattedGameState}
 
 You are given an interaction by the user and the answer from a Dungeon Master and you are to compute the necessary changes to the game state.
 For example,
- - if the user picks up or changes an item.
+ - if the user picks up or changes an item or even many items
  - if the user moves
  - if the user completes a quest
- - if the user levels up or their attributes change based on interaction with the world.`,
+ - if the user levels up or their attributes change based on interaction with the world`,
       },
       {
         role: "user",
