@@ -82,43 +82,6 @@ export async function processCommand(
       ]),
       dmAnswer: z.string(),
       reasoning: z.array(z.string()),
-      locationChange: z
-        .object({
-          xRelativeChange: z.optional(z.number()),
-          yRelativeChange: z.optional(z.number()),
-        })
-        .optional(),
-      questChange: z
-        .object({
-          questName: z.string(),
-          descriptionChange: z.string().optional(),
-          isCompleted: z.boolean().optional(),
-        })
-        .optional(),
-      itemChange: z
-        .object({
-          itemAction: z.enum(["add", "remove", "change"]).optional(),
-          itemName: z.string(),
-          descriptionChange: z.string().optional(),
-          dropRate: z.number().optional(),
-          requirements: z.object({
-            strength: z.number(),
-            dexterity: z.number(),
-            intelligence: z.number(),
-          }),
-          damage: z.string().optional(),
-        })
-        .optional(),
-      playerStatsChange: z
-        .object({
-          health: z.number().optional(),
-          magic: z.number().optional(),
-          strength: z.number().optional(),
-          dexterity: z.number().optional(),
-          intelligence: z.number().optional(),
-          luck: z.number().optional(),
-        })
-        .optional(),
     }),
     messages: [
       {
@@ -154,5 +117,81 @@ ${formattedInteractionHistory}`,
     ],
   });
 
-  return resp.object;
+  const stateChangeSchema = z.object({
+    locationChange: z
+      .object({
+        xRelativeChange: z.optional(z.number()),
+        yRelativeChange: z.optional(z.number()),
+      })
+      .optional(),
+    questChange: z
+      .object({
+        questName: z.string(),
+        descriptionChange: z.string().optional(),
+        isCompleted: z.boolean().optional(),
+      })
+      .optional(),
+    itemChange: z
+      .object({
+        itemAction: z.enum(["add", "remove", "change"]).optional(),
+        itemName: z.string(),
+        descriptionChange: z.string().optional(),
+        dropRate: z.number().optional(),
+        requirements: z.object({
+          strength: z.number(),
+          dexterity: z.number(),
+          intelligence: z.number(),
+        }),
+        damage: z.string().optional(),
+      })
+      .optional(),
+    playerStatsChange: z
+      .object({
+        health: z.number().optional(),
+        magic: z.number().optional(),
+        strength: z.number().optional(),
+        dexterity: z.number().optional(),
+        intelligence: z.number().optional(),
+        luck: z.number().optional(),
+      })
+      .optional(),
+  });
+
+  const stateChangeResponse = await generateObject({
+    model,
+    schema: stateChangeSchema,
+    messages: [
+      {
+        role: "system",
+        content: `You are an expert dangeon master in a text based role playing game. The current state of the game is
+\`\`\`
+${formattedGameState}
+\`\`\`
+
+You are given an interaction by the user and the answer from a Dungeon Master and you are to compute the necessary changes to the game state.
+For example,
+ - if the user picks up or changes an item.
+ - if the user moves
+ - if the user completes a quest
+ - if the user levels up or their attributes change based on interaction with the world.`,
+      },
+      {
+        role: "user",
+        content: `The interaction history is:
+${formattedInteractionHistory}`,
+      },
+      {
+        role: "user",
+        content: `The user request was: '${userRequest}'
+The category of action the Dungeon Master chose was: '${resp.object.actionCategory}'
+The Dungeon Master answer was: '${resp.object.dmAnswer}'`,
+      },
+    ],
+  });
+
+  return {
+    actionCategory: resp.object.actionCategory,
+    dmAnswer: resp.object.dmAnswer,
+    ...stateChangeResponse.object,
+  };
 }
