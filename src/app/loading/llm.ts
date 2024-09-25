@@ -26,7 +26,12 @@ export async function createObject<OBJECT>({
     model,
     schema,
     messages,
-    experimental_telemetry: { isEnabled: true },
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: {
+        "x-request-id": "123",
+      },
+    },
   });
 }
 
