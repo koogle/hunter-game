@@ -21,21 +21,16 @@ export async function createObject<OBJECT>({
   schema: z.Schema<OBJECT, z.ZodTypeDef, any> | Schema<OBJECT>;
   temperature?: number;
 }) {
+  console.log("calling generate object");
   return generateObject({
     temperature,
     model,
     schema,
     messages,
-    experimental_telemetry: {
-      isEnabled: true,
-      metadata: {
-        "x-request-id": "123",
-      },
-    },
   });
 }
 
-export async function checkIfValid(
+/*export async function checkIfValid(
   formattedGameState: string,
   command: string
 ): Promise<[boolean, string]> {
@@ -75,7 +70,7 @@ The monster will attack the user after the user's turn. Return both a response f
   });
 
   return [resp.object.is_valid, resp.object.clever_response];
-}
+}*/
 
 export async function processCommand(
   formattedGameState: string,
@@ -134,6 +129,12 @@ ${formattedInteractionHistory}`,
         content: `The user request is: '${userRequest}'`,
       },
     ],
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: {
+        "x-request-id": "123",
+      },
+    },
   });
 
   const stateChangeSchema = z.object({
@@ -234,6 +235,12 @@ If the user is fighting a monster, then the monster action is: '${resp.object.mo
 `,
       },
     ],
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: {
+        "x-request-id": "123",
+      },
+    },
   });
 
   return {
