@@ -76,7 +76,7 @@ export function LoadedMainScreen({
             ...prevHistory,
             { userRequest: command, dmResponse: gameStateChange.dmAnswer },
           ];
-          return newHistory.slice(-10);
+          return newHistory.slice(-20);
         });
         setIsLoading(false);
       }
