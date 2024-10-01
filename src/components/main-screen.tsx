@@ -121,7 +121,6 @@ export function LoadedMainScreen({
             {gameText.length > 0 && (
               <div className="flex w-full border-t border-black"></div>
             )}
-
             {gameState.world.currentMonster != null && (
               <div>
                 <br />
@@ -130,6 +129,9 @@ export function LoadedMainScreen({
                 <br />
                 <p>{gameState.world.currentMonster.description}</p>
               </div>
+            )}
+            {gameState.world.currentMonster != null && (
+              <div className="flex w-full border-t border-black"></div>
             )}
             {isLoading ? (
               <Loading />
@@ -159,7 +161,7 @@ export function LoadedMainScreen({
             </div>
           </div>
           <Tabs defaultValue="inventory" className="border h-full border-black">
-            <TabsList className="w-full grid grid-cols-[1fr_1fr_auto]">
+            <TabsList className="w-full  grid grid-cols-[1fr_1fr_auto]">
               <TabsTrigger
                 value="inventory"
                 className="data-[state=active]:bg-black data-[state=active]:text-white"
@@ -179,13 +181,19 @@ export function LoadedMainScreen({
                 ⋮
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="inventory" className="p-4">
+            <TabsContent
+              value="inventory"
+              className="p-4 max-h-full overflow-auto"
+            >
               <Inventory />
             </TabsContent>
-            <TabsContent value="stats" className="p-4">
+            <TabsContent value="stats" className="p-4 max-h-full overflow-auto">
               <Stats />
             </TabsContent>
-            <TabsContent value="config" className="p-4">
+            <TabsContent
+              value="config"
+              className="p-4 max-h-full overflow-auto"
+            >
               <Config />
             </TabsContent>
           </Tabs>

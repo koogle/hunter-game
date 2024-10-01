@@ -2,7 +2,7 @@
 
 import { GameState } from "@/lib/state";
 import { Monster } from "@/lib/types";
-import { createBiomes, createMap, createMonsters } from "./creation";
+import { createBiomes, createMonsters } from "./creation";
 
 function randomInt(min: number, max: number) {
   return min + Math.round(Math.random() * (max - min));
@@ -39,7 +39,6 @@ export const setupWorld = async (
             numberOfMonsters
           );
         }
-        console.log(biome.name, monsters);
 
         gameState.world.biomes.push({
           id: crypto.randomUUID(),

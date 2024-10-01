@@ -53,7 +53,15 @@ export type PlayerStats = {
 };
 
 export interface GameStateChange {
-  actionCategory: "move" | "interact" | "ask" | "take" | "fight" | "craft";
+  actionCategory:
+    | "move"
+    | "interact"
+    | "ask"
+    | "itemInteraction"
+    | "fight"
+    | "craft"
+    | "other"
+    | "levelup";
   dmAnswer: string;
   playerLocationChange?: {
     direction?:
@@ -74,6 +82,7 @@ export interface GameStateChange {
   monsterChange?: {
     healthChange?: number;
     isDefeated?: boolean;
+    hasUserFled?: boolean;
   };
   itemChanges?: {
     itemAction?: "add" | "remove" | "change";
