@@ -2,7 +2,7 @@
 
 import { GameState } from "@/lib/state";
 import { Monster } from "@/lib/types";
-import { createBiomes, createMonsters } from "./creation";
+import { createBiomes, createMap, createMonsters } from "./creation";
 
 function randomInt(min: number, max: number) {
   return min + Math.round(Math.random() * (max - min));
