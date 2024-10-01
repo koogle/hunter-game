@@ -36,6 +36,7 @@ export function LoginScreen() {
         name: playerName,
       },
       scenario: selectedScenario,
+      state: "loading",
     });
   };
 
