@@ -18,7 +18,8 @@ export type PlayerState = {
 };
 
 export type GameState = {
-  state: "login" | "loading" | "main" | "error";
+  state: "login" | "loading" | "main" | "error" | "died" | "won";
   world: WorldState;
   player: PlayerState;
+  scenario: string;
 };

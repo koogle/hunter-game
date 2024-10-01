@@ -13,6 +13,7 @@ interface CreatedBiome {
 }
 
 export async function createBiomes(
+  scenario: string,
   numberBiomes: number
 ): Promise<CreatedBiome[]> {
   const jsonSchema = z.object({
@@ -31,12 +32,13 @@ export async function createBiomes(
           messages: [
             {
               role: "system",
-              content:
-                "You are a expert Dungeon Master for a text based RPG. You are asked to create a world biomes. There should be biomes that are not dangerous where the player can rest. Ensure there are more dangerous biomes than not dangerous ones",
+              content: `You are a expert Dungeon Master for a text based RPG.
+You are asked to create a world biomes. There should be biomes that are not dangerous where the player can rest.
+Ensure there are more dangerous biomes than not dangerous ones`,
             },
             {
               role: "user",
-              content: `Create a that fits a medival middle european fantasy setting.
+              content: `Create a biome for a ${scenario} scenario that fits a
 The biome should have a name, description, rarity and danger level.
 Biomes can range from mundane to fantastical.
 
@@ -56,6 +58,7 @@ Do not repeat existing biomes and ensure that the new biome could be placed next
 }
 
 export async function createMonsters(
+  scenario: string,
   biomeName: string,
   biomeDescription: string,
   numberMonsters: number
@@ -97,8 +100,11 @@ export async function createMonsters(
       messages: [
         {
           role: "system",
-          content:
-            "You are a expert Dungeon Master for a text based RPG. You are asked to create monsters for a biome. Assume that the player is level 1 - 10. Try to find a balance between strong and week monster, and have some be very strong and more attack focused and some be more weak.",
+          content: `You are a expert Dungeon Master for a text based RPG.
+You are asked to create monsters for a biome.
+Assume that the player is level 1 - 10. Try to find a balance between strong and week monster, and have some be very strong and more attack focused and some be more weak.
+
+The scenario is ${scenario}.`,
         },
         {
           role: "user",

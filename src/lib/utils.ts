@@ -226,6 +226,9 @@ export function processGameStateChange(
 
   if (gameStateChange.playerStatsChange != null) {
     state.player.stats = {
+      maxHealth:
+        state.player.stats.maxHealth +
+        (gameStateChange.playerStatsChange.maxHealth ?? 0),
       health:
         state.player.stats.health +
         (gameStateChange.playerStatsChange.health ?? 0),
@@ -264,7 +267,14 @@ export function processGameStateChange(
         (gameStateChange.monsterChange.healthChange ?? 0);
     }
   }
-  console.log(gameStateChange);
+
+  if (gameStateChange.playerStatsChange?.hasDied ?? false) {
+    state.state = "died";
+  }
+
+  if (gameStateChange.playerStatsChange?.hasWon ?? false) {
+    state.state = "won";
+  }
 
   setGameState(state);
 }

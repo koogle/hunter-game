@@ -42,6 +42,7 @@ export type Monster = {
 export type PlayerStats = {
   level: number;
   health: number;
+  maxHealth: number;
   magic: number;
   strength: number;
   dexterity: number;
@@ -86,8 +87,10 @@ export interface GameStateChange {
     };
     damage?: string;
   }[];
+
   playerStatsChange?: {
     health?: number;
+    maxHealth?: number;
     level?: number;
     magic?: number;
     gold?: number;
@@ -96,5 +99,7 @@ export interface GameStateChange {
     intelligence?: number;
     luck?: number;
     xp?: number;
+    hasDied?: boolean;
+    hasWon?: boolean;
   };
 }
