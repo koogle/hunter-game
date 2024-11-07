@@ -19,6 +19,9 @@ export type PlayerState = {
 
 export type GameState = {
   state: "login" | "loading" | "main" | "error" | "died" | "won";
+  background: string;
+  historic_messages: string[];
+
   world: WorldState;
   player: PlayerState;
   scenario: string;

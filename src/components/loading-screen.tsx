@@ -1,17 +1,19 @@
 "use client";
 
 import { GameStateContext } from "@/app/context/game_state";
-import { setupWorld } from "@/app/loading/client_setup";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useState } from "react";
 
 export function LoadingScreen() {
   const ctx = useContext(GameStateContext);
+  const [activeDot, setActiveDot] = useState(0);
+  const totalDots = 5;
 
   const [loadingMessage, setLoadingMessage] = useState(
     "Preparing your adventure"
   );
-  const [activeDot, setActiveDot] = useState(0);
-  const totalDots = 5;
+
+  /*
+  
   const isCreatingWorld = useRef(false);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function LoadingScreen() {
     return () => {
       cancel.abort();
     };
-  }, [ctx]);
+  }, [ctx]);*/
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white text-black font-mono">
