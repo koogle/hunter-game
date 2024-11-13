@@ -97,6 +97,7 @@ export function LoginScreen() {
           <Button
             className="w-full bg-black text-white hover:bg-gray-800 rounded-none font-bold"
             onClick={handleStart}
+            disabled={playerName.length === 0 || scenario.length === 0}
           >
             BEGIN JOURNEY
           </Button>
