@@ -140,8 +140,8 @@ export function LoadedMainScreen({
             )}
           </div>
         </div>
-        <div className="flex flex-col w-96  space-y-4">
-          <div className="border border-black p-2 h-[32rem]">
+        <div className="flex flex-col w-96 space-y-4">
+          {/*<div className="border border-black p-2 h-[32rem]">
             <div className="w-full h-full bg-gray-200 flex justify-center items-center">
               {gameState.world.currentMonster ? (
                 <>
@@ -159,7 +159,7 @@ export function LoadedMainScreen({
                 <GeneratedImage element={biome} updateImage={updateImage} />
               )}
             </div>
-          </div>
+          </div>*/}
           <Tabs defaultValue="inventory" className="border h-full border-black">
             <TabsList className="w-full  grid grid-cols-[1fr_1fr_auto]">
               <TabsTrigger
