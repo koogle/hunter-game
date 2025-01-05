@@ -1,101 +1,118 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  GameState,
+  ScenarioType,
+  loadGameState,
+  updateGameState,
+} from "@/lib/gameState";
+import { DebugModal } from "@/components/DebugModal";
+
+const SCENARIO_DEFAULTS = {
+  "medieval-fantasy":
+    "A high fantasy world with magic, dragons, and epic quests in a medieval setting.",
+  "space-opera":
+    "A vast interstellar civilization with advanced technology, alien species, and epic space adventures.",
+  custom: "",
+} as const;
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [gameState, setGameState] = useState<GameState>({
+    playerName: "",
+    scenarioType: "medieval-fantasy",
+    scenarioDescription: SCENARIO_DEFAULTS["medieval-fantasy"],
+  });
+  const [isDebugOpen, setIsDebugOpen] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+  useEffect(() => {
+    const savedState = loadGameState();
+    setGameState(savedState);
+  }, []);
+
+  const handleStateUpdate = (updates: Partial<GameState>) => {
+    const newState = updateGameState(updates);
+    setGameState(newState);
+  };
+
+  const handleScenarioTypeChange = (type: ScenarioType) => {
+    handleStateUpdate({
+      scenarioType: type,
+      scenarioDescription: SCENARIO_DEFAULTS[type],
+    });
+  };
+
+  return (
+    <>
+      <div className="min-h-screen p-4 max-w-2xl mx-auto">
+        <main>
+          <h1 className="text-2xl mb-4">Interactive RPG System</h1>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="playerName" className="block mb-2">
+                Character Name:
+              </label>
+              <input
+                type="text"
+                id="playerName"
+                value={gameState.playerName}
+                onChange={(e) =>
+                  handleStateUpdate({ playerName: e.target.value })
+                }
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="scenarioType" className="block mb-2">
+                Choose Your Scenario:
+              </label>
+              <select
+                id="scenarioType"
+                value={gameState.scenarioType}
+                onChange={(e) =>
+                  handleScenarioTypeChange(e.target.value as ScenarioType)
+                }
+                className="w-full p-2 border rounded"
+              >
+                <option value="medieval-fantasy">Medieval Fantasy</option>
+                <option value="space-opera">Space Opera</option>
+                <option value="custom">Custom Scenario</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="scenario" className="block mb-2">
+                Scenario Description:
+              </label>
+              <textarea
+                id="scenario"
+                value={gameState.scenarioDescription}
+                onChange={(e) =>
+                  handleStateUpdate({ scenarioDescription: e.target.value })
+                }
+                disabled={gameState.scenarioType !== "custom"}
+                className="w-full p-2 border rounded h-32 disabled:bg-gray-100 disabled:text-gray-700"
+              />
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <button
+        onClick={() => setIsDebugOpen(true)}
+        className="fixed bottom-4 right-4 bg-gray-200 hover:bg-gray-300 rounded px-3 py-2 text-sm"
+        title="Show Game State"
+      >
+        Game State
+      </button>
+
+      <DebugModal
+        isOpen={isDebugOpen}
+        onClose={() => setIsDebugOpen(false)}
+        gameState={gameState}
+      />
+    </>
   );
 }
