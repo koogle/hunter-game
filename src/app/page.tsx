@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GameSummary, GameState } from "@/types/game";
+import { GameSummary, GameState, MessageResponse } from "@/types/game";
 
 type ScenarioType = {
   id: string;
@@ -35,6 +35,8 @@ export default function Home() {
   const [showCustom, setShowCustom] = useState(false);
   const [games, setGames] = useState<GameSummary[]>([]);
   const [currentGame, setCurrentGame] = useState<GameState | null>(null);
+  const [messageInput, setMessageInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (step === "load") {
@@ -93,6 +95,31 @@ export default function Home() {
     setCurrentGame(game);
     setMessages(game.messages);
     setStep("game");
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageInput.trim() || !currentGame || isLoading) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/games/${currentGame.id}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: messageInput.trim() }),
+      });
+
+      if (!response.ok) throw new Error("Failed to send message");
+
+      const data: MessageResponse = await response.json();
+      setCurrentGame(data.game);
+      setMessages(data.game.messages);
+      setMessageInput("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -229,11 +256,32 @@ export default function Home() {
         <>
           <div className="flex-1 border-2 border-white p-4 mb-4 min-h-[400px] bg-black overflow-y-auto">
             {messages.map((msg, i) => (
-              <div key={i} className="mb-4 text-white">
+              <div
+                key={i}
+                className={`mb-4 text-white ${i % 2 === 0 ? "opacity-80" : ""}`}
+              >
+                {i % 2 === 0 ? "DM: " : "You: "}
                 {msg}
               </div>
             ))}
           </div>
+          <form onSubmit={handleSendMessage} className="flex gap-2">
+            <input
+              type="text"
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              className="flex-1 p-3 bg-black text-white border-2 border-white focus:border-blue-500 outline-none"
+              placeholder="What would you like to do?"
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-6 py-3 bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Thinking..." : "Send"}
+            </button>
+          </form>
         </>
       )}
 
