@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GameSummary, GameState, MessageResponse } from "@/types/game";
+import { GameSummary, GameState } from "@/types/game";
+import { useChat, Message as ChatMessage } from "ai/react";
 
 type ScenarioType = {
   id: string;
@@ -31,12 +32,42 @@ export default function Home() {
   const [name, setName] = useState("");
   const [scenario, setScenario] = useState("");
   const [customScenario, setCustomScenario] = useState("");
-  const [messages, setMessages] = useState<string[]>([]);
+
   const [showCustom, setShowCustom] = useState(false);
   const [games, setGames] = useState<GameSummary[]>([]);
   const [currentGame, setCurrentGame] = useState<GameState | null>(null);
-  const [messageInput, setMessageInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    messages: chatMessages,
+    input: chatInput,
+    handleInputChange,
+    handleSubmit: handleChatSubmit,
+    isLoading: isChatLoading,
+    setMessages,
+  } = useChat({
+    api: currentGame ? `/api/games/${currentGame.id}/message` : undefined,
+    id: currentGame?.id,
+    initialMessages: [],
+    onFinish: async (_: ChatMessage) => {
+      if (currentGame) {
+        const response = await fetch(`/api/games/${currentGame.id}`);
+        const updatedGame = await response.json();
+        setCurrentGame(updatedGame);
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (currentGame && currentGame.messages.length > 0) {
+      setMessages(
+        currentGame.messages.map((msg, i) => ({
+          id: String(i),
+          content: msg,
+          role: i % 2 === 0 ? "user" : "assistant",
+        }))
+      );
+    }
+  }, [currentGame, setMessages]);
 
   useEffect(() => {
     if (step === "load") {
@@ -95,31 +126,6 @@ export default function Home() {
     setCurrentGame(game);
     setMessages(game.messages);
     setStep("game");
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageInput.trim() || !currentGame || isLoading) return;
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/games/${currentGame.id}/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: messageInput.trim() }),
-      });
-
-      if (!response.ok) throw new Error("Failed to send message");
-
-      const data: MessageResponse = await response.json();
-      setCurrentGame(data.game);
-      setMessages(data.game.messages);
-      setMessageInput("");
-    } catch (error) {
-      console.error("Failed to send message:", error);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -255,31 +261,51 @@ export default function Home() {
       {step === "game" && (
         <>
           <div className="flex-1 border-2 border-white p-4 mb-4 min-h-[400px] bg-black overflow-y-auto">
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`mb-4 text-white ${i % 2 === 0 ? "opacity-80" : ""}`}
-              >
-                {i % 2 === 0 ? "DM: " : "You: "}
-                {msg}
-              </div>
-            ))}
+            <div className="space-y-4">
+              {chatMessages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`text-white ${
+                    msg.role === "assistant" ? "opacity-80" : ""
+                  }`}
+                >
+                  <span className="font-bold">
+                    {msg.role === "assistant" ? "DM: " : "You: "}
+                  </span>
+                  <span className="whitespace-pre-wrap">{msg.content}</span>
+                </div>
+              ))}
+              {isChatLoading && (
+                <div className="text-white opacity-80">
+                  <span className="font-bold">DM: </span>
+                  <span className="animate-pulse">...</span>
+                </div>
+              )}
+            </div>
           </div>
-          <form onSubmit={handleSendMessage} className="flex gap-2">
+          <form onSubmit={handleChatSubmit} className="flex gap-2">
             <input
               type="text"
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
+              value={chatInput}
+              onChange={handleInputChange}
               className="flex-1 p-3 bg-black text-white border-2 border-white focus:border-blue-500 outline-none"
               placeholder="What would you like to do?"
-              disabled={isLoading}
+              disabled={isChatLoading}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (chatInput.trim()) {
+                    handleChatSubmit(e);
+                  }
+                }
+              }}
             />
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isChatLoading || !chatInput.trim()}
               className="px-6 py-3 bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Thinking..." : "Send"}
+              {isChatLoading ? "Thinking..." : "Send"}
             </button>
           </form>
         </>
