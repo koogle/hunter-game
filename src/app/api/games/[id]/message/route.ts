@@ -1,9 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { GameStorage } from "@/lib/storage";
-import { streamText } from "ai";
+import { Message, streamText } from "ai";
 import { xai } from "@ai-sdk/xai";
 
 const model = xai("grok-2-1212");
+
+const SYSTEM_PROMPT = `You are an experienced and creative Dungeon Master for an interactive role-playing game.
+Keep responses focused and engaging. Stay in character as the Dungeon Master.
+Only ask one question at a time.`;
 
 export async function POST(
   request: NextRequest,
@@ -11,60 +15,45 @@ export async function POST(
 ) {
   try {
     const { id } = await Promise.resolve(context.params);
-    const { message } = await request.json();
-
-    if (!message) {
-      return NextResponse.json(
-        { error: "Message is required" },
-        { status: 400 }
-      );
-    }
+    const { messages } = await request.json();
 
     // Get current game state
     const game = await GameStorage.getGame(id);
     if (!game) {
-      return NextResponse.json({ error: "Game not found" }, { status: 404 });
+      throw new Error("Game not found");
     }
 
-    // Format messages for AI
-    const formattedMessages = game.messages.map((msg, index) => ({
-      role: index === 0 ? "assistant" : index % 2 === 0 ? "assistant" : "user",
-      content: msg,
-    }));
-
-    // Create conversation array with new message
-    const conversation = [
-      ...formattedMessages,
-      { role: "user", content: message },
+    // Create conversation array with system prompt
+    const conversationMessages: Message[] = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages,
     ];
 
-    // Get streaming response
+    // Get streaming response using streamText
     const result = streamText({
       model,
-      prompt: JSON.stringify(conversation),
+      messages: conversationMessages,
     });
 
-    // Create response stream
-    const response = result.toTextStreamResponse();
+    // Collect the full response for game state update
+    let fullResponse = "";
+    for await (const chunk of result.textStream) {
+      fullResponse += chunk;
+    }
 
-    // Update game state after streaming completes
-    result.textStream.pipeTo(
-      new WritableStream({
-        close: async () => {
-          const fullResponse = await result.text;
-          await GameStorage.updateGame(id, {
-            messages: [...game.messages, message, fullResponse],
-          });
-        },
-      })
-    );
+    // Update game state after stream completes
+    GameStorage.updateGame(id, {
+      messages: [
+        ...game.messages,
+        messages[messages.length - 1].content,
+        fullResponse,
+      ],
+    });
 
-    return response;
+    // Return data stream response
+    return result.toDataStreamResponse();
   } catch (error) {
     console.error("Message handler error:", error);
-    return NextResponse.json(
-      { error: "Failed to process message" },
-      { status: 500 }
-    );
+    throw error;
   }
 }

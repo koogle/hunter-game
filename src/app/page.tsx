@@ -36,6 +36,7 @@ export default function Home() {
   const [showCustom, setShowCustom] = useState(false);
   const [games, setGames] = useState<GameSummary[]>([]);
   const [currentGame, setCurrentGame] = useState<GameState | null>(null);
+  const [streamingText, setStreamingText] = useState("");
 
   const {
     messages: chatMessages,
@@ -48,7 +49,41 @@ export default function Home() {
     api: currentGame ? `/api/games/${currentGame.id}/message` : undefined,
     id: currentGame?.id,
     initialMessages: [],
-    onFinish: async (_: ChatMessage) => {
+    onResponse: async (response) => {
+      // Reset streaming text
+      setStreamingText("");
+
+      // Get the response stream
+      const reader = response.body?.getReader();
+      if (!reader) return;
+
+      // Read the stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Decode and parse the chunk
+        const text = new TextDecoder().decode(value);
+        const lines = text.split("\n").filter((line) => line.trim() !== "");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices[0]?.delta?.content || "";
+              setStreamingText((prev) => prev + content);
+            } catch (e) {
+              console.error("Failed to parse chunk:", e);
+            }
+          }
+        }
+      }
+    },
+    onFinish: async (message: ChatMessage) => {
+      setStreamingText(""); // Clear streaming text
       if (currentGame) {
         const response = await fetch(`/api/games/${currentGame.id}`);
         const updatedGame = await response.json();
@@ -262,28 +297,43 @@ export default function Home() {
         <>
           <div className="flex-1 border-2 border-white p-4 mb-4 min-h-[400px] bg-black overflow-y-auto">
             <div className="space-y-4">
-              {chatMessages.map((msg) => (
+              {chatMessages.map((message) => (
                 <div
-                  key={msg.id}
+                  key={message.id}
                   className={`text-white ${
-                    msg.role === "assistant" ? "opacity-80" : ""
+                    message.role === "assistant" ? "opacity-80" : ""
                   }`}
                 >
                   <span className="font-bold">
-                    {msg.role === "assistant" ? "DM: " : "You: "}
+                    {message.role === "assistant" ? "DM: " : "You: "}
                   </span>
-                  <span className="whitespace-pre-wrap">{msg.content}</span>
+                  <span className="whitespace-pre-wrap">{message.content}</span>
                 </div>
               ))}
-              {isChatLoading && (
+              {(isChatLoading || streamingText) && (
                 <div className="text-white opacity-80">
                   <span className="font-bold">DM: </span>
-                  <span className="animate-pulse">...</span>
+                  <span className="whitespace-pre-wrap">
+                    {streamingText}
+                    {isChatLoading && <span className="animate-pulse">▋</span>}
+                  </span>
                 </div>
               )}
             </div>
           </div>
-          <form onSubmit={handleChatSubmit} className="flex gap-2">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!chatInput.trim()) return;
+
+              try {
+                await handleChatSubmit(e);
+              } catch (error) {
+                console.error("Failed to send message:", error);
+              }
+            }}
+            className="flex gap-2"
+          >
             <input
               type="text"
               value={chatInput}
@@ -305,7 +355,11 @@ export default function Home() {
               disabled={isChatLoading || !chatInput.trim()}
               className="px-6 py-3 bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isChatLoading ? "Thinking..." : "Send"}
+              {isChatLoading ? (
+                <span className="animate-pulse">Thinking...</span>
+              ) : (
+                "Send"
+              )}
             </button>
           </form>
         </>
