@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { GameSummary } from "@/types/game";
-
 type StartScreenProps = {
   onStart: () => void;
   onLoad: () => void;
@@ -8,26 +5,23 @@ type StartScreenProps = {
 
 export default function StartScreen({ onStart, onLoad }: StartScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center h-screen gap-8 -mt-16">
-      <h1 className="text-5xl font-bold text-white border-b-2 border-white pb-4 text-center">
-        Hunter Game
-      </h1>
-      <p className="text-white text-xl text-center max-w-md mb-8">
-        Enter a world where imagination meets artificial intelligence. Your
-        journey awaits.
+    <div className="flex flex-col items-center justify-center min-h-screen gap-8">
+      <h1 className="text-4xl font-bold text-white">Hunter Game</h1>
+      <p className="text-xl text-white/80 text-center max-w-md">
+        Embark on a text-based adventure where your choices shape the story.
       </p>
       <div className="flex gap-4">
         <button
           onClick={onStart}
-          className="px-8 py-4 bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-colors duration-200 text-xl"
+          className="px-6 py-3 bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-colors duration-200"
         >
-          NEW JOURNEY
+          Start New Journey
         </button>
         <button
           onClick={onLoad}
-          className="px-8 py-4 bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-colors duration-200 text-xl"
+          className="px-6 py-3 bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-colors duration-200"
         >
-          LOAD JOURNEY
+          Load Journey
         </button>
       </div>
     </div>

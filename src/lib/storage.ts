@@ -43,7 +43,7 @@ export class GameStorage {
         "utf-8"
       );
       return JSON.parse(content);
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -74,7 +74,7 @@ export class GameStorage {
     try {
       await fs.unlink(path.join(GAMES_DIR, `${id}.json`));
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -107,8 +107,8 @@ export class GameStorage {
           new Date(b.lastUpdatedAt).getTime() -
           new Date(a.lastUpdatedAt).getTime()
       );
-    } catch (error) {
-      console.error("Failed to list games:", error);
+    } catch {
+      console.error("Failed to list games:");
       return [];
     }
   }

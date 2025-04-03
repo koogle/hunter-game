@@ -99,17 +99,17 @@ export default function GameScreen({ currentGame, setCurrentGame }: GameScreenPr
     <>
       <div className="flex-1 border-2 border-white p-4 mb-4 min-h-[400px] bg-black overflow-y-auto">
         <div className="space-y-4">
-          {messages.map((message, index) => (
+          {messages.map((msg, index) => (
             <div
               key={index}
               className={`text-white ${
-                message.role === "assistant" ? "opacity-80" : ""
+                msg.role === "assistant" ? "opacity-80" : ""
               }`}
             >
               <span className="font-bold">
-                {message.role === "assistant" ? "DM: " : "You: "}
+                {msg.role === "assistant" ? "DM: " : "You: "}
               </span>
-              <span className="whitespace-pre-wrap">{message.content}</span>
+              <span className="whitespace-pre-wrap">{msg.content}</span>
             </div>
           ))}
           {(isLoading || streamingText) && (

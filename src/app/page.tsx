@@ -2,40 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { GameSummary, GameState } from "@/types/game";
-import { Message as ChatMessage } from "ai/react";
 import StartScreen from "@/components/StartScreen";
 import GameScreen from "@/components/GameScreen";
 import SetupScreen from "@/components/SetupScreen";
 
-type ScenarioType = {
-  id: string;
-  title: string;
-  description: string;
-};
-
-const predefinedScenarios: ScenarioType[] = [
-  {
-    id: "fantasy",
-    title: "The Lost Kingdom",
-    description:
-      "A classic fantasy adventure in a medieval realm filled with magic and mystery.",
-  },
-  {
-    id: "scifi",
-    title: "Deep Space Expedition",
-    description:
-      "Explore the unknown reaches of space in this sci-fi adventure.",
-  },
-];
 
 export default function Home() {
-  const [step, setStep] = useState<"start" | "setup" | "game" | "load">(
-    "start"
-  );
+  const [step, setStep] = useState<"start" | "setup" | "game" | "load">("start");
   const [isLoading, setIsLoading] = useState(true);
   const [games, setGames] = useState<GameSummary[]>([]);
   const [currentGame, setCurrentGame] = useState<GameState | null>(null);
-  
 
   const fetchGames = async () => {
     const response = await fetch("/api/games");
@@ -63,7 +39,7 @@ export default function Home() {
 
   useEffect(() => {
     loadLastGame();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (step === "load") {
