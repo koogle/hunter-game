@@ -32,6 +32,8 @@ export default function Home() {
   const [name, setName] = useState("");
   const [scenario, setScenario] = useState("");
   const [customScenario, setCustomScenario] = useState("");
+  const [generatedDescription, setGeneratedDescription] = useState("");
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
 
   const [showCustom, setShowCustom] = useState(false);
   const [games, setGames] = useState<GameSummary[]>([]);
@@ -163,6 +165,24 @@ export default function Home() {
     setStep("game");
   };
 
+  const generateScenarioDescription = async (scenarioTitle: string) => {
+    setIsGeneratingDescription(true);
+    try {
+      const response = await fetch("/api/generate-scenario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario: scenarioTitle }),
+      });
+      const data = await response.json();
+      setGeneratedDescription(data.description);
+      setCustomScenario(data.description);
+    } catch (error) {
+      console.error("Failed to generate scenario description:", error);
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto min-h-screen flex flex-col p-4">
       {step === "start" && (
@@ -235,7 +255,7 @@ export default function Home() {
                       onChange={(e) => {
                         setScenario(e.target.value);
                         setShowCustom(false);
-                        setCustomScenario("");
+                        generateScenarioDescription(e.target.value);
                       }}
                       className="w-4 h-4"
                     />
@@ -264,6 +284,7 @@ export default function Home() {
                     onChange={() => {
                       setShowCustom(true);
                       setScenario("");
+                      setGeneratedDescription("");
                     }}
                     className="w-4 h-4"
                   />
@@ -281,6 +302,27 @@ export default function Home() {
                 )}
               </label>
             </div>
+            {isGeneratingDescription && (
+              <div className="text-white/80 text-sm">
+                Generating a rich description of your scenario...
+              </div>
+            )}
+            {generatedDescription && !showCustom && (
+              <div className="mt-4 p-4 bg-white/5 border-2 border-white">
+                <h4 className="text-white font-bold mb-2">Suggested Description:</h4>
+                <p className="text-white/80">{generatedDescription}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCustom(true);
+                    setCustomScenario(generatedDescription);
+                  }}
+                  className="mt-2 px-4 py-2 bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-colors duration-200"
+                >
+                  Use This Description
+                </button>
+              </div>
+            )}
           </div>
 
           <button
