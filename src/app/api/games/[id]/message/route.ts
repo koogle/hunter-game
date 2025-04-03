@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { OpenAI } from "openai";
-import { GameState } from "@/types/game";
+import { GameState, GameMessage } from "@/types/game";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 const openai = new OpenAI({
@@ -22,7 +22,11 @@ export async function POST(
     const game: GameState = await gameResponse.json();
 
     // Create a new message array with the user's message
-    const updatedMessages = [...game.messages, message];
+    const userMessage: GameMessage = {
+      role: "user",
+      content: message
+    };
+    const updatedMessages = [...game.messages, userMessage];
 
     // Prepare messages for OpenAI API
     const messages: ChatCompletionMessageParam[] = [
@@ -30,9 +34,9 @@ export async function POST(
         role: "system",
         content: `You are a game master in a text adventure game. The game is set in: ${game.customScenario || game.scenario}. The player's name is ${game.name}. Keep responses concise and engaging.`,
       },
-      ...updatedMessages.map((msg, i) => ({
-        role: i % 2 === 0 ? "user" : "assistant",
-        content: msg,
+      ...updatedMessages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
       } as const)),
     ];
 
@@ -57,9 +61,13 @@ export async function POST(
         }
 
         // Update the game state with the complete response
+        const assistantMessage: GameMessage = {
+          role: "assistant",
+          content: fullResponse
+        };
         const updatedGame = {
           ...game,
-          messages: [...updatedMessages, fullResponse],
+          messages: [...updatedMessages, assistantMessage],
           lastUpdatedAt: new Date().toISOString(),
         };
 

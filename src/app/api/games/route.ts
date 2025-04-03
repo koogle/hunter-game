@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GameStorage } from "@/lib/storage";
+import { GameMessage } from "@/types/game";
 
 export async function GET() {
   const games = await GameStorage.listGames();
@@ -16,11 +17,44 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const initialMessages: GameMessage[] = [
+    {
+      role: "assistant",
+      content: `Welcome, ${body.name}!`
+    },
+    {
+      role: "assistant",
+      content: `Your adventure begins in: ${body.customScenario || body.scenario}`
+    }
+  ];
+
   const game = await GameStorage.createGame({
     name: body.name,
     scenario: body.scenario,
     customScenario: body.customScenario,
-    messages: body.messages || [],
+    messages: initialMessages,
+    stats: {
+      health: 100,
+      mana: 100,
+      experience: 0
+    },
+    inventory: [
+      {
+        name: "Iron Sword",
+        quantity: 1,
+        description: "A basic sword for combat"
+      },
+      {
+        name: "Leather Shield",
+        quantity: 1,
+        description: "Provides basic protection"
+      },
+      {
+        name: "Health Potion",
+        quantity: 3,
+        description: "Restores 20 health"
+      }
+    ]
   });
 
   return NextResponse.json(game);
