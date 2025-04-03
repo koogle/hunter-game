@@ -8,12 +8,12 @@ const openai = new OpenAI({
 });
 
 export async function POST(
-  request: NextRequest,
-  context: { params: { id: string } }
+  request: NextRequest
 ) {
   try {
     const { message } = await request.json();
-    const gameId = context.params.id;
+
+    const gameId = request.nextUrl.pathname.split('/')[3];
 
     // Get the current game state
     const gameResponse = await fetch(

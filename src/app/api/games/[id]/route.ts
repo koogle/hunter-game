@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { GameStorage } from "@/lib/storage";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest
 ) {
   try {
-    const { id } = params;
+    const id = request.nextUrl.pathname.split('/')[3];
     const game = await GameStorage.getGame(id);
 
     if (!game) {
@@ -23,11 +22,10 @@ export async function GET(
 }
 
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest
 ) {
   try {
-    const { id } = params;
+    const id = request.nextUrl.pathname.split('/')[3];
     const body = await request.json();
     const game = await GameStorage.updateGame(id, body);
 
@@ -45,11 +43,10 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest
 ) {
   try {
-    const { id } = params;
+    const id = request.nextUrl.pathname.split('/')[3];
     const success = await GameStorage.deleteGame(id);
 
     if (!success) {
