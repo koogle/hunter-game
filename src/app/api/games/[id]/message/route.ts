@@ -1,59 +1,91 @@
 import { NextRequest } from "next/server";
-import { GameStorage } from "@/lib/storage";
-import { Message, streamText } from "ai";
-import { xai } from "@ai-sdk/xai";
+import { OpenAI } from "openai";
+import { GameState } from "@/types/game";
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
-const model = xai("grok-2-1212");
-
-const SYSTEM_PROMPT = `You are an experienced and creative Dungeon Master for an interactive role-playing game.
-Keep responses focused and engaging. Stay in character as the Dungeon Master.
-Only ask one question at a time.`;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await Promise.resolve(context.params);
-    const { messages } = await request.json();
+    const { message } = await request.json();
+    const gameId = params.id;
 
-    // Get current game state
-    const game = await GameStorage.getGame(id);
-    if (!game) {
-      throw new Error("Game not found");
-    }
+    // Get the current game state
+    const gameResponse = await fetch(
+      `${request.nextUrl.origin}/api/games/${gameId}`
+    );
+    const game: GameState = await gameResponse.json();
 
-    // Create conversation array with system prompt
-    const conversationMessages: Message[] = [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...messages,
+    // Create a new message array with the user's message
+    const updatedMessages = [...game.messages, message];
+
+    // Prepare messages for OpenAI API
+    const messages: ChatCompletionMessageParam[] = [
+      {
+        role: "system",
+        content: `You are a game master in a text adventure game. The game is set in: ${game.customScenario || game.scenario}. The player's name is ${game.name}. Keep responses concise and engaging.`,
+      },
+      ...updatedMessages.map((msg, i) => ({
+        role: i % 2 === 0 ? "user" : "assistant",
+        content: msg,
+      } as const)),
     ];
 
-    // Get streaming response using streamText
-    const result = streamText({
-      model,
-      messages: conversationMessages,
+    // Call OpenAI API with streaming
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages,
+      stream: true,
     });
 
-    // Collect the full response for game state update
-    let fullResponse = "";
-    for await (const chunk of result.textStream) {
-      fullResponse += chunk;
-    }
+    // Create a new ReadableStream to handle the streaming response
+    const stream = new ReadableStream({
+      async start(controller) {
+        let fullResponse = "";
 
-    // Update game state after stream completes
-    GameStorage.updateGame(id, {
-      messages: [
-        ...game.messages,
-        messages[messages.length - 1].content,
-        fullResponse,
-      ],
+        for await (const chunk of completion) {
+          const content = chunk.choices[0]?.delta?.content || "";
+          if (content) {
+            fullResponse += content;
+            controller.enqueue(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`);
+          }
+        }
+
+        // Update the game state with the complete response
+        const updatedGame = {
+          ...game,
+          messages: [...updatedMessages, fullResponse],
+          lastUpdatedAt: new Date().toISOString(),
+        };
+
+        await fetch(`${request.nextUrl.origin}/api/games/${gameId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedGame),
+        });
+
+        controller.enqueue("data: [DONE]\n\n");
+        controller.close();
+      },
     });
 
-    // Return data stream response
-    return result.toDataStreamResponse();
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
   } catch (error) {
-    console.error("Message handler error:", error);
-    throw error;
+    console.error("Error in message route:", error);
+    return new Response(JSON.stringify({ error: "Failed to process message" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

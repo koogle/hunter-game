@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { GameSummary, GameState } from "@/types/game";
-import { useChat, Message as ChatMessage } from "ai/react";
+import { Message as ChatMessage } from "ai/react";
 import StartScreen from "@/components/StartScreen";
 import GameScreen from "@/components/GameScreen";
 import SetupScreen from "@/components/SetupScreen";
@@ -35,68 +35,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [games, setGames] = useState<GameSummary[]>([]);
   const [currentGame, setCurrentGame] = useState<GameState | null>(null);
-  const [streamingText, setStreamingText] = useState("");
-
-  const {
-    messages: chatMessages,
-    input: chatInput,
-    handleInputChange,
-    handleSubmit: handleChatSubmit,
-    isLoading: isChatLoading,
-    setMessages,
-  } = useChat({
-    api: currentGame ? `/api/games/${currentGame.id}/message` : undefined,
-    id: currentGame?.id,
-    initialMessages: [],
-    onResponse: async (response) => {
-      setStreamingText("");
-      const reader = response.body?.getReader();
-      if (!reader) return;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const text = new TextDecoder().decode(value);
-        const lines = text.split("\n").filter((line) => line.trim() !== "");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") continue;
-
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices[0]?.delta?.content || "";
-              setStreamingText((prev) => prev + content);
-            } catch (e) {
-              console.error("Failed to parse chunk:", e);
-            }
-          }
-        }
-      }
-    },
-    onFinish: async (message: ChatMessage) => {
-      setStreamingText("");
-      if (currentGame) {
-        const response = await fetch(`/api/games/${currentGame.id}`);
-        const updatedGame = await response.json();
-        setCurrentGame(updatedGame);
-      }
-    },
-  });
-
-  useEffect(() => {
-    if (currentGame && currentGame.messages.length > 0) {
-      setMessages(
-        currentGame.messages.map((msg, i) => ({
-          id: String(i),
-          content: msg,
-          role: i % 2 === 0 ? "user" : "assistant",
-        }))
-      );
-    }
-  }, [currentGame, setMessages]);
+  
 
   const fetchGames = async () => {
     const response = await fetch("/api/games");
@@ -136,7 +75,6 @@ export default function Home() {
     const response = await fetch(`/api/games/${id}`);
     const game = await response.json();
     setCurrentGame(game);
-    setMessages(game.messages);
     setStep("game");
   };
 
@@ -169,7 +107,6 @@ export default function Home() {
 
     const game = await response.json();
     setCurrentGame(game);
-    setMessages(game.messages);
     setStep("game");
   };
 
@@ -192,7 +129,6 @@ export default function Home() {
           {step === "game" && currentGame && (
             <GameScreen
               currentGame={currentGame}
-              setMessages={setMessages}
               setCurrentGame={setCurrentGame}
             />
           )}

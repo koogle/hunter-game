@@ -1,30 +1,60 @@
-import { useState } from "react";
-import { useChat, Message as ChatMessage } from "ai/react";
+import { useState, useRef, useEffect } from "react";
 import { GameState } from "@/types/game";
 
 type GameScreenProps = {
   currentGame: GameState;
-  setMessages: (messages: ChatMessage[]) => void;
   setCurrentGame: (game: GameState) => void;
 };
 
-export default function GameScreen({ currentGame, setMessages, setCurrentGame }: GameScreenProps) {
+export default function GameScreen({ currentGame, setCurrentGame }: GameScreenProps) {
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [streamingText, setStreamingText] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const {
-    messages: chatMessages,
-    input: chatInput,
-    handleInputChange,
-    handleSubmit: handleChatSubmit,
-    isLoading: isChatLoading,
-  } = useChat({
-    api: currentGame ? `/api/games/${currentGame.id}/message` : undefined,
-    id: currentGame?.id,
-    initialMessages: [],
-    onResponse: async (response) => {
-      setStreamingText("");
+  useEffect(() => {
+    if (currentGame && currentGame.messages.length > 0) {
+      setMessages(
+        currentGame.messages.map((msg, i) => ({
+          role: i % 2 === 0 ? "user" : "assistant",
+          content: msg,
+        }))
+      );
+    }
+  }, [currentGame]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streamingText]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input.trim();
+    setInput("");
+    setIsLoading(true);
+    setStreamingText("");
+
+    // Add user message to the chat
+    setMessages(prev => [...prev, { role: "user", content: userMessage }]);
+
+    try {
+      const response = await fetch(`/api/games/${currentGame.id}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
       const reader = response.body?.getReader();
       if (!reader) return;
+
+      let fullResponse = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -41,31 +71,37 @@ export default function GameScreen({ currentGame, setMessages, setCurrentGame }:
             try {
               const parsed = JSON.parse(data);
               const content = parsed.choices[0]?.delta?.content || "";
-              setStreamingText((prev: string) => prev + content);
+              fullResponse += content;
+              setStreamingText(fullResponse);
             } catch (e) {
               console.error("Failed to parse chunk:", e);
             }
           }
         }
       }
-    },
-    onFinish: async (message: ChatMessage) => {
+
+      // Add the complete assistant message to the chat
+      setMessages(prev => [...prev, { role: "assistant", content: fullResponse }]);
       setStreamingText("");
-      if (currentGame) {
-        const response = await fetch(`/api/games/${currentGame.id}`);
-        const updatedGame = await response.json();
-        setCurrentGame(updatedGame);
-      }
-    },
-  });
+
+      // Update the game state
+      const gameResponse = await fetch(`/api/games/${currentGame.id}`);
+      const updatedGame = await gameResponse.json();
+      setCurrentGame(updatedGame);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
       <div className="flex-1 border-2 border-white p-4 mb-4 min-h-[400px] bg-black overflow-y-auto">
         <div className="space-y-4">
-          {chatMessages.map((message) => (
+          {messages.map((message, index) => (
             <div
-              key={message.id}
+              key={index}
               className={`text-white ${
                 message.role === "assistant" ? "opacity-80" : ""
               }`}
@@ -76,52 +112,41 @@ export default function GameScreen({ currentGame, setMessages, setCurrentGame }:
               <span className="whitespace-pre-wrap">{message.content}</span>
             </div>
           ))}
-          {(isChatLoading || streamingText) && (
+          {(isLoading || streamingText) && (
             <div className="text-white opacity-80">
               <span className="font-bold">DM: </span>
               <span className="whitespace-pre-wrap">
                 {streamingText}
-                {isChatLoading && <span className="animate-pulse">▋</span>}
+                {isLoading && <span className="animate-pulse">▋</span>}
               </span>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
       </div>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          if (!chatInput.trim()) return;
-
-          try {
-            await handleChatSubmit(e);
-          } catch (error) {
-            console.error("Failed to send message:", error);
-          }
-        }}
-        className="flex gap-2"
-      >
+      <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"
-          value={chatInput}
-          onChange={handleInputChange}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
           className="flex-1 p-3 bg-black text-white border-2 border-white focus:border-blue-500 outline-none"
           placeholder="What would you like to do?"
-          disabled={isChatLoading}
+          disabled={isLoading}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              if (chatInput.trim()) {
-                handleChatSubmit(e);
+              if (input.trim()) {
+                handleSubmit(e);
               }
             }
           }}
         />
         <button
           type="submit"
-          disabled={isChatLoading || !chatInput.trim()}
+          disabled={isLoading || !input.trim()}
           className="px-6 py-3 bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isChatLoading ? (
+          {isLoading ? (
             <span className="animate-pulse">Thinking...</span>
           ) : (
             "Send"
