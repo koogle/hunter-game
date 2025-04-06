@@ -19,8 +19,10 @@ export default function GameScreen({ gameState, onCommand }: GameScreenProps) {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [gameState.messages]);
+    if (gameState && gameState.messages && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [gameState?.messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && input.trim()) {
@@ -32,7 +34,7 @@ export default function GameScreen({ gameState, onCommand }: GameScreenProps) {
   return (
     <div className="flex flex-col h-full bg-background text-foreground crt-effect scanlines">
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {gameState.messages.map((message: GameMessage, index) => (
+        {gameState?.messages.map((message: GameMessage, index) => (
           <div
             key={index}
             className={`font-pixel text-lg ${
