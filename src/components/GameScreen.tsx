@@ -1,65 +1,175 @@
-import { useState, useRef, useEffect } from "react";
-import { GameState, GameMessage } from "@/types/game";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { GameState } from "@/types/game";
 
 interface GameScreenProps {
   gameState: GameState;
-  onCommand: (command: string) => void;
+  onGameStateUpdate: (gameState: GameState) => void;
 }
 
-export default function GameScreen({ gameState, onCommand }: GameScreenProps) {
-  const [input, setInput] = useState("");
+export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenProps) {
+  const [command, setCommand] = useState("");
   const [cursorVisible, setCursorVisible] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const logEndRef = useRef<HTMLDivElement>(null);
 
+  // Blinking cursor effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCursorVisible((prev) => !prev);
-    }, 500);
+    }, 530);
     return () => clearInterval(interval);
   }, []);
 
+  // Auto-scroll to bottom of log
   useEffect(() => {
-    if (gameState && gameState.messages && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [gameState.messages]);
+
+  // Create ASCII progress bar
+  const createTextBar = (value: number, max: number, length = 16, filled = "█", empty = "░") => {
+    const filledLength = Math.floor((value / max) * length);
+    return `${filled.repeat(filledLength)}${empty.repeat(length - filledLength)}`;
+  };
+
+  const handleCommand = async (cmd: string) => {
+    if (!cmd.trim()) return;
+
+    try {
+      const response = await fetch(`/api/games/${gameState.id}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: cmd }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to send message");
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) return;
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = JSON.parse(line.slice(6));
+            if (data.choices?.[0]?.delta?.content) {
+              // Handle streaming content if needed
+            }
+          }
+        }
+      }
+
+      // Refresh the game state after the message is processed
+      const updatedGame = await fetch(`/api/games/${gameState.id}`).then(res => res.json());
+      onGameStateUpdate(updatedGame);
+    } catch (error) {
+      console.error("Error processing command:", error);
     }
-  }, [gameState?.messages]);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && input.trim()) {
-      onCommand(input.trim());
-      setInput("");
+    if (e.key === "Enter" && command.trim()) {
+      handleCommand(command.trim());
+      setCommand("");
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-background text-foreground crt-effect scanlines">
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {gameState?.messages.map((message: GameMessage, index) => (
-          <div
-            key={index}
-            className={`font-pixel text-lg ${
-              message.role === "user" ? "text-primary" : "text-foreground"
-            }`}
-          >
-            {message.content}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-      <div className="p-4 border-t border-primary">
-        <div className="flex items-center space-x-2">
-          <span className="text-primary font-pixel">&gt;</span>
+    <div className="font-vt323 text-green-400 w-full max-w-4xl h-[80vh] flex flex-col md:flex-row gap-4 scanlines">
+      {/* Main game area */}
+      <div className="flex-1 flex flex-col border-2 border-green-500 overflow-hidden shadow-[0_0_10px_rgba(0,255,0,0.3)]">
+        {/* Game header */}
+        <div className="border-b-2 border-green-500 p-2 text-center relative bg-black">
+          <div className="text-center text-2xl glitch-text">CRYSTAL QUEST</div>
+          <div className="text-center text-green-300 mt-1 text-lg">{gameState.scenario}</div>
+        </div>
+
+        {/* Game log */}
+        <div
+          className="flex-1 p-4 overflow-y-auto bg-black text-green-400 whitespace-pre-wrap terminal-text"
+          style={{
+            textShadow: "0 0 5px rgba(0,255,0,0.5)",
+          }}
+        >
+          {gameState.messages.map((message, index) => (
+            <div key={index} className="mb-2 leading-relaxed">
+              {message.content}
+            </div>
+          ))}
+          <div ref={logEndRef}></div>
+        </div>
+
+        {/* Command input */}
+        <div className="border-t-2 border-green-500 p-2 flex bg-black">
+          <span className="mr-2 text-xl text-green-500">&gt;</span>
           <input
             type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            value={command}
+            onChange={(e) => setCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent border-none outline-none text-primary font-pixel"
-            placeholder="Enter command..."
+            className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-green-400 text-xl"
+            placeholder="Type a command..."
+            aria-label="Command input"
           />
-          <span className={`text-primary font-pixel ${cursorVisible ? "opacity-100" : "opacity-0"}`}>
-            _
-          </span>
+          <span className={`text-green-500 text-xl ${cursorVisible ? "opacity-100" : "opacity-0"}`}>█</span>
+        </div>
+      </div>
+
+      {/* Character panel */}
+      <div className="w-full md:w-72 border-2 border-green-500 flex flex-col shadow-[0_0_10px_rgba(0,255,0,0.3)]">
+        <div className="border-b-2 border-green-500 p-2 text-center bg-black">
+          <div className="text-xl">CHARACTER</div>
+        </div>
+
+        <div className="p-4 flex-1 overflow-y-auto bg-black">
+          <div className="mb-4 border border-green-800 p-2 bg-black/50">
+            <div className="mb-1 flex justify-between">
+              <span>HP:</span>
+              <span>{gameState.stats?.health ?? 0}/100</span>
+            </div>
+            <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats?.health ?? 0, 100)}</div>
+          </div>
+
+          <div className="mb-4 border border-green-800 p-2 bg-black/50">
+            <div className="mb-1 flex justify-between">
+              <span>MP:</span>
+              <span>{gameState.stats?.mana ?? 0}/100</span>
+            </div>
+            <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats?.mana ?? 0, 100)}</div>
+          </div>
+
+          <div className="mb-4 border border-green-800 p-2 bg-black/50">
+            <div className="mb-1 flex justify-between">
+              <span>XP:</span>
+              <span>{gameState.stats?.experience ?? 0}/100</span>
+            </div>
+            <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats?.experience ?? 0, 100)}</div>
+          </div>
+
+          <div className="border-t-2 border-green-500 pt-4 mt-4">
+            <div className="mb-2 text-xl">INVENTORY</div>
+            <ul className="list-none pl-2">
+              {gameState.inventory?.map((item, index) => (
+                <li key={index} className="mb-1">{item.name} {item.quantity > 1 ? `(${item.quantity})` : ''}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t-2 border-green-500 p-2 text-center bg-black">
+          <div className="text-sm blink-slow">Type 'help' for commands</div>
         </div>
       </div>
     </div>

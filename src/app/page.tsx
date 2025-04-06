@@ -104,8 +104,8 @@ export default function Home() {
 
           {step === "game" && currentGame && (
             <GameScreen
-              currentGame={currentGame}
-              setCurrentGame={setCurrentGame}
+              gameState={currentGame}
+              onGameStateUpdate={setCurrentGame}
             />
           )}
 
