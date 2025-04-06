@@ -15,11 +15,22 @@ export type GameState = {
     health: number;
     mana: number;
     experience: number;
+    strength: number;
+    dexterity: number;
+    intelligence: number;
+    luck: number;
   };
+  playerNotes: string;
   inventory: {
     name: string;
     quantity: number;
     description?: string;
+    requirements?: {
+      strength?: number;
+      dexterity?: number;
+      intelligence?: number;
+      luck?: number;
+    };
   }[];
 };
 
