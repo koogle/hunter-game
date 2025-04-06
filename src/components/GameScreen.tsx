@@ -202,7 +202,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
         </div>
 
         <div className="border-t-2 border-green-500 p-2 text-center bg-black">
-          <div className="text-sm blink-slow">Type 'help' for commands</div>
+          <div className="text-sm blink-slow">{"Type <help> for commands"}</div>
         </div>
       </div>
     </div>

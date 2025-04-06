@@ -36,8 +36,13 @@ export async function POST(request: NextRequest) {
     stats: {
       health: 100,
       mana: 100,
-      experience: 0
+      experience: 0,
+      strength: 5,
+      intelligence: 5,
+      dexterity:5,
+      luck:1,
     },
+    playerNotes: "",
     inventory: [
       {
         name: "Iron Sword",
