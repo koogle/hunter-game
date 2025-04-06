@@ -125,7 +125,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
       <div className="flex-1 flex flex-col border-2 w-[800px] border-green-500 overflow-hidden shadow-[0_0_10px_rgba(0,255,0,0.3)]">
         {/* Game header */}
         <div className="border-b-2 border-green-500 p-2 text-center relative bg-black">
-          <div className="text-center text-2xl glitch-text">CRYSTAL QUEST</div>
+          <div className="text-center text-2xl glitch-text">HUNTER</div>
           <div className="text-center text-green-300 mt-1 text-lg">{gameState.scenario}</div>
         </div>
 
