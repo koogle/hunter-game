@@ -18,9 +18,17 @@
     "I put the flower in my inventory",
     "You tuck the glowing, silver-blue flower safely into your inventory. As you secure it, you can’t help but wonder what mysteries it might unlock down the line.\n\nWith the flower secure, you return your attention to your surroundings. The ruins to your front, the stream to your right, and the trail to the watchtower on your left wait quietly for your decision. \n\nWhat do you choose to explore next, Jakob?",
     "what is my inventory right nwo",
-    "Currently, your inventory contains:\n\n1. A silver-blue flower: A magical and warm flower that you found in the grass. It radiates a gentle light.\n\nYou have ample space for other objects that you may find during your adventure in The Lost Kingdom. What would you like to do next, Jakob?"
+    "Currently, your inventory contains:\n\n1. A silver-blue flower: A magical and warm flower that you found in the grass. It radiates a gentle light.\n\nYou have ample space for other objects that you may find during your adventure in The Lost Kingdom. What would you like to do next, Jakob?",
+    {
+      "role": "user",
+      "content": "help"
+    },
+    {
+      "role": "assistant",
+      "content": "Of course, Jakob! Here's a short guide:\n\n1. Actions: Write what you want to do. Ex: \"Walk to the castle\".\n\n2. Interactions: Communicate with the characters or objects by writing. Ex: \"Ask the blacksmith about the sword\".\n\n3. Inventory: You can check what you're carrying by saying \"Check inventory\".\n\n4. Health/Stats: Request for these updates anytime.\n\n5. Looking around: Just write \"Look around\".\n\nIf you need help with a specific task or command, feel free to ask!"
+    }
   ],
   "id": "f5cbed8f-d1a7-4bb2-a7f8-cbf2deeae42f",
   "createdAt": "2025-02-06T08:55:31.573Z",
-  "lastUpdatedAt": "2025-04-03T02:00:54.243Z"
+  "lastUpdatedAt": "2025-04-06T07:08:44.094Z"
 }

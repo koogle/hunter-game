@@ -87,7 +87,7 @@ export default function Home() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto min-h-screen flex flex-col p-4">
+    <div className="max-w-6xl mx-auto min-h-screen flex flex-col p-4">
       {isLoading ? (
         <div className="flex items-center justify-center h-screen">
           <div className="text-white text-xl">Loading your adventure...</div>

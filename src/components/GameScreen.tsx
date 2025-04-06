@@ -120,9 +120,9 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
   };
 
   return (
-    <div className="font-vt323 text-green-400 w-full max-w-4xl h-[80vh] flex flex-col md:flex-row gap-4 scanlines">
+    <div className="font-vt323 text-green-400 w-full h-[80vh] flex flex-col md:flex-row gap-4 scanlines">
       {/* Main game area */}
-      <div className="flex-1 flex flex-col border-2 border-green-500 overflow-hidden shadow-[0_0_10px_rgba(0,255,0,0.3)]">
+      <div className="flex-1 flex flex-col border-2 w-[800px] border-green-500 overflow-hidden shadow-[0_0_10px_rgba(0,255,0,0.3)]">
         {/* Game header */}
         <div className="border-b-2 border-green-500 p-2 text-center relative bg-black">
           <div className="text-center text-2xl glitch-text">CRYSTAL QUEST</div>
@@ -161,7 +161,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
       </div>
 
       {/* Character panel */}
-      <div className="w-full md:w-72 border-2 border-green-500 flex flex-col shadow-[0_0_10px_rgba(0,255,0,0.3)]">
+      <div className="md:w-72 border-2 border-green-500 flex flex-col shadow-[0_0_10px_rgba(0,255,0,0.3)]">
         <div className="border-b-2 border-green-500 p-2 text-center bg-black">
           <div className="text-xl">CHARACTER</div>
         </div>
