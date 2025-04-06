@@ -43,13 +43,21 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
       });
 
       if (!response.ok) {
-        console.error("Failed to send message");
+        const errorData = await response.json().catch(() => null);
+        console.error("Failed to send message:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
         return;
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) return;
+      if (!response.body) {
+        console.error("Response body is null");
+        return;
+      }
 
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
 
@@ -63,19 +71,44 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
 
         for (const line of lines) {
           if (line.startsWith("data: ")) {
-            const data = JSON.parse(line.slice(6));
-            if (data.choices?.[0]?.delta?.content) {
-              // Handle streaming content if needed
+            try {
+              if (line === "data: [DONE]") {
+                continue;
+              }
+              const data = JSON.parse(line.slice(6));
+              if (data.choices?.[0]?.delta?.content) {
+                // Handle streaming content if needed
+              }
+            } catch (e) {
+              console.error("Error parsing SSE data:", e);
             }
           }
         }
       }
 
       // Refresh the game state after the message is processed
-      const updatedGame = await fetch(`/api/games/${gameState.id}`).then(res => res.json());
+      const updatedGameResponse = await fetch(`/api/games/${gameState.id}`);
+      if (!updatedGameResponse.ok) {
+        console.error("Failed to fetch updated game state:", {
+          status: updatedGameResponse.status,
+          statusText: updatedGameResponse.statusText
+        });
+        return;
+      }
+
+      const updatedGame = await updatedGameResponse.json();
       onGameStateUpdate(updatedGame);
     } catch (error) {
       console.error("Error processing command:", error);
+      // Add the command to the game state as a user message even if it failed
+      const userMessage = {
+        role: "user" as const,
+        content: cmd
+      };
+      onGameStateUpdate({
+        ...gameState,
+        messages: [...gameState.messages, userMessage]
+      });
     }
   };
 
