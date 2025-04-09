@@ -3,9 +3,14 @@ import { OpenAI } from "openai";
 import { GameState, GameMessage } from "@/types/game";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
+const LOCAL_MODE = true;
+
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  ...(LOCAL_MODE ?{ baseUrl: "http://localhost:11434/api/v1"} :{apiKey: process.env.OPENAI_API_KEY}),
+
 });
+
+const MODEL = LOCAL_MODE ? "llama3.2": "gpt-4"
 
 export async function POST(
   request: NextRequest
@@ -24,7 +29,7 @@ export async function POST(
     const gameResponse = await fetch(
       `${request.nextUrl.origin}/api/games/${gameId}`
     );
-    
+
     if (!gameResponse.ok) {
       return new Response(JSON.stringify({ error: "Failed to fetch game state" }), {
         status: gameResponse.status,
@@ -54,7 +59,7 @@ export async function POST(
     ];
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: MODEL,
       messages,
       stream: true,
     });
@@ -66,11 +71,13 @@ export async function POST(
 
           for await (const chunk of completion) {
             const content = chunk.choices[0]?.delta?.content || "";
+            console.log("got content", content);
             if (content) {
               fullResponse += content;
               controller.enqueue(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`);
             }
           }
+
 
           const assistantMessage: GameMessage = {
             role: "assistant",
@@ -108,7 +115,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: "Failed to process message",
       details: error instanceof Error ? error.message : "Unknown error"
     }), {
