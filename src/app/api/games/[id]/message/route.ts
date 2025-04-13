@@ -6,18 +6,17 @@ import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 const LOCAL_MODE = true;
 
 const openai = new OpenAI({
-  ...(LOCAL_MODE ?{ baseUrl: "http://localhost:11434/api/v1"} :{apiKey: process.env.OPENAI_API_KEY}),
-
+  ...(LOCAL_MODE
+    ? { baseUrl: "http://localhost:11434/v1", apiKey: "ollama" }
+    : { apiKey: process.env.OPENAI_API_KEY }),
 });
 
-const MODEL = LOCAL_MODE ? "llama3.2": "gpt-4"
+const MODEL = LOCAL_MODE ? "llama3.2" : "gpt-4";
 
-export async function POST(
-  request: NextRequest
-) {
+export async function POST(request: NextRequest) {
   try {
     const { message } = await request.json();
-    const gameId = request.nextUrl.pathname.split('/')[3];
+    const gameId = request.nextUrl.pathname.split("/")[3];
 
     if (!gameId) {
       return new Response(JSON.stringify({ error: "Game ID is required" }), {
@@ -27,21 +26,24 @@ export async function POST(
     }
 
     const gameResponse = await fetch(
-      `${request.nextUrl.origin}/api/games/${gameId}`
+      `${request.nextUrl.origin}/api/games/${gameId}`,
     );
 
     if (!gameResponse.ok) {
-      return new Response(JSON.stringify({ error: "Failed to fetch game state" }), {
-        status: gameResponse.status,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch game state" }),
+        {
+          status: gameResponse.status,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
 
     const game: GameState = await gameResponse.json();
 
     const userMessage: GameMessage = {
       role: "user",
-      content: message
+      content: message,
     };
     const updatedMessages = [...game.messages, userMessage];
 
@@ -50,12 +52,17 @@ export async function POST(
         role: "system",
         content: `You are a game master in a text adventure game. The game is set in: ${game.customScenario || game.scenario}. The player's name is ${game.name}. Keep responses concise and engaging.`,
       },
-      ...updatedMessages
-        .filter(msg => msg.content !== undefined && msg.content !== null && msg.content.trim() !== '')
+      ...(updatedMessages
+        .filter(
+          (msg) =>
+            msg.content !== undefined &&
+            msg.content !== null &&
+            msg.content.trim() !== "",
+        )
         .map((msg) => ({
           role: msg.role === "user" ? "user" : "assistant",
           content: msg.content,
-        })) as ChatCompletionMessageParam[],
+        })) as ChatCompletionMessageParam[]),
     ];
 
     const completion = await openai.chat.completions.create({
@@ -74,14 +81,15 @@ export async function POST(
             console.log("got content", content);
             if (content) {
               fullResponse += content;
-              controller.enqueue(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`);
+              controller.enqueue(
+                `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`,
+              );
             }
           }
 
-
           const assistantMessage: GameMessage = {
             role: "assistant",
-            content: fullResponse
+            content: fullResponse,
           };
           const updatedGame = {
             ...game,
@@ -89,11 +97,14 @@ export async function POST(
             lastUpdatedAt: new Date().toISOString(),
           };
 
-          const updateResponse = await fetch(`${request.nextUrl.origin}/api/games/${gameId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedGame),
-          });
+          const updateResponse = await fetch(
+            `${request.nextUrl.origin}/api/games/${gameId}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(updatedGame),
+            },
+          );
 
           if (!updateResponse.ok) {
             throw new Error("Failed to update game state");
@@ -115,12 +126,15 @@ export async function POST(
       },
     });
   } catch (error) {
-    return new Response(JSON.stringify({
-      error: "Failed to process message",
-      details: error instanceof Error ? error.message : "Unknown error"
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Failed to process message",
+        details: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 }
