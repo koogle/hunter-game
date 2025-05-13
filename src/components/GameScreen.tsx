@@ -11,6 +11,7 @@ interface GameScreenProps {
 export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenProps) {
   const [command, setCommand] = useState("");
   const [cursorVisible, setCursorVisible] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +32,19 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
 
   const handleCommand = async (cmd: string) => {
     if (!cmd.trim()) return;
+
+    // Add user message immediately and show loading state
+    const userMessage = {
+      role: "user" as const,
+      content: `${cmd}`
+    };
+    onGameStateUpdate({
+      ...gameState,
+      messages: [...gameState.messages, userMessage]
+    });
+
+    setIsLoading(true);
+    setCommand(""); // Clear input immediately
 
     try {
       const response = await fetch(`/api/games/${gameState.id}/message`, {
@@ -97,28 +111,19 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
       onGameStateUpdate(updatedGame);
     } catch (error) {
       console.error("Error processing command:", error);
-      // Add the command to the game state as a user message even if it failed
-      const userMessage = {
-        role: "user" as const,
-        content: cmd
-      };
-      onGameStateUpdate({
-        ...gameState,
-        messages: [...gameState.messages, userMessage]
-      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && command.trim()) {
       handleCommand(command.trim());
-      setCommand("");
     }
   };
 
   return (
     <div className="font-vt323 text-green-400 w-full h-[80vh] flex flex-col md:flex-row gap-4 scanlines">
-
       <div className="flex-1 flex flex-col border-2 w-[800px] border-green-500 overflow-hidden shadow-[0_0_10px_rgba(0,255,0,0.3)]">
         <div className="border-b-2 border-green-500 p-2 text-center relative bg-black">
           <div className="text-center text-2xl glitch-text">HUNTER</div>
@@ -131,15 +136,16 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           }}
         >
           {gameState.messages.map((message, index) => (
-            <div key={index} className="mb-2 leading-relaxed">
+            <div key={index} className="mb-2 leading-relaxed flex flex-row gap-1">
+              {message.role === "user" ? <p>user:</p> : undefined}
               {message.content}
             </div>
           ))}
           <div ref={logEndRef}></div>
         </div>
         <div className="border-t-2 border-green-500 p-2 flex gap-2 bg-black">
-          <span className="mr-2 text-xl text-green-500">&gt;</span>
-          <input
+          {!isLoading && <span className="mx-2 text-lg text-green-500">&gt;</span>}
+          {!isLoading && <input
             type="text"
             value={command}
             onChange={(e) => setCommand(e.target.value)}
@@ -147,7 +153,11 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
             className={`mr-2 flex-1 bg-transparent border-none outline-none focus:ring-0 text-green-400 text-xl placeholder:text-gray-400 ${!command.trim() ? 'blink-slow' : ''}`}
             aria-label="Command input"
             placeholder="What do you want to do..."
-          />
+            disabled={isLoading}
+          />}
+          {isLoading && (
+            <div className="mx-2 text-green-500 text-lg animate-pulse">Processing...</div>
+          )}
         </div>
       </div>
       <div className="md:w-72 border-2 border-green-500 flex flex-col shadow-[0_0_10px_rgba(0,255,0,0.3)]">
