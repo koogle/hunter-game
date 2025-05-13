@@ -144,7 +144,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            className={`mr-2 flex-1 bg-transparent border-none outline-none focus:ring-0 text-green-400 text-xl placeholder:text-green-200 ${!command.trim() ? 'blink-slow' : ''}`}
+            className={`mr-2 flex-1 bg-transparent border-none outline-none focus:ring-0 text-green-400 text-xl placeholder:text-gray-400 ${!command.trim() ? 'blink-slow' : ''}`}
             aria-label="Command input"
             placeholder="What do you want to do..."
           />
