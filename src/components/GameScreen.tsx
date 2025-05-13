@@ -13,7 +13,6 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
   const [cursorVisible, setCursorVisible] = useState(true);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  // Blinking cursor effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCursorVisible((prev) => !prev);
@@ -21,12 +20,10 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom of log
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [gameState.messages]);
 
-  // Create ASCII progress bar
   const createTextBar = (value: number, max: number, length = 16, filled = "█", empty = "░") => {
     const filledLength = Math.floor((value / max) * length);
     return `${filled.repeat(filledLength)}${empty.repeat(length - filledLength)}`;
@@ -127,8 +124,6 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           <div className="text-center text-2xl glitch-text">HUNTER</div>
           <div className="text-center text-green-300 mt-1 text-lg">{gameState.scenario}</div>
         </div>
-
-
         <div
           className="flex-1 p-4 overflow-y-auto bg-black text-green-400 whitespace-pre-wrap terminal-text"
           style={{
@@ -142,12 +137,8 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           ))}
           <div ref={logEndRef}></div>
         </div>
-
-
         <div className="border-t-2 border-green-500 p-2 flex gap-2 bg-black">
-          
           <span className="mr-2 text-xl text-green-500">&gt;</span>
-          
           <input
             type="text"
             value={command}
@@ -157,41 +148,34 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
             aria-label="Command input"
             placeholder="What do you want to do..."
           />
-          
         </div>
       </div>
-
-      {/* Character panel */}
       <div className="md:w-72 border-2 border-green-500 flex flex-col shadow-[0_0_10px_rgba(0,255,0,0.3)]">
         <div className="border-b-2 border-green-500 p-2 text-center bg-black">
           <div className="text-xl">CHARACTER</div>
         </div>
-
         <div className="p-4 flex-1 overflow-y-auto bg-black">
           <div className="mb-4 border border-green-800 p-2 bg-black/50">
             <div className="mb-1 flex justify-between">
               <span>HP:</span>
-              <span>{gameState.stats?.health ?? 0}/100</span>
+              <span>{gameState.stats.health}/100</span>
             </div>
-            <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats?.health ?? 0, 100)}</div>
+            <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats.health, 100)}</div>
           </div>
-
           <div className="mb-4 border border-green-800 p-2 bg-black/50">
             <div className="mb-1 flex justify-between">
               <span>MP:</span>
-              <span>{gameState.stats?.mana ?? 0}/100</span>
+              <span>{gameState.stats.mana}/100</span>
             </div>
-            <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats?.mana ?? 0, 100)}</div>
+            <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats.mana, 100)}</div>
           </div>
-
           <div className="mb-4 border border-green-800 p-2 bg-black/50">
             <div className="mb-1 flex justify-between">
               <span>XP:</span>
-              <span>{gameState.stats?.experience ?? 0}/100</span>
+              <span>{gameState.stats.experience}/100</span>
             </div>
-            <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats?.experience ?? 0, 100)}</div>
+            <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats.experience, 100)}</div>
           </div>
-
           <div className="border-t-2 border-green-500 pt-4 mt-4">
             <div className="mb-2 text-xl">INVENTORY</div>
             <ul className="list-none pl-2">
@@ -201,7 +185,6 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
             </ul>
           </div>
         </div>
-
         <div className="border-t-2 border-green-500 p-2 text-center bg-black">
           <div className="text-sm blink-slow">{"Type <help> for commands"}</div>
         </div>

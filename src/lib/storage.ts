@@ -4,6 +4,53 @@ import { GameState, GameSummary } from "@/types/game";
 
 const GAMES_DIR = path.join(process.cwd(), "data/games");
 
+
+export const DEFAULT_STATS = {
+  health: 100,
+  mana: 100,
+  experience: 0,
+  strength: 5,
+  intelligence: 5,
+  dexterity: 5,
+  luck: 1,
+};
+
+
+export function normalizeGameState(gameState: GameState): GameState {
+  if (!gameState) return gameState;
+
+  // Clone the game state to avoid mutations
+  const normalizedState = { ...gameState };
+
+  // Initialize stats with defaults if missing
+  if (!normalizedState.stats) {
+    normalizedState.stats = { ...DEFAULT_STATS };
+  } else {
+    // Ensure all stats exist with at least 0 value
+    normalizedState.stats = {
+      health: normalizedState.stats.health ?? DEFAULT_STATS.health,
+      mana: normalizedState.stats.mana ?? DEFAULT_STATS.mana,
+      experience: normalizedState.stats.experience ?? DEFAULT_STATS.experience,
+      strength: normalizedState.stats.strength ?? DEFAULT_STATS.strength,
+      intelligence: normalizedState.stats.intelligence ?? DEFAULT_STATS.intelligence,
+      dexterity: normalizedState.stats.dexterity ?? DEFAULT_STATS.dexterity,
+      luck: normalizedState.stats.luck ?? DEFAULT_STATS.luck,
+    };
+  }
+
+  // Initialize inventory if missing
+  if (!normalizedState.inventory || !Array.isArray(normalizedState.inventory)) {
+    normalizedState.inventory = [];
+  }
+
+  // Initialize playerNotes if missing
+  if (normalizedState.playerNotes == null) {
+    normalizedState.playerNotes = "";
+  }
+
+  return normalizedState;
+}
+
 export class GameStorage {
   static async init() {
     try {
@@ -42,7 +89,8 @@ export class GameStorage {
         path.join(GAMES_DIR, `${id}.json`),
         "utf-8"
       );
-      return JSON.parse(content);
+      const gameState = JSON.parse(content);
+      return normalizeGameState(gameState);
     } catch {
       return null;
     }
@@ -55,12 +103,12 @@ export class GameStorage {
     const game = await this.getGame(id);
     if (!game) return null;
 
-    const updatedGame: GameState = {
+    const updatedGame: GameState = normalizeGameState({
       ...game,
       ...updates,
       id: game.id, // Ensure ID cannot be changed
       lastUpdatedAt: new Date().toISOString(),
-    };
+    });
 
     await fs.writeFile(
       path.join(GAMES_DIR, `${id}.json`),

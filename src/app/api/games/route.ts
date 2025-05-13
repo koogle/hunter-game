@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GameStorage } from "@/lib/storage";
+import { DEFAULT_STATS, GameStorage } from "@/lib/storage";
 import { GameMessage } from "@/types/game";
 
 export async function GET() {
@@ -33,15 +33,7 @@ export async function POST(request: NextRequest) {
     scenario: body.scenario,
     customScenario: body.customScenario,
     messages: initialMessages,
-    stats: {
-      health: 100,
-      mana: 100,
-      experience: 0,
-      strength: 5,
-      intelligence: 5,
-      dexterity:5,
-      luck:1,
-    },
+    stats: DEFAULT_STATS,
     playerNotes: "",
     inventory: [
       {
