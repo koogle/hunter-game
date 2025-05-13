@@ -28,9 +28,36 @@
     {
       "role": "assistant",
       "content": "Check complete, Jakob. Your adventure is ready to commence. What will your next move be in the heart of Valenwood?"
+    },
+    {
+      "role": "user",
+      "content": "write a python function"
+    },
+    {
+      "role": "assistant",
+      "content": "Sure, here is a basic Python function as an example. What specific function do you require for your adventure?\n\n```python\ndef hello_world():\n  print(\"Hello, World!\")\n\n# To call the function:\nhello_world()\n```\nThis function, when called, will simply print \"Hello, World!\" to the console."
+    },
+    {
+      "role": "user",
+      "content": "write a python function"
+    },
+    {
+      "role": "assistant",
+      "content": "Of course, Jakob. Here is an example of a Python function:\n\n```python\ndef greet(name):\n    return f\"Hello, {name}!\"\n\n# To call the function:\nprint(greet('Jakob'))\n```\n\nThis function takes a name as an argument and returns a greeting. Please provide more details if you require a specific function."
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-04-06T06:57:44.651Z"
+  "lastUpdatedAt": "2025-05-13T02:43:45.873Z",
+  "stats": {
+    "health": 100,
+    "mana": 100,
+    "experience": 0,
+    "strength": 5,
+    "intelligence": 5,
+    "dexterity": 5,
+    "luck": 1
+  },
+  "inventory": [],
+  "playerNotes": ""
 }

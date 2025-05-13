@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
+import { openaiService } from "@/lib/openai-service";
 
-const MODEL_NAME = "gpt-4o-mini-2024-07-18";
+const MODEL_NAME = "gpt-4";
 
 // Validate that the API key exists
 if (!process.env.OPENAI_API_KEY) {
   throw new Error('Missing OpenAI API key. Please add OPENAI_API_KEY to your .env.local file.');
 }
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 export async function POST(req: Request) {
   try {
@@ -23,7 +19,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const completion = await openai.chat.completions.create({
+    const completion = await openaiService.createChatCompletion({
       messages: [
         {
           role: "system",

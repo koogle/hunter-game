@@ -3,7 +3,7 @@ import { OpenAI } from "openai";
 import { GameState, GameMessage } from "@/types/game";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
-const LOCAL_MODE = true;
+const LOCAL_MODE = false;
 
 const openai = new OpenAI({
   ...(LOCAL_MODE
@@ -78,7 +78,6 @@ export async function POST(request: NextRequest) {
 
           for await (const chunk of completion) {
             const content = chunk.choices[0]?.delta?.content || "";
-            console.log("got content", content);
             if (content) {
               fullResponse += content;
               controller.enqueue(
