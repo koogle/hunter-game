@@ -121,15 +121,14 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
 
   return (
     <div className="font-vt323 text-green-400 w-full h-[80vh] flex flex-col md:flex-row gap-4 scanlines">
-      {/* Main game area */}
+
       <div className="flex-1 flex flex-col border-2 w-[800px] border-green-500 overflow-hidden shadow-[0_0_10px_rgba(0,255,0,0.3)]">
-        {/* Game header */}
         <div className="border-b-2 border-green-500 p-2 text-center relative bg-black">
           <div className="text-center text-2xl glitch-text">HUNTER</div>
           <div className="text-center text-green-300 mt-1 text-lg">{gameState.scenario}</div>
         </div>
 
-        {/* Game log */}
+
         <div
           className="flex-1 p-4 overflow-y-auto bg-black text-green-400 whitespace-pre-wrap terminal-text"
           style={{
@@ -144,19 +143,21 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           <div ref={logEndRef}></div>
         </div>
 
-        {/* Command input */}
-        <div className="border-t-2 border-green-500 p-2 flex bg-black">
+
+        <div className="border-t-2 border-green-500 p-2 flex gap-2 bg-black">
+          
           <span className="mr-2 text-xl text-green-500">&gt;</span>
+          
           <input
             type="text"
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-green-400 text-xl"
-            placeholder="Type a command..."
+            className="mr-2 flex-1 bg-transparent border-none outline-none focus:ring-0 text-green-400 text-xl"
             aria-label="Command input"
+            placeholder="What do you want to do..."
           />
-          <span className={`text-green-500 text-xl ${cursorVisible ? "opacity-100" : "opacity-0"}`}>█</span>
+          
         </div>
       </div>
 
