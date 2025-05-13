@@ -40,6 +40,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: "VT323", monospace;
@@ -86,63 +87,83 @@
   0% {
     opacity: 0.27861;
   }
+
   5% {
     opacity: 0.34769;
   }
+
   10% {
     opacity: 0.23604;
   }
+
   15% {
     opacity: 0.90626;
   }
+
   20% {
     opacity: 0.18128;
   }
+
   25% {
     opacity: 0.83891;
   }
+
   30% {
     opacity: 0.65583;
   }
+
   35% {
     opacity: 0.67807;
   }
+
   40% {
     opacity: 0.26559;
   }
+
   45% {
     opacity: 0.84693;
   }
+
   50% {
     opacity: 0.96019;
   }
+
   55% {
     opacity: 0.08594;
   }
+
   60% {
     opacity: 0.20313;
   }
+
   65% {
     opacity: 0.71988;
   }
+
   70% {
     opacity: 0.53455;
   }
+
   75% {
     opacity: 0.37288;
   }
+
   80% {
     opacity: 0.71428;
   }
+
   85% {
     opacity: 0.70419;
   }
+
   90% {
     opacity: 0.7003;
   }
+
   95% {
     opacity: 0.36108;
   }
+
   100% {
     opacity: 0.24387;
   }
@@ -170,6 +191,7 @@
   0% {
     background-position: 0 0;
   }
+
   100% {
     background-position: 0 100%;
   }
@@ -200,45 +222,46 @@
 
 @keyframes glitch {
   0% {
-    text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75), -0.05em -0.025em 0 rgba(0, 255, 0, 0.75), 0.025em 0.05em 0
-      rgba(0, 0, 255, 0.75);
+    text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75), -0.05em -0.025em 0 rgba(0, 255, 0, 0.75), 0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
   }
+
   14% {
-    text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75), -0.05em -0.025em 0 rgba(0, 255, 0, 0.75), 0.025em 0.05em 0
-      rgba(0, 0, 255, 0.75);
+    text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75), -0.05em -0.025em 0 rgba(0, 255, 0, 0.75), 0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
   }
+
   15% {
-    text-shadow: -0.05em -0.025em 0 rgba(255, 0, 0, 0.75), 0.025em 0.025em 0 rgba(0, 255, 0, 0.75), -0.05em -0.05em 0
-      rgba(0, 0, 255, 0.75);
+    text-shadow: -0.05em -0.025em 0 rgba(255, 0, 0, 0.75), 0.025em 0.025em 0 rgba(0, 255, 0, 0.75), -0.05em -0.05em 0 rgba(0, 0, 255, 0.75);
   }
+
   49% {
-    text-shadow: -0.05em -0.025em 0 rgba(255, 0, 0, 0.75), 0.025em 0.025em 0 rgba(0, 255, 0, 0.75), -0.05em -0.05em 0
-      rgba(0, 0, 255, 0.75);
+    text-shadow: -0.05em -0.025em 0 rgba(255, 0, 0, 0.75), 0.025em 0.025em 0 rgba(0, 255, 0, 0.75), -0.05em -0.05em 0 rgba(0, 0, 255, 0.75);
   }
+
   50% {
-    text-shadow: 0.025em 0.05em 0 rgba(255, 0, 0, 0.75), 0.05em 0 0 rgba(0, 255, 0, 0.75), 0 -0.05em 0
-      rgba(0, 0, 255, 0.75);
+    text-shadow: 0.025em 0.05em 0 rgba(255, 0, 0, 0.75), 0.05em 0 0 rgba(0, 255, 0, 0.75), 0 -0.05em 0 rgba(0, 0, 255, 0.75);
   }
+
   99% {
-    text-shadow: 0.025em 0.05em 0 rgba(255, 0, 0, 0.75), 0.05em 0 0 rgba(0, 255, 0, 0.75), 0 -0.05em 0
-      rgba(0, 0, 255, 0.75);
+    text-shadow: 0.025em 0.05em 0 rgba(255, 0, 0, 0.75), 0.05em 0 0 rgba(0, 255, 0, 0.75), 0 -0.05em 0 rgba(0, 0, 255, 0.75);
   }
+
   100% {
-    text-shadow: -0.025em 0 0 rgba(255, 0, 0, 0.75), -0.025em -0.025em 0 rgba(0, 255, 0, 0.75), -0.025em -0.05em 0
-      rgba(0, 0, 255, 0.75);
+    text-shadow: -0.025em 0 0 rgba(255, 0, 0, 0.75), -0.025em -0.025em 0 rgba(0, 255, 0, 0.75), -0.025em -0.05em 0 rgba(0, 0, 255, 0.75);
   }
 }
 
 /* Slow blinking effect */
 .blink-slow {
-  animation: blink-slow 2s infinite;
+  animation: blink-slow 4s infinite;
 }
 
 @keyframes blink-slow {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.3;
   }

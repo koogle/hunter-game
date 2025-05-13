@@ -144,7 +144,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="mr-2 flex-1 bg-transparent border-none outline-none focus:ring-0 text-green-400 text-xl"
+            className={`mr-2 flex-1 bg-transparent border-none outline-none focus:ring-0 text-green-400 text-xl placeholder:text-green-200 ${!command.trim() ? 'blink-slow' : ''}`}
             aria-label="Command input"
             placeholder="What do you want to do..."
           />
@@ -179,14 +179,18 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           <div className="border-t-2 border-green-500 pt-4 mt-4">
             <div className="mb-2 text-xl">INVENTORY</div>
             <ul className="list-none pl-2">
-              {gameState.inventory?.map((item, index) => (
-                <li key={index} className="mb-1">{item.name} {item.quantity > 1 ? `(${item.quantity})` : ''}</li>
-              ))}
+              {gameState.inventory?.length > 0 ? (
+                gameState.inventory.map((item, index) => (
+                  <li key={index} className="mb-1">{item.name} {item.quantity > 1 ? `(${item.quantity})` : ''}</li>
+                ))
+              ) : (
+                <li className="text-gray-400 italic">No items in inventory</li>
+              )}
             </ul>
           </div>
         </div>
         <div className="border-t-2 border-green-500 p-2 text-center bg-black">
-          <div className="text-sm blink-slow">{"Type <help> for commands"}</div>
+          <div className="text-sm">{"Type <help> for commands"}</div>
         </div>
       </div>
     </div>
