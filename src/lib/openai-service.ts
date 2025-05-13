@@ -1,8 +1,16 @@
 import OpenAI from 'openai';
+import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+
+interface CompletionOptions {
+    model?: string;
+    temperature?: number;
+    max_tokens?: number;
+}
 
 class OpenAIService {
     private static instance: OpenAIService;
     private client: OpenAI;
+    private defaultModel = "gpt-4.1";
 
     private constructor() {
         const apiKey = process.env.OPENAI_API_KEY;
@@ -28,19 +36,48 @@ class OpenAIService {
         return this.client;
     }
 
-    // Example method for making completions
-    public async createCompletion(prompt: string): Promise<string> {
+    // Abstracted method for chat completions
+    public async createChatCompletion(
+        messages: ChatCompletionMessageParam[],
+        options?: CompletionOptions
+    ): Promise<string> {
         try {
             const completion = await this.client.chat.completions.create({
-                messages: [{ role: "user", content: prompt }],
-                model: "gpt-3.5-turbo",
+                messages,
+                model: options?.model || this.defaultModel,
+                temperature: options?.temperature,
+                max_tokens: options?.max_tokens,
             });
 
             return completion.choices[0]?.message?.content || '';
         } catch (error) {
-            console.error('Error creating completion:', error);
+            console.error('Error creating chat completion:', error);
             throw error;
         }
+    }
+
+    // Method for streaming chat completions
+    public async createStreamingChatCompletion(
+        messages: ChatCompletionMessageParam[],
+        options?: CompletionOptions
+    ) {
+        try {
+            return await this.client.chat.completions.create({
+                messages,
+                model: options?.model || this.defaultModel,
+                temperature: options?.temperature,
+                max_tokens: options?.max_tokens,
+                stream: true,
+            });
+        } catch (error) {
+            console.error('Error creating streaming chat completion:', error);
+            throw error;
+        }
+    }
+
+    // Legacy method for backward compatibility
+    public async createCompletion(prompt: string, options?: CompletionOptions): Promise<string> {
+        return this.createChatCompletion([{ role: "user", content: prompt }], options);
     }
 }
 

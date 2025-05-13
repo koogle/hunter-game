@@ -132,11 +132,19 @@
     {
       "role": "assistant",
       "content": "Your test request has been received, Jakob. As you continue your journey, the magic of the Valenwood forest envelops you. What action would you like to take next on your quest?"
+    },
+    {
+      "role": "user",
+      "content": "What should I do next?"
+    },
+    {
+      "role": "assistant",
+      "content": "As dusk settles and ethereal lights begin to dance among the moss-laden branches, you notice three possible paths ahead:\n\n1. **The Overgrown Archway:** To your left, vines part just enough to reveal an ancient archway, its surface etched with glowing runes. Whispers seem to flow from beyond, hinting at secrets awaiting those brave enough to decipher the glyphs.\n\n2. **The Glimmering Pool:** Straight ahead, a soft blue light pulses from a hidden pool surrounded by wildflowers. The air above shimmers with magical energy, and you sense the presence of something watching—possibly friendly, or perhaps just curious.\n\n3. **The Statues of the Forgotten:** To the right, colossal statues stand sentinel, half-swallowed by roots. Their stone eyes appear to follow your movements. The ground here is thick with fog and the scent of ancient incense.\n\n**What will you do, Jakob?**\n- Approach the overgrown archway and inspect the runes.\n- Investigate the glimmering pool.\n- Examine the statues of the forgotten heroes."
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-13T03:10:40.994Z",
+  "lastUpdatedAt": "2025-05-13T03:23:04.927Z",
   "stats": {
     "health": 100,
     "mana": 100,

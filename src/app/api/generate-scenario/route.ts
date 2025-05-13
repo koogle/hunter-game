@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAIService from "../../../lib/openai-service";
-
-const MODEL_NAME = "gpt-4";
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 // Validate that the API key exists
 if (!process.env.OPENAI_API_KEY) {
@@ -19,27 +18,23 @@ export async function POST(req: Request) {
       );
     }
 
-
     const openaiService = OpenAIService.getInstance();
-    const openai = openaiService.getClient();
-    const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: `You are a creative game master. Create a rich, detailed description for a game scenario. 
-          The description should be engaging, immersive, and provide enough detail for players to understand the setting and potential adventures.
-          Keep it between 2-3 paragraphs.`,
-        },
-        {
-          role: "user",
-          content: `Create a detailed description for the scenario: ${scenario}`,
-        },
-      ],
-      model: MODEL_NAME,
-      temperature: 0.8,
-    });
+    const messages: ChatCompletionMessageParam[] = [
+      {
+        role: "system",
+        content: `You are a creative game master. Create a rich, detailed description for a game scenario. 
+        The description should be engaging, immersive, and provide enough detail for players to understand the setting and potential adventures.
+        Keep it between 2-3 paragraphs.`,
+      },
+      {
+        role: "user",
+        content: `Create a detailed description for the scenario: ${scenario}`,
+      },
+    ];
 
-    const description = completion.choices[0]?.message?.content || "";
+    const description = await openaiService.createChatCompletion(messages, {
+      temperature: 0.5
+    });
 
     return NextResponse.json({ description });
   } catch (error) {

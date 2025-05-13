@@ -1,9 +1,7 @@
 import { NextRequest } from "next/server";
 import { GameState, GameMessage } from "@/types/game";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
-import OpenAIService from "@/lib/openai-service";
-
-const MODEL = "gpt-3.5-turbo";
+import OpenAIService from "../../../../../lib/openai-service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,15 +55,8 @@ export async function POST(request: NextRequest) {
         })) as ChatCompletionMessageParam[]),
     ];
 
-
     const openaiService = OpenAIService.getInstance();
-    const openai = openaiService.getClient();
-
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages,
-      stream: true,
-    });
+    const completion = await openaiService.createStreamingChatCompletion(messages);
 
     const stream = new ReadableStream({
       async start(controller) {
