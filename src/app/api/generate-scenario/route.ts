@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { openaiService } from "@/lib/openai-service";
+import OpenAIService from "../../../lib/openai-service";
 
 const MODEL_NAME = "gpt-4";
 
@@ -19,7 +19,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const completion = await openaiService.createChatCompletion({
+
+    const openaiService = OpenAIService.getInstance();
+    const openai = openaiService.getClient();
+    const completion = await openai.chat.completions.create({
       messages: [
         {
           role: "system",

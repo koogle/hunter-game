@@ -1,17 +1,9 @@
 import { NextRequest } from "next/server";
-import { OpenAI } from "openai";
 import { GameState, GameMessage } from "@/types/game";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import OpenAIService from "@/lib/openai-service";
 
-const LOCAL_MODE = false;
-
-const openai = new OpenAI({
-  ...(LOCAL_MODE
-    ? { baseUrl: "http://localhost:11434/v1", apiKey: "ollama" }
-    : { apiKey: process.env.OPENAI_API_KEY }),
-});
-
-const MODEL = LOCAL_MODE ? "llama3.2" : "gpt-4";
+const MODEL = "gpt-3.5-turbo";
 
 export async function POST(request: NextRequest) {
   try {
@@ -64,6 +56,10 @@ export async function POST(request: NextRequest) {
           content: msg.content,
         })) as ChatCompletionMessageParam[]),
     ];
+
+
+    const openaiService = OpenAIService.getInstance();
+    const openai = openaiService.getClient();
 
     const completion = await openai.chat.completions.create({
       model: MODEL,
