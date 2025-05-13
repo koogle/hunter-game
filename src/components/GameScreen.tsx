@@ -10,16 +10,8 @@ interface GameScreenProps {
 
 export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenProps) {
   const [command, setCommand] = useState("");
-  const [cursorVisible, setCursorVisible] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCursorVisible((prev) => !prev);
-    }, 530);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,7 +25,6 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
   const handleCommand = async (cmd: string) => {
     if (!cmd.trim()) return;
 
-    // Add user message immediately and show loading state
     const userMessage = {
       role: "user" as const,
       content: `${cmd}`
@@ -44,7 +35,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     });
 
     setIsLoading(true);
-    setCommand(""); // Clear input immediately
+    setCommand("");
 
     try {
       const response = await fetch(`/api/games/${gameState.id}/message`, {
