@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { GameState } from "@/types/game";
+import { GameState, GameMessage } from "@/types/game";
 
 interface GameScreenProps {
   gameState: GameState;
@@ -45,11 +45,103 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     setActiveQuests([]);
   }, [gameState.id, gameState.lastUpdatedAt]);
 
+  // Handle special commands like <help> and <reset>
+  const handleSpecialCommand = (cmd: string): boolean => {
+    // Help command
+    if (cmd.toLowerCase() === "<help>") {
+      const helpMessage: GameMessage = {
+        role: "assistant",
+        content: `HUNTER - Text Adventure Game Help
+
+Basic Commands:
+- Type natural language commands to interact with the game world (e.g., "look around", "talk to the merchant", "pick up the sword")
+- Use <help> to display this help message
+- Use <reset> to reset your character while keeping the same scenario
+
+Game Stats:
+- Health (HP): Your life force. Reaches 0 and you die.
+- Mana (MP): Magic energy for casting spells.
+- Experience (XP): Gained by completing quests and defeating enemies.
+- Strength (STR): Affects physical damage and carrying capacity.
+- Dexterity (DEX): Affects accuracy, dodging, and movement.
+- Intelligence (INT): Affects magic power and skill learning.
+- Luck (LCK): Affects critical hits, item discovery, and random events.
+
+Tips:
+- Explore your surroundings thoroughly
+- Talk to NPCs for quests and information
+- Manage your inventory and resources carefully
+- Pay attention to your character stats when attempting difficult actions`
+      };
+
+      onGameStateUpdate({
+        ...gameState,
+        messages: [
+          ...gameState.messages,
+          { role: "user" as const, content: cmd },
+          helpMessage
+        ]
+      });
+
+      return true;
+    }
+    
+    // Reset command
+    if (cmd.toLowerCase() === "<reset>") {
+      const resetMessage: GameMessage = {
+        role: "assistant",
+        content: "Game state has been reset. Your character stats and inventory have been restored to their initial values, but the scenario remains the same."
+      };
+
+      // Create a reset game state
+      const resetGame: GameState = {
+        ...gameState,
+        messages: [
+          ...gameState.messages,
+          { role: "user" as const, content: cmd },
+          resetMessage
+        ],
+        stats: {
+          health: 100,
+          mana: 100,
+          experience: 0,
+          strength: 10,
+          dexterity: 10,
+          intelligence: 10,
+          luck: 10
+        },
+        inventory: [],
+        lastUpdatedAt: new Date().toISOString()
+      };
+
+      // Update the game state
+      onGameStateUpdate(resetGame);
+
+      // Save the reset state to the server
+      fetch(`/api/games/${gameState.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resetGame),
+      }).catch(error => {
+        console.error("Failed to save reset game state:", error);
+      });
+
+      return true;
+    }
+
+    return false;
+  };
+
   const handleCommand = async (cmd: string) => {
     if (!cmd.trim()) return;
     
     setLastCommand(cmd);
     setStreamedResponse("");
+
+    // Check for special commands first
+    if (handleSpecialCommand(cmd)) {
+      return;
+    }
 
     const userMessage = {
       role: "user" as const,
