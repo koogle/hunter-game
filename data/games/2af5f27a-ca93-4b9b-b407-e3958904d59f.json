@@ -140,19 +140,27 @@
     {
       "role": "assistant",
       "content": "As dusk settles and ethereal lights begin to dance among the moss-laden branches, you notice three possible paths ahead:\n\n1. **The Overgrown Archway:** To your left, vines part just enough to reveal an ancient archway, its surface etched with glowing runes. Whispers seem to flow from beyond, hinting at secrets awaiting those brave enough to decipher the glyphs.\n\n2. **The Glimmering Pool:** Straight ahead, a soft blue light pulses from a hidden pool surrounded by wildflowers. The air above shimmers with magical energy, and you sense the presence of something watching—possibly friendly, or perhaps just curious.\n\n3. **The Statues of the Forgotten:** To the right, colossal statues stand sentinel, half-swallowed by roots. Their stone eyes appear to follow your movements. The ground here is thick with fog and the scent of ancient incense.\n\n**What will you do, Jakob?**\n- Approach the overgrown archway and inspect the runes.\n- Investigate the glimmering pool.\n- Examine the statues of the forgotten heroes."
+    },
+    {
+      "role": "user",
+      "content": "<reset>"
+    },
+    {
+      "role": "assistant",
+      "content": "Game state has been reset. Your character stats and inventory have been restored to their initial values, but the scenario remains the same."
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-13T03:23:04.927Z",
+  "lastUpdatedAt": "2025-05-14T01:09:53.331Z",
   "stats": {
     "health": 100,
     "mana": 100,
     "experience": 0,
-    "strength": 5,
-    "intelligence": 5,
-    "dexterity": 5,
-    "luck": 1
+    "strength": 10,
+    "intelligence": 10,
+    "dexterity": 10,
+    "luck": 10
   },
   "inventory": [],
   "playerNotes": ""
