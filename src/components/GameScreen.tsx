@@ -93,11 +93,11 @@ Tips:
         content: "Game state has been reset. Your character stats and inventory have been restored to their initial values, but the scenario remains the same."
       };
 
-      // Create a reset game state
+      // Create a reset game state with cleared messages
       const resetGame: GameState = {
         ...gameState,
         messages: [
-          ...gameState.messages,
+          // Clear all previous messages and just add the reset command and response
           { role: "user" as const, content: cmd },
           resetMessage
         ],
