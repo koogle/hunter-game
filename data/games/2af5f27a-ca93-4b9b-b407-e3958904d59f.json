@@ -5,16 +5,16 @@
   "messages": [
     {
       "role": "user",
-      "content": "<reset>"
+      "content": "I am looking around what do I see"
     },
     {
       "role": "assistant",
-      "content": "Game state has been reset. Your character stats and inventory have been restored to their initial values, but the scenario remains the same."
+      "content": "{\n  \"narrative\": \"Jakob pauses at the edge of the tangled pathway, the heavy mist swirling around his boots. As his eyes adjust to the filtered sunlight, more details emerge: towering trees whose thick roots twist over weathered flagstones, fragments of ancient walls obscured by dense green moss, and glimpses of shattered stone arches that hint at a long-lost grandeur. To the north, an overgrown footpath continues deeper into the forest, its route marked by glowing runes pulsing with quiet energy. To your right, tangled underbrush parts slightly to reveal a toppled statue—its features eroded by time, but a faint insignia of a sun can still be seen carved into its surface. Somewhere in the dense thicket to the west, you catch the briefest sound of trickling water, while the soft flutter of wings suggests hidden life among the upper boughs.\\n\\nThe forest is alive, ancient, and watchful. The magic in the air tickles at your senses, as if eager to show you both splendor and secrets.\\n\\nAvailable actions:\\n- Inspect the pathway and runes\\n- Approach the toppled statue\\n- Investigate the sound of water\\n- Scan the trees and listen for movement\\n- Choose a direction to travel (north, east, south, west)\",\n  \"game_state_changes\": {\n    \"Player Experience\": 1,\n    \"Active Quests\": [\n      \"The Beginning: Explore the surroundings and find a lead (active)\"\n    ]\n  }\n}"
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-14T05:24:30.851Z",
+  "lastUpdatedAt": "2025-05-14T17:36:08.313Z",
   "stats": {
     "health": 100,
     "mana": 100,

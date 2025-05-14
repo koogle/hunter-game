@@ -24,33 +24,12 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
 
   const [streamedResponse, setStreamedResponse] = useState("");
   const [lastCommand, setLastCommand] = useState("");
-  const [activeQuests, setActiveQuests] = useState<Array<{ name: string, description: string, progress: number }>>([]);
 
-  // Fetch active quests when game state updates
-  useEffect(() => {
-    const fetchQuests = async () => {
-      try {
-        const response = await fetch(`/api/games/${gameState.id}/quests`);
-        if (response.ok) {
-          const quests = await response.json();
-          setActiveQuests(quests);
-        }
-      } catch (error) {
-        console.error("Error fetching quests:", error);
-      }
-    };
-
-    // This is a placeholder - the actual quests endpoint would need to be implemented
-    // For now, we'll just use an empty array
-    setActiveQuests([]);
-  }, [gameState.id, gameState.lastUpdatedAt]);
-
-  // State for temporary help and reset messages
   const [tempMessage, setTempMessage] = useState<GameMessage | null>(null);
 
   // Handle special commands like <help> and <reset>
   const handleSpecialCommand = (cmd: string): boolean => {
-    // Help command
+
     if (cmd.toLowerCase() === "<help>") {
       const helpMessage: GameMessage = {
         role: "assistant",
@@ -97,7 +76,7 @@ Tips:
       const resetGame: GameState = {
         ...gameState,
         // Keep the existing messages instead of replacing them
-        messages: gameState.messages,
+        messages: [],
         stats: {
           health: 100,
           mana: 100,
@@ -249,21 +228,57 @@ Tips:
             textShadow: "0 0 5px rgba(0,255,0,0.5)",
           }}
         >
-          {gameState.messages.map((message, index) => (
-            <div key={index} className="mb-4 leading-relaxed">
-              {message.role === "user" ? (
-                <div className="flex items-start gap-2">
-                  <span className="text-yellow-400 font-bold">You:</span>
-                  <span>{message.content}</span>
+          {gameState.messages.map((message, index) => {
+            if (message.role === "user") {
+              return (
+                <div key={index} className="mb-4 leading-relaxed">
+                  <div className="flex items-start gap-2">
+                    <span className="text-yellow-400 font-bold">You:</span>
+                    <span>{message.content}</span>
+                  </div>
                 </div>
-              ) : (
-                <div className="flex items-start gap-2">
-                  <span className="text-green-500 font-bold">DM:</span>
-                  <span>{message.content}</span>
+              );
+            }
+            // Try to parse DM message as JSON
+            let parsed: any = null;
+            try {
+              parsed = typeof message.content === 'string' ? JSON.parse(message.content) : null;
+            } catch (e) {
+              parsed = null;
+            }
+            if (parsed && typeof parsed === 'object' && parsed.narrative) {
+              return (
+                <div key={index} className="mb-4 leading-relaxed">
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-500 font-bold">DM:</span>
+                    <span className="whitespace-pre-line">{typeof parsed.narrative === 'string' ? parsed.narrative : String(parsed.narrative)}</span>
+                  </div>
+                  {parsed.game_state_changes && (
+                    <div className="mt-2 ml-8 p-2 bg-green-950/60 border border-green-800 rounded text-green-300 text-sm">
+                      <div className="font-bold mb-1">Game State Changes:</div>
+                      <ul className="list-disc pl-5">
+                        {Object.entries(parsed.game_state_changes).map(([key, value], i) => (
+                          <li key={i}>
+                            <span className="font-semibold">{key}:</span> {Array.isArray(value) ? value.join(", ") : value}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              );
+            } else {
+              // fallback: show as plain text
+              return (
+                <div key={index} className="mb-4 leading-relaxed">
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-500 font-bold">DM:</span>
+                    <span>{message.content}</span>
+                  </div>
+                </div>
+              );
+            }
+          })}
           {/* Display temporary help/reset message */}
           {tempMessage && (
             <div className="mb-4 leading-relaxed bg-black/50 border border-green-800 p-2 rounded">
@@ -306,7 +321,7 @@ Tips:
           <div className="text-xl">CHARACTER</div>
         </div>
         <div className="p-4 flex-1 overflow-y-auto bg-black">
-          {/* Character Stats */}
+
           <div className="mb-4 border border-green-800 p-2 bg-black/50">
             <div className="mb-1 flex justify-between">
               <span>HP:</span>
@@ -329,7 +344,7 @@ Tips:
             <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats.experience, 100)}</div>
           </div>
 
-          {/* Character Attributes */}
+
           <div className="mb-4 border border-green-800 p-2 bg-black/50">
             <div className="text-center mb-2 text-green-300">ATTRIBUTES</div>
             <div className="grid grid-cols-2 gap-2">
@@ -352,7 +367,7 @@ Tips:
             </div>
           </div>
 
-          {/* Quests Section */}
+          {/* 
           {activeQuests.length > 0 && (
             <div className="mb-4 border border-green-800 p-2 bg-black/50">
               <div className="text-center mb-2 text-green-300">ACTIVE QUESTS</div>
@@ -366,7 +381,7 @@ Tips:
                 ))}
               </ul>
             </div>
-          )}
+          )}Quests Section */}
 
           {/* Inventory Section */}
           <div className="border-t-2 border-green-500 pt-4 mt-4">
