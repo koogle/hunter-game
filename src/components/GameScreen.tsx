@@ -22,8 +22,34 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     return `${filled.repeat(filledLength)}${empty.repeat(length - filledLength)}`;
   };
 
+  const [streamedResponse, setStreamedResponse] = useState("");
+  const [lastCommand, setLastCommand] = useState("");
+  const [activeQuests, setActiveQuests] = useState<Array<{name: string, description: string, progress: number}>>([]);
+  
+  // Fetch active quests when game state updates
+  useEffect(() => {
+    const fetchQuests = async () => {
+      try {
+        const response = await fetch(`/api/games/${gameState.id}/quests`);
+        if (response.ok) {
+          const quests = await response.json();
+          setActiveQuests(quests);
+        }
+      } catch (error) {
+        console.error("Error fetching quests:", error);
+      }
+    };
+    
+    // This is a placeholder - the actual quests endpoint would need to be implemented
+    // For now, we'll just use an empty array
+    setActiveQuests([]);
+  }, [gameState.id, gameState.lastUpdatedAt]);
+
   const handleCommand = async (cmd: string) => {
     if (!cmd.trim()) return;
+    
+    setLastCommand(cmd);
+    setStreamedResponse("");
 
     const userMessage = {
       role: "user" as const,
@@ -62,6 +88,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let currentResponse = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -79,7 +106,10 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
               }
               const data = JSON.parse(line.slice(6));
               if (data.choices?.[0]?.delta?.content) {
-                // Handle streaming content if needed
+                // Handle streaming content
+                const content = data.choices[0].delta.content;
+                currentResponse += content;
+                setStreamedResponse(currentResponse);
               }
             } catch (e) {
               console.error("Error parsing SSE data:", e);
@@ -104,6 +134,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
       console.error("Error processing command:", error);
     } finally {
       setIsLoading(false);
+      setStreamedResponse("");
     }
   };
 
@@ -127,11 +158,28 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           }}
         >
           {gameState.messages.map((message, index) => (
-            <div key={index} className="mb-2 leading-relaxed flex flex-row gap-1">
-              {message.role === "user" ? <p>user:</p> : undefined}
-              {message.content}
+            <div key={index} className="mb-4 leading-relaxed">
+              {message.role === "user" ? (
+                <div className="flex items-start gap-2">
+                  <span className="text-yellow-400 font-bold">You:</span>
+                  <span>{message.content}</span>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2">
+                  <span className="text-green-500 font-bold">DM:</span>
+                  <span>{message.content}</span>
+                </div>
+              )}
             </div>
           ))}
+          {isLoading && streamedResponse && (
+            <div className="mb-4 leading-relaxed">
+              <div className="flex items-start gap-2">
+                <span className="text-green-500 font-bold">DM:</span>
+                <span>{streamedResponse}</span>
+              </div>
+            </div>
+          )}
           <div ref={logEndRef}></div>
         </div>
         <div className="border-t-2 border-green-500 p-2 flex gap-2 bg-black">
@@ -156,6 +204,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           <div className="text-xl">CHARACTER</div>
         </div>
         <div className="p-4 flex-1 overflow-y-auto bg-black">
+          {/* Character Stats */}
           <div className="mb-4 border border-green-800 p-2 bg-black/50">
             <div className="mb-1 flex justify-between">
               <span>HP:</span>
@@ -177,12 +226,59 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
             </div>
             <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats.experience, 100)}</div>
           </div>
+          
+          {/* Character Attributes */}
+          <div className="mb-4 border border-green-800 p-2 bg-black/50">
+            <div className="text-center mb-2 text-green-300">ATTRIBUTES</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex justify-between">
+                <span>STR:</span>
+                <span>{gameState.stats.strength}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>DEX:</span>
+                <span>{gameState.stats.dexterity}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>INT:</span>
+                <span>{gameState.stats.intelligence}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>LCK:</span>
+                <span>{gameState.stats.luck}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Quests Section */}
+          {activeQuests.length > 0 && (
+            <div className="mb-4 border border-green-800 p-2 bg-black/50">
+              <div className="text-center mb-2 text-green-300">ACTIVE QUESTS</div>
+              <ul className="list-none pl-0">
+                {activeQuests.map((quest, index) => (
+                  <li key={index} className="mb-2">
+                    <div className="text-yellow-400">{quest.name}</div>
+                    <div className="text-xs text-gray-400">{quest.description}</div>
+                    <div className="mt-1 font-mono text-xs">{createTextBar(quest.progress, 100, 10)}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Inventory Section */}
           <div className="border-t-2 border-green-500 pt-4 mt-4">
-            <div className="mb-2 text-xl">INVENTORY</div>
+            <div className="mb-2 text-xl text-center text-green-300">INVENTORY</div>
             <ul className="list-none pl-2">
               {gameState.inventory?.length > 0 ? (
                 gameState.inventory.map((item, index) => (
-                  <li key={index} className="mb-1">{item.name} {item.quantity > 1 ? `(${item.quantity})` : ''}</li>
+                  <li key={index} className="mb-2">
+                    <div className="flex justify-between">
+                      <span className="text-yellow-400">{item.name}</span>
+                      {item.quantity > 1 && <span className="text-gray-400">{item.quantity}</span>}
+                    </div>
+                    {item.description && <div className="text-xs text-gray-400">{item.description}</div>}
+                  </li>
                 ))
               ) : (
                 <li className="text-gray-400 italic">No items in inventory</li>

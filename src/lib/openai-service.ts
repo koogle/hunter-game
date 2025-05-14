@@ -1,11 +1,7 @@
 import OpenAI from 'openai';
-import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { ChatCompletionMessageParam, ChatCompletionCreateParamsBase } from 'openai/resources/chat/completions';
 
-interface CompletionOptions {
-    model?: string;
-    temperature?: number;
-    max_tokens?: number;
-}
+type CompletionOptions = Omit<ChatCompletionCreateParamsBase, 'messages'>;
 
 class OpenAIService {
     private static instance: OpenAIService;
