@@ -24,8 +24,8 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
 
   const [streamedResponse, setStreamedResponse] = useState("");
   const [lastCommand, setLastCommand] = useState("");
-  const [activeQuests, setActiveQuests] = useState<Array<{name: string, description: string, progress: number}>>([]);
-  
+  const [activeQuests, setActiveQuests] = useState<Array<{ name: string, description: string, progress: number }>>([]);
+
   // Fetch active quests when game state updates
   useEffect(() => {
     const fetchQuests = async () => {
@@ -39,11 +39,14 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
         console.error("Error fetching quests:", error);
       }
     };
-    
+
     // This is a placeholder - the actual quests endpoint would need to be implemented
     // For now, we'll just use an empty array
     setActiveQuests([]);
   }, [gameState.id, gameState.lastUpdatedAt]);
+
+  // State for temporary help and reset messages
+  const [tempMessage, setTempMessage] = useState<GameMessage | null>(null);
 
   // Handle special commands like <help> and <reset>
   const handleSpecialCommand = (cmd: string): boolean => {
@@ -74,18 +77,12 @@ Tips:
 - Pay attention to your character stats when attempting difficult actions`
       };
 
-      onGameStateUpdate({
-        ...gameState,
-        messages: [
-          ...gameState.messages,
-          { role: "user" as const, content: cmd },
-          helpMessage
-        ]
-      });
+      // Set the temporary message instead of updating game state
+      setTempMessage(helpMessage);
 
       return true;
     }
-    
+
     // Reset command
     if (cmd.toLowerCase() === "<reset>") {
       const resetMessage: GameMessage = {
@@ -93,14 +90,14 @@ Tips:
         content: "Game state has been reset. Your character stats and inventory have been restored to their initial values, but the scenario remains the same."
       };
 
-      // Create a reset game state with cleared messages
+      // Set the temporary message
+      setTempMessage(resetMessage);
+
+      // Create a reset game state without adding messages
       const resetGame: GameState = {
         ...gameState,
-        messages: [
-          // Clear all previous messages and just add the reset command and response
-          { role: "user" as const, content: cmd },
-          resetMessage
-        ],
+        // Keep the existing messages instead of replacing them
+        messages: gameState.messages,
         stats: {
           health: 100,
           mana: 100,
@@ -134,7 +131,10 @@ Tips:
 
   const handleCommand = async (cmd: string) => {
     if (!cmd.trim()) return;
-    
+
+    // Clear any temporary message when user enters a new command
+    setTempMessage(null);
+
     setLastCommand(cmd);
     setStreamedResponse("");
 
@@ -264,6 +264,16 @@ Tips:
               )}
             </div>
           ))}
+          {/* Display temporary help/reset message */}
+          {tempMessage && (
+            <div className="mb-4 leading-relaxed bg-black/50 border border-green-800 p-2 rounded">
+              <div className="flex items-start gap-2">
+                <span className="text-green-500 font-bold">DM:</span>
+                <span>{tempMessage.content}</span>
+              </div>
+
+            </div>
+          )}
           {isLoading && streamedResponse && (
             <div className="mb-4 leading-relaxed">
               <div className="flex items-start gap-2">
@@ -318,7 +328,7 @@ Tips:
             </div>
             <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats.experience, 100)}</div>
           </div>
-          
+
           {/* Character Attributes */}
           <div className="mb-4 border border-green-800 p-2 bg-black/50">
             <div className="text-center mb-2 text-green-300">ATTRIBUTES</div>
@@ -341,7 +351,7 @@ Tips:
               </div>
             </div>
           </div>
-          
+
           {/* Quests Section */}
           {activeQuests.length > 0 && (
             <div className="mb-4 border border-green-800 p-2 bg-black/50">
@@ -357,7 +367,7 @@ Tips:
               </ul>
             </div>
           )}
-          
+
           {/* Inventory Section */}
           <div className="border-t-2 border-green-500 pt-4 mt-4">
             <div className="mb-2 text-xl text-center text-green-300">INVENTORY</div>
