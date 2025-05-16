@@ -151,43 +151,19 @@ Tips:
         return;
       }
 
-      if (!response.body) {
-        console.error("Response body is null");
-        return;
-      }
+      // Await the full JSON response
+      const data = await response.json();
+      const assistantMessage: GameMessage = {
+        role: "assistant",
+        content: data.shortAnswer || data.message || "(No response)"
+      };
+      // Append the assistant's response to the chat
+      onGameStateUpdate({
+        ...gameState,
+        messages: [...gameState.messages, { role: "user", content: cmd }, assistantMessage]
+      });
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let currentResponse = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              if (line === "data: [DONE]") {
-                continue;
-              }
-              const data = JSON.parse(line.slice(6));
-              if (data.choices?.[0]?.delta?.content) {
-                // Handle streaming content
-                const content = data.choices[0].delta.content;
-                currentResponse += content;
-                setStreamedResponse(currentResponse);
-              }
-            } catch (e) {
-              console.error("Error parsing SSE data:", e);
-            }
-          }
-        }
-      }
+      // Optionally, update local game state with stateChanges here if desired
 
       // Refresh the game state after the message is processed
       const updatedGameResponse = await fetch(`/api/games/${gameState.id}`);
