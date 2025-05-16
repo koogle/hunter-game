@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { ChatCompletionMessageParam, ChatCompletionCreateParamsBase } from 'openai/resources/chat/completions';
 import { z } from 'zod';
 import { zodTextFormat } from 'openai/helpers/zod';
 

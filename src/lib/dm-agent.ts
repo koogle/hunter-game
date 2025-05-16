@@ -218,7 +218,7 @@ export class DungeonMaster {
     dmResponse: DMResponse;
   }> {
     // Step 1: Validate action
-    if (!this.isValidAction(action)) {
+    if (!await this.isValidAction(action, gameState, openaiService)) {
       throw new Error('Invalid action. Please try a different command.');
     }
     // Step 2: LLM - should we do a skill check?
@@ -336,13 +336,15 @@ Your response must be in JSON format according to the provided schema.`;
       // If no JSON found, return just the message
       return {
         message: responseText,
-        stateChanges: {}
+        stateChanges: {},
+        shortAnswer: responseText
       };
     } catch (error) {
       console.error("Error parsing DM response:", error);
       return {
         message: responseText,
-        stateChanges: {}
+        stateChanges: {},
+        shortAnswer: responseText
       };
     }
   }

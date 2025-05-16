@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAIService from "../../../lib/openai-service";
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+
 
 // Validate that the API key exists
 if (!process.env.OPENAI_API_KEY) {
