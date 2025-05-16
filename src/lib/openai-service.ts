@@ -1,5 +1,7 @@
 import OpenAI from 'openai';
 import { ChatCompletionMessageParam, ChatCompletionCreateParamsBase } from 'openai/resources/chat/completions';
+import { z } from 'zod';
+import { zodTextFormat } from 'openai/helpers/zod';
 
 type CompletionOptions = Omit<ChatCompletionCreateParamsBase, 'messages'>;
 
@@ -48,6 +50,37 @@ class OpenAIService {
             return completion.choices[0]?.message?.content || '';
         } catch (error) {
             console.error('Error creating chat completion:', error);
+            throw error;
+        }
+    }
+
+    // Method for structured chat completions
+    public async createStructuredChatCompletion<T>(
+        messages: ChatCompletionMessageParam[],
+        schema: z.ZodType<T>,
+        options?: CompletionOptions
+    ): Promise<T> {
+        try {
+            const completion = await this.client.chat.completions.create({
+                messages,
+                model: options?.model || this.defaultModel,
+                temperature: options?.temperature,
+                max_tokens: options?.max_tokens,
+                response_format: zodTextFormat(schema, 'output')
+            });
+            // The SDK should return the parsed output directly
+            // But for compatibility, fallback to extracting from content if needed
+            const msg = completion.choices[0]?.message;
+            if (msg && (msg as any).output_parsed) {
+                return (msg as any).output_parsed;
+            }
+            if (msg?.content) {
+                // Fallback: try to parse JSON
+                return schema.parse(JSON.parse(msg.content));
+            }
+            throw new Error('No structured output from OpenAI');
+        } catch (error) {
+            console.error('Error creating structured chat completion:', error);
             throw error;
         }
     }
