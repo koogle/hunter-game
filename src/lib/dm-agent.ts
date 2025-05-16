@@ -1,5 +1,6 @@
 import { GameState } from "@/types/game";
 import { z } from 'zod';
+import OpenAI from "openai";
 
 // Types for DM's internal state
 export interface DMNotes {
@@ -307,7 +308,7 @@ When responding to the player, follow this process:
 Your response must be in JSON format according to the provided schema.`;
   }
 
-  public createMessages(gameState: GameState): ChatCompletionMessageParam[] {
+  public createMessages(gameState: GameState): OpenAI.Chat.ChatCompletionCreateParams[] {
     const systemPrompt = this.createSystemPrompt(gameState);
 
     return [
@@ -320,7 +321,7 @@ Your response must be in JSON format according to the provided schema.`;
         .map(msg => ({
           role: msg.role === "user" ? "user" : "assistant",
           content: msg.content,
-        })) as ChatCompletionMessageParam[]),
+        })) as OpenAI.Chat.ChatCompletionMessageParam[]),
     ];
   }
 

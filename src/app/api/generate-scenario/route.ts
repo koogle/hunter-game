@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAIService from "../../../lib/openai-service";
-
+import OpenAI from "openai";
 
 // Validate that the API key exists
 if (!process.env.OPENAI_API_KEY) {
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     }
 
     const openaiService = OpenAIService.getInstance();
-    const messages: ChatCompletionMessageParam[] = [
+    const messages: OpenAI.Chat.ChatCompletionCreateParams[] = [
       {
         role: "system",
         content: `You are a creative game master. Create a rich, detailed description for a game scenario. 
