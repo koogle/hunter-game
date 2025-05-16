@@ -79,6 +79,7 @@ export class DungeonMaster {
     gameState: GameState,
     openaiService: any
   ): Promise<boolean> {
+    console.log("[DM] isValidAction called", { action, gameState });
     const schema = z.object({
       valid: z.boolean(),
       reason: z.union([z.string(), z.null()])
@@ -88,7 +89,9 @@ export class DungeonMaster {
       { role: 'system', content: 'You are an expert RPG game master.' },
       { role: 'user', content: prompt }
     ];
+    console.log("[DM] isValidAction prompt", prompt);
     const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o', temperature: 0 });
+    console.log("[DM] isValidAction response", response);
     return (await response).valid === true;
   }
 
@@ -98,6 +101,7 @@ export class DungeonMaster {
     gameState: GameState,
     openaiService: any
   ): Promise<SkillCheckRequest> {
+    console.log("[DM] getSkillCheckRequest called", { action, gameState });
     const schema = z.object({
       required: z.boolean(),
       stat: z.union([z.enum(['strength', 'dexterity', 'intelligence', 'luck']), z.null()]),
@@ -109,7 +113,10 @@ export class DungeonMaster {
       { role: 'system', content: 'You are an expert RPG game master.' },
       { role: 'user', content: prompt }
     ];
-    return openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o', temperature: 0 });
+    console.log("[DM] getSkillCheckRequest prompt", prompt);
+    const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o', temperature: 0 });
+    console.log("[DM] getSkillCheckRequest response", response);
+    return response;
   }
 
   // Step 3: Perform the skill check
@@ -118,12 +125,13 @@ export class DungeonMaster {
     difficulty: number,
     gameState: GameState
   ): SkillCheckResult {
+    console.log("[DM] performSkillCheck called", { stat, difficulty, gameState });
     const statValue = gameState.stats[stat];
     const roll = Math.ceil(Math.random() * 12);
     const total = statValue + roll;
     const success = total >= difficulty;
     const degree = total - difficulty;
-    return {
+    const result = {
       performed: true,
       stat,
       roll,
@@ -133,6 +141,8 @@ export class DungeonMaster {
       success,
       degree
     };
+    console.log("[DM] performSkillCheck result", result);
+    return result;
   }
 
   // Step 4: LLM generates long answer (with skill check result if applicable)
@@ -142,6 +152,7 @@ export class DungeonMaster {
     skillCheckResult: SkillCheckResult | null,
     openaiService: any
   ): Promise<string> {
+    console.log("[DM] getLongAnswer called", { action, gameState, skillCheckResult });
     let prompt = `Player action: "${action}"\n`;
     if (skillCheckResult && skillCheckResult.performed) {
       prompt += `Skill check performed: ${skillCheckResult.stat} (value: ${skillCheckResult.statValue}) + d12 roll (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty}. Result: ${skillCheckResult.success ? 'Success' : 'Failure'} (degree: ${skillCheckResult.degree}).\n`;
@@ -151,7 +162,10 @@ export class DungeonMaster {
       { role: 'system', content: 'You are a creative RPG game master.' },
       { role: 'user', content: prompt }
     ];
-    return openaiService.createChatCompletion(messages, { model: 'gpt-4', temperature: 0.8 });
+    console.log("[DM] getLongAnswer prompt", prompt);
+    const response = await openaiService.createChatCompletion(messages, { model: 'gpt-4', temperature: 0.8 });
+    console.log("[DM] getLongAnswer response", response);
+    return response;
   }
 
   // Step 5: LLM parses for state changes and short answer
@@ -160,6 +174,7 @@ export class DungeonMaster {
     gameState: GameState,
     openaiService: any
   ): Promise<DMResponse> {
+    console.log("[DM] getDiffAndShortAnswer called", { longAnswer, gameState });
     // Zod schema for DMResponse
     const DMResponseSchema = z.object({
       message: z.string(),
@@ -169,7 +184,7 @@ export class DungeonMaster {
             add: z.union([
               z.array(z.object({
                 name: z.string(),
-                quantity: z.number().int().min(1),
+                quantity: z.union([z.number().int(), z.null()]),
                 description: z.union([z.string(), z.null()])
               })),
               z.null()
@@ -177,7 +192,7 @@ export class DungeonMaster {
             remove: z.union([
               z.array(z.object({
                 name: z.string(),
-                quantity: z.number().int().min(1)
+                quantity: z.union([z.number().int(), z.null()]) // must be >= 1
               })),
               z.null()
             ])
@@ -217,12 +232,15 @@ export class DungeonMaster {
       }),
       shortAnswer: z.string()
     });
-    const prompt = `Given the following DM narrative:\n${longAnswer}\n\nBased on this, generate:\n1. A JSON diff for changes to stats, inventory, and quests (do not invent new stats, only update existing ones).\n2. A short answer for the user (preferably one sentence, or a short paragraph if needed).`;
+    const prompt = `Given the following DM narrative:\n${longAnswer}\n\nBased on this, generate:\n1. A JSON diff for changes to stats, inventory, and quests (do not invent new stats, only update existing ones). For any inventory quantity, the value must be an integer greater than or equal to 1.\n2. A short answer for the user (preferably one sentence, or a short paragraph if needed).`;
     const messages = [
       { role: 'system', content: 'You are a precise RPG game master.' },
       { role: 'user', content: prompt }
     ];
-    return openaiService.createStructuredChatCompletion(messages, DMResponseSchema, { model: 'gpt-4o', temperature: 0 });
+    console.log("[DM] getDiffAndShortAnswer prompt", prompt);
+    const response = await openaiService.createStructuredChatCompletion(messages, DMResponseSchema, { model: 'gpt-4o', temperature: 0 });
+    console.log("[DM] getDiffAndShortAnswer response", response);
+    return response;
   }
 
   // Main DM agent loop
@@ -231,11 +249,12 @@ export class DungeonMaster {
     gameState: GameState,
     openaiService: any
   ): Promise<{
-    skillCheckRequest: SkillCheckRequest;
+    skillCheckRequest: SkillCheckRequest | null;
     skillCheckResult: SkillCheckResult | null;
     longAnswer: string;
     dmResponse: DMResponse;
   }> {
+    console.log("[DM] processPlayerAction called", { action, gameState });
     // Step 1: Validate action
     if (!await this.isValidAction(action, gameState, openaiService)) {
       throw new Error('Invalid action. Please try a different command.');
@@ -369,6 +388,7 @@ Your response must be in JSON format according to the provided schema.`;
   }
 
   public applyStateChanges(gameState: GameState, response: DMResponse): GameState {
+    console.log("[DM] applyStateChanges called", { gameState, response });
     const updatedGame = { ...gameState };
     const { stateChanges } = response;
 
