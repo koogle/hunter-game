@@ -253,18 +253,6 @@ Tips:
                     <span className="text-green-500 font-bold">DM:</span>
                     <span className="whitespace-pre-line">{typeof parsed.narrative === 'string' ? parsed.narrative : String(parsed.narrative)}</span>
                   </div>
-                  {parsed.game_state_changes && (
-                    <div className="mt-2 ml-8 p-2 bg-green-950/60 border border-green-800 rounded text-green-300 text-sm">
-                      <div className="font-bold mb-1">Game State Changes:</div>
-                      <ul className="list-disc pl-5">
-                        {Object.entries(parsed.game_state_changes).map(([key, value], i) => (
-                          <li key={i}>
-                            <span className="font-semibold">{key}:</span> {Array.isArray(value) ? value.join(", ") : value}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               );
             } else {
