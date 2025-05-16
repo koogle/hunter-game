@@ -81,7 +81,7 @@ export class DungeonMaster {
   ): Promise<boolean> {
     const schema = z.object({
       valid: z.boolean(),
-      reason: z.string().optional()
+      reason: z.union([z.string(), z.null()])
     });
     const prompt = `Given the following player action: "${action}", and the current RPG game state: ${JSON.stringify(gameState)}, judge if this is a valid in-character action for a text adventure RPG. Do not allow meta-questions, out-of-character, or game-breaking actions.`;
     const messages = [
@@ -100,11 +100,11 @@ export class DungeonMaster {
   ): Promise<SkillCheckRequest> {
     const schema = z.object({
       required: z.boolean(),
-      stat: z.enum(['strength', 'dexterity', 'intelligence', 'luck']).optional(),
-      difficulty: z.number().int().min(1).max(20).optional(),
-      reason: z.string().optional()
+      stat: z.union([z.enum(['strength', 'dexterity', 'intelligence', 'luck']), z.null()]),
+      difficulty: z.union([z.number().int(), z.null()]),
+      reason: z.union([z.string(), z.null()])
     });
-    const prompt = `Given the following player action: "${action}", and the available stats: strength, dexterity, intelligence, luck, decide if a skill check is required. Only suggest a skill check if it makes sense in context. If so, pick the most appropriate stat and a difficulty (1-20).`;
+    const prompt = `Given the following player action: "${action}", and the available stats: strength, dexterity, intelligence, luck, decide if a skill check is required. Only suggest a skill check if it makes sense in context. If so, pick the most appropriate stat and a difficulty (must be an integer between 1 and 20).`;
     const messages = [
       { role: 'system', content: 'You are an expert RPG game master.' },
       { role: 'user', content: prompt }
@@ -164,38 +164,56 @@ export class DungeonMaster {
     const DMResponseSchema = z.object({
       message: z.string(),
       stateChanges: z.object({
-        inventoryChanges: z.object({
-          add: z.array(z.object({
-            name: z.string(),
-            quantity: z.number().int().min(1),
-            description: z.string().optional()
-          })).optional(),
-          remove: z.array(z.object({
-            name: z.string(),
-            quantity: z.number().int().min(1)
-          })).optional()
-        }).optional(),
-        statChanges: z.object({
-          health: z.number().optional(),
-          mana: z.number().optional(),
-          experience: z.number().optional(),
-          strength: z.number().optional(),
-          dexterity: z.number().optional(),
-          intelligence: z.number().optional(),
-          luck: z.number().optional()
-        }).optional(),
-        questUpdates: z.array(z.object({
-          questId: z.string(),
-          status: z.enum(["active", "completed", "failed"])
-        })).optional(),
-        dmNotesUpdates: z.object({
-          worldState: z.string().optional(),
-          playerAssessment: z.string().optional(),
-          hiddenObjectives: z.array(z.string()).optional(),
-          plotHooks: z.array(z.string()).optional(),
-          keyLocations: z.record(z.string()).optional(),
-          keyCharacters: z.record(z.string()).optional()
-        }).optional()
+        inventoryChanges: z.union([
+          z.object({
+            add: z.union([
+              z.array(z.object({
+                name: z.string(),
+                quantity: z.number().int().min(1),
+                description: z.union([z.string(), z.null()])
+              })),
+              z.null()
+            ]),
+            remove: z.union([
+              z.array(z.object({
+                name: z.string(),
+                quantity: z.number().int().min(1)
+              })),
+              z.null()
+            ])
+          }),
+          z.null()
+        ]),
+        statChanges: z.union([
+          z.object({
+            health: z.union([z.number(), z.null()]),
+            mana: z.union([z.number(), z.null()]),
+            experience: z.union([z.number(), z.null()]),
+            strength: z.union([z.number(), z.null()]),
+            dexterity: z.union([z.number(), z.null()]),
+            intelligence: z.union([z.number(), z.null()]),
+            luck: z.union([z.number(), z.null()])
+          }),
+          z.null()
+        ]),
+        questUpdates: z.union([
+          z.array(z.object({
+            questId: z.string(),
+            status: z.enum(["active", "completed", "failed"])
+          })),
+          z.null()
+        ]),
+        dmNotesUpdates: z.union([
+          z.object({
+            worldState: z.union([z.string(), z.null()]),
+            playerAssessment: z.union([z.string(), z.null()]),
+            hiddenObjectives: z.union([z.array(z.string()), z.null()]),
+            plotHooks: z.union([z.array(z.string()), z.null()]),
+            keyLocations: z.union([z.record(z.string()), z.null()]),
+            keyCharacters: z.union([z.record(z.string()), z.null()])
+          }),
+          z.null()
+        ])
       }),
       shortAnswer: z.string()
     });
