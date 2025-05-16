@@ -2,10 +2,19 @@
   "name": "Jakob",
   "scenario": "The Lost Kingdom",
   "customScenario": "In the heart of an ancient, uncharted forest known as Valenwood, whispers of a once-mighty kingdom echo through the thick canopy of emerald leaves. The Lost Kingdom of Eldoria, as it was called, is said to have thrived centuries ago, its splendor rivaling that of the sun itself, before mysteriously vanishing from the annals of history. As your party steps deeper into the forest, the air grows thick with a magical mist that seems to shimmer under the light of the sun, revealing glimpses of crumbling stonework and overgrown archways entwined with vibrant moss and wildflowers. The path beneath your feet is strewn with ancient runes, half-concealed by the roots of giant trees, each step sparking a faint glow and an echo of forgotten incantations.\n\nAt the heart of Valenwood lies the fabled Eldorian Crystal, a source of immense power said to be embedded within the ruins of the royal palace. Surrounding the palace are remnants of the kingdom’s grandeur: majestic statues of forgotten heroes, their faces worn but resolute, and sprawling gardens where the once vibrant flora has become a canvas of nature’s reclamation. Darkened shadows flit between the trees, hinting at lurking dangers—mythical beasts, enchanted guardians of the realm, and the restless spirits of Eldoria’s last defenders. As night falls, the forest comes alive with ethereal lights and haunting melodies, beckoning adventurers to uncover the kingdom’s secrets, confront the malevolent force that caused its demise, and perhaps even bring a flicker of its lost glory back to life. Will your party uncover the truth hidden within the ruins, or will Eldoria’s mysteries claim yet another set of souls? The Lost Kingdom awaits your exploration, filled with promise and peril alike.",
-  "messages": [],
+  "messages": [
+    {
+      "role": "user",
+      "content": "what is around me"
+    },
+    {
+      "role": "assistant",
+      "content": "As you proceed cautiously into the heart of Valenwood, keep your senses sharp and your wits about you, for the forest's secrets are both perilous and enticing."
+    }
+  ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-16T04:15:47.154Z",
+  "lastUpdatedAt": "2025-05-16T04:40:41.468Z",
   "stats": {
     "health": 100,
     "mana": 100,

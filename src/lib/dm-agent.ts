@@ -145,27 +145,31 @@ export class DungeonMaster {
     return result;
   }
 
-  // Step 4: LLM generates long answer (with skill check result if applicable)
-  public async getLongAnswer(
+  // Step 4: LLM generates DM's internal monologue and player-facing response
+  public async getMonologueAndResponse(
     action: string,
     gameState: GameState,
     skillCheckResult: SkillCheckResult | null,
     openaiService: any
-  ): Promise<string> {
-    console.log("[DM] getLongAnswer called", { action, gameState, skillCheckResult });
+  ): Promise<{ monologue: string; response: string }> {
+    console.log("[DM] getMonologueAndResponse called", { action, gameState, skillCheckResult });
     let prompt = `Player action: "${action}"\n`;
     if (skillCheckResult && skillCheckResult.performed) {
       prompt += `Skill check performed: ${skillCheckResult.stat} (value: ${skillCheckResult.statValue}) + d12 roll (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty}. Result: ${skillCheckResult.success ? 'Success' : 'Failure'} (degree: ${skillCheckResult.degree}).\n`;
     }
-    prompt += `Game state: ${JSON.stringify(gameState)}\nDM Notes: ${JSON.stringify(this.notes)}\nProvide a detailed narrative of what happens next, taking into account quests, world state, and DM plans. Do not output any status changes yet.`;
+    prompt += `Game state: ${JSON.stringify(gameState)}\nDM Notes: ${JSON.stringify(this.notes)}\n\nPlease do the following:\n1. Write the DM's internal monologue (thoughts, reasoning, world logic, NPC motivations, etc.) about what happens next, based on the action, game state, and DM notes.\n2. Then, write the DM's response to the player (what the player hears or sees).\n\nFormat your output as JSON with two fields: { "monologue": string, "response": string }. Do not output any status changes yet.`;
     const messages = [
       { role: 'system', content: 'You are a creative RPG game master.' },
       { role: 'user', content: prompt }
     ];
-    console.log("[DM] getLongAnswer prompt", prompt);
-    const response = await openaiService.createChatCompletion(messages, { model: 'gpt-4', temperature: 0.8 });
-    console.log("[DM] getLongAnswer response", response);
-    return response;
+    console.log("[DM] getMonologueAndResponse prompt", prompt);
+    const schema = z.object({
+      monologue: z.string(),
+      response: z.string()
+    });
+    const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4', temperature: 0.8 });
+    console.log("[DM] getMonologueAndResponse response", result);
+    return result;
   }
 
   // Step 5: LLM parses for state changes and short answer
@@ -251,7 +255,7 @@ export class DungeonMaster {
   ): Promise<{
     skillCheckRequest: SkillCheckRequest | null;
     skillCheckResult: SkillCheckResult | null;
-    longAnswer: string;
+    monologue: string;
     dmResponse: DMResponse;
   }> {
     console.log("[DM] processPlayerAction called", { action, gameState });
@@ -265,12 +269,12 @@ export class DungeonMaster {
     if (skillCheckRequest.required && skillCheckRequest.stat && skillCheckRequest.difficulty) {
       skillCheckResult = this.performSkillCheck(skillCheckRequest.stat, skillCheckRequest.difficulty, gameState);
     }
-    // Step 3: LLM - generate long answer (with skill check result if any)
-    const longAnswer = await this.getLongAnswer(action, gameState, skillCheckResult, openaiService);
-    // Step 4: LLM - parse for diff and short answer
-    const dmResponse = await this.getDiffAndShortAnswer(longAnswer, gameState, openaiService);
+    // Step 3: LLM - generate DM monologue and player-facing response (with skill check result if any)
+    const { monologue, response } = await this.getMonologueAndResponse(action, gameState, skillCheckResult, openaiService);
+    // Step 4: LLM - parse for diff and short answer, using the DM's response to the player
+    const dmResponse = await this.getDiffAndShortAnswer(response, gameState, openaiService);
     // Step 5: Error handling for malformed output is in each step
-    return { skillCheckRequest, skillCheckResult, longAnswer, dmResponse };
+    return { skillCheckRequest, skillCheckResult, monologue, dmResponse };
   }
 
   private initializeNotes(gameState: GameState): DMNotes {
