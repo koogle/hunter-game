@@ -5,7 +5,7 @@ import { GameState, GameMessage } from "@/types/game";
 
 interface GameScreenProps {
   gameState: GameState;
-  onGameStateUpdate: (gameState: GameState) => void;
+  onGameStateUpdate: (gameState: GameState | ((prevState: GameState) => GameState)) => void;
 }
 
 export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenProps) {
@@ -122,6 +122,12 @@ Tips:
       return;
     }
 
+
+
+    setIsLoading(true);
+    setCommand("");
+
+    // Show user message immediately
     const userMessage = {
       role: "user" as const,
       content: `${cmd}`
@@ -130,9 +136,6 @@ Tips:
       ...gameState,
       messages: [...gameState.messages, userMessage]
     });
-
-    setIsLoading(true);
-    setCommand("");
 
     try {
       // Step 1: Precheck for validity and skill check
@@ -144,6 +147,12 @@ Tips:
       const precheck = await precheckResponse.json();
       if (!precheck.valid) {
         setTempMessage({ role: "assistant", content: precheck.reason || "That action is not allowed." });
+        // Remove the last user message from history since it was invalid
+        // Remove the last user message if invalid, using functional update to avoid race conditions
+        onGameStateUpdate((prevState: GameState): GameState => ({
+          ...prevState,
+          messages: prevState.messages.slice(0, -1)
+        }));
         return;
       }
       // If skill check required, show progress message
@@ -167,8 +176,6 @@ Tips:
           role: "assistant",
           content: `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs ${skillCheckResult.difficultyCategory} → ${skillCheckResult.success ? "SUCCESS" : "FAILURE"} (Δ${skillCheckResult.degree})${skillCheckResult.reason ? ": " + skillCheckResult.reason : ""}`
         });
-        // Optionally, wait a moment so user can see it
-        await new Promise(res => setTimeout(res, 1200));
       }
       // Step 2: Resolve the action (with skillCheckResult if needed)
       const resolveResponse = await fetch(`/api/games/${gameState.id}/message/resolve`, {

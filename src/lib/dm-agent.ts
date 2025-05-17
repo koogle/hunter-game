@@ -19,6 +19,10 @@ export interface DMNotes {
   plotHooks: string[];
 }
 
+const SMALL_MODEL = 'o4-mini-2025-04-16';
+const BIG_MODEL = 'gpt-4.1-2025-04-14';
+
+
 // Types for structured output from the DM
 export type SkillDifficulty = "easy" | "somewhat easy" | "medium" | "hard" | "very hard" | "extremely hard";
 
@@ -110,7 +114,7 @@ export class DungeonMaster {
       { role: 'user', content: prompt }
     ];
     console.log("[DM] isValidAction prompt", prompt);
-    const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o', temperature: 0 });
+    const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
     console.log("[DM] isValidAction response", response);
     return { valid: response.valid === true, reason: response.reason ?? null };
   }
@@ -136,7 +140,7 @@ export class DungeonMaster {
       { role: 'user', content: prompt }
     ];
     console.log("[DM] getSkillCheckRequest prompt", prompt);
-    const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o', temperature: 0 });
+    const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
     console.log("[DM] getSkillCheckRequest response", response);
     return response;
   }
@@ -202,7 +206,7 @@ export class DungeonMaster {
       monologue: z.string(),
       response: z.string()
     });
-    const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o-2024-08-06', temperature: 0.8 });
+    const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0.8 });
     console.log("[DM] getMonologueAndResponse response", result);
     return result;
   }
@@ -214,18 +218,111 @@ export class DungeonMaster {
     openaiService: any
   ): Promise<DMResponse> {
     console.log("[DM] getDiffAndShortAnswer called", { longAnswer, gameState });
-    // Zod schema for DMResponse
-    const schema = this.getResponseSchema();
-    const prompt = `Given the following DM narrative:\n${longAnswer}\n\nBased on this, generate:\n1. A JSON diff for changes to stats, inventory, and quests (do not invent new stats, only update existing ones). For any inventory quantity, the value must be an integer greater than or equal to 1.\n2. A short answer for the user (preferably one sentence, or a short paragraph if needed).`;
-    const messages = [
-      { role: 'system', content: 'You are a precise RPG game master.' },
-      { role: 'user', content: prompt }
-    ];
-    console.log("[DM] getDiffAndShortAnswer prompt", prompt);
 
-    const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o', temperature: 0 });
-    console.log("[DM] getDiffAndShortAnswer response", response);
-    return response;
+    const stats = ["health", "mana", "experience", "strength", "dexterity", "intelligence", "luck"] as const;
+    const inventory = gameState.inventory || [];
+    const statChanges: Record<string, number> = {};
+
+    // Helper to ask if a stat should change
+    const shouldChangeStat = async (stat: string) => {
+      const prompt = `Given this DM narrative:\n${longAnswer}\n\nShould the player's ${stat} change as a result of this action? Answer "yes" or "no" only.`;
+      const schema = z.object({ change: z.enum(["yes", "no"]) });
+      const messages = [
+        { role: 'system', content: 'You are a precise RPG game master.' },
+        { role: 'user', content: prompt }
+      ];
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      return res.change === "yes";
+    };
+
+    // Helper to get the new value for a stat
+    const getStatChange = async (stat: string) => {
+      const prompt = `Given this DM narrative:\n${longAnswer}\n\nWhat should the player's ${stat} be after this action? Return an integer between 0 and 100.`;
+      const schema = z.object({ value: z.number().int().min(0).max(100) });
+      const messages = [
+        { role: 'system', content: 'You are a precise RPG game master.' },
+        { role: 'user', content: prompt }
+      ];
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      return res.value;
+    };
+
+    // Parallel check for all stats
+    const statChangeChecks = stats.map(async (stat) => {
+      if (await shouldChangeStat(stat)) {
+        const newValue = await getStatChange(stat);
+        statChanges[stat] = newValue;
+      }
+    });
+
+    // Inventory: ask if it should change
+    let inventoryChanges: any = null;
+    const shouldChangeInventory = async () => {
+      const prompt = `Given this DM narrative:\n${longAnswer}\n\nShould the player's inventory change as a result of this action? Answer "yes" or "no" only.`;
+      const schema = z.object({ change: z.enum(["yes", "no"]) });
+      const messages = [
+        { role: 'system', content: 'You are a precise RPG game master.' },
+        { role: 'user', content: prompt }
+      ];
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      return res.change === "yes";
+    };
+
+    const getInventoryChange = async () => {
+      const prompt = `Given this DM narrative:\n${longAnswer}\n\nDescribe the inventory changes (add/remove) as a JSON array of objects with { action: "add"|"remove", name: string, quantity: number, description?: string }.`;
+      const schema = z.object({
+        changes: z.array(z.object({
+          action: z.enum(["add", "remove"]),
+          name: z.string(),
+          quantity: z.number().int().min(1),
+          description: z.string().optional()
+        }))
+      });
+      const messages = [
+        { role: 'system', content: 'You are a precise RPG game master.' },
+        { role: 'user', content: prompt }
+      ];
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      return res.changes;
+    };
+
+    const inventoryCheck = (async () => {
+      if (await shouldChangeInventory()) {
+        inventoryChanges = await getInventoryChange();
+      }
+    })();
+
+    // Short answer (always)
+    const getShortAnswer = async () => {
+      const prompt = `Given this DM narrative:\n${longAnswer}\n\nWrite a short answer for the user (1-2 sentences).`;
+      const schema = z.object({ shortAnswer: z.string() });
+      const messages = [
+        { role: 'system', content: 'You are a precise RPG game master.' },
+        { role: 'user', content: prompt }
+      ];
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      return res.shortAnswer;
+    };
+
+    // Run all in parallel
+    await Promise.all([...statChangeChecks, inventoryCheck]);
+    const shortAnswer = await getShortAnswer();
+
+    // Merge changes
+    const stateChanges: any = {};
+    if (Object.keys(statChanges).length > 0) {
+      stateChanges.statChanges = statChanges;
+    }
+    if (inventoryChanges) {
+      stateChanges.inventoryChanges = inventoryChanges;
+    }
+
+    // Compose DMResponse
+    return {
+      message: longAnswer,
+      stateChanges,
+      shortAnswer,
+    };
   }
 
   // Main DM agent loop
