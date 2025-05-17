@@ -73,45 +73,11 @@ export class DungeonMaster {
     this.notes = this.initializeNotes(gameState);
   }
 
-  /**
-   * Combined validity and skill check in a single LLM call.
-   * Uses o4-mini-2025-04-16 for cost efficiency.
-   * Returns: { valid, reason, skillCheck: { required, stat, difficulty, reason } }
-   */
-  public async checkActionAndSkill(
-    action: string,
-    gameState: GameState,
-    openaiService: any
-  ): Promise<{
-    valid: boolean;
-    reason: string | null;
-    skillCheck: SkillCheckRequest;
-  }> {
-    const schema = z.object({
-      valid: z.boolean(),
-      reason: z.union([z.string(), z.null()]),
-      skillCheck: z.object({
-        required: z.boolean(),
-        stat: z.union([z.enum(['strength', 'dexterity', 'intelligence', 'luck']), z.null()]),
-        difficulty: z.union([z.number().int(), z.null()]),
-        reason: z.union([z.string(), z.null()])
-      })
-    });
-    const prompt = `Given the following player action: "${action}", and the current RPG game state: ${JSON.stringify(gameState)}, 1) Judge if this is a valid in-character action for a text adventure RPG (no meta-questions, out-of-character, or game-breaking actions). 2) If valid, decide if a skill check is required (and if so, specify stat and difficulty). Respond strictly in the provided JSON schema.`;
-    const messages = [
-      { role: 'system', content: 'You are an expert RPG game master.' },
-      { role: 'user', content: prompt }
-    ];
-    const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'o4-mini-2025-04-16', temperature: 0 });
-    return response;
-  }
-
-  // DEPRECATED: Use checkActionAndSkill instead.
   public async isValidAction(
     action: string,
     gameState: GameState,
     openaiService: any
-  ): Promise<boolean> {
+  ): Promise<{ valid: boolean; reason: string | null }> {
     console.log("[DM] isValidAction called", { action, gameState });
     const schema = z.object({
       valid: z.boolean(),
@@ -125,10 +91,9 @@ export class DungeonMaster {
     console.log("[DM] isValidAction prompt", prompt);
     const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o', temperature: 0 });
     console.log("[DM] isValidAction response", response);
-    return (await response).valid === true;
+    return { valid: response.valid === true, reason: response.reason ?? null };
   }
 
-  // DEPRECATED: Use checkActionAndSkill instead.
   public async getSkillCheckRequest(
     action: string,
     gameState: GameState,
@@ -239,27 +204,51 @@ export class DungeonMaster {
     actionValidity: { valid: boolean; reason: string | null };
   }> {
     console.log("[DM] processPlayerAction called", { action, gameState });
-    // Step 1: Combined validity and skill check
-    const result = await this.checkActionAndSkill(action, gameState, openaiService);
-    if (!result.valid) {
-      throw new Error(result.reason || 'Invalid action. Please try a different command.');
+
+    const validityPromise = this.isValidAction(action, gameState, openaiService);
+    const skillCheckPromise = this.getSkillCheckRequest(action, gameState, openaiService);
+
+    const validity = await validityPromise;
+    let skillCheck: SkillCheckRequest | null = null;
+    if (!validity.valid) {
+
+      return {
+        skillCheckRequest: null,
+        skillCheckResult: null,
+        monologue: '',
+        dmResponse: {
+          shortAnswer: validity.reason || 'Invalid action',
+          message: '',
+          stateChanges: {},
+        },
+        actionValidity: { valid: validity.valid, reason: validity.reason }
+      };
+    } else {
+      skillCheck = await skillCheckPromise;
     }
-    // Step 2: Skill check
+
     let skillCheckResult: SkillCheckResult | null = null;
-    if (result.skillCheck.required && result.skillCheck.stat && result.skillCheck.difficulty) {
-      skillCheckResult = this.performSkillCheck(result.skillCheck.stat, result.skillCheck.difficulty, gameState);
+    if (skillCheck && skillCheck.required) {
+      skillCheckResult = this.performSkillCheck(
+        skillCheck.stat!,
+        skillCheck.difficulty!,
+        gameState
+      );
     }
-    // Step 3: LLM - generate DM monologue and player-facing response (with skill check result if any)
+
+
+
+    // Step 3: LLM generates DM's internal monologue and player-facing response
     const { monologue, response } = await this.getMonologueAndResponse(action, gameState, skillCheckResult, openaiService);
     // Step 4: LLM - parse for diff and short answer, using the DM's response to the player
     const dmResponse = await this.getDiffAndShortAnswer(response, gameState, openaiService);
     // Step 5: Error handling for malformed output is in each step
     return {
-      skillCheckRequest: result.skillCheck,
+      skillCheckRequest: skillCheck,
       skillCheckResult,
       monologue,
       dmResponse,
-      actionValidity: { valid: result.valid, reason: result.reason }
+      actionValidity: { valid: validity.valid, reason: validity.reason }
     };
   }
 

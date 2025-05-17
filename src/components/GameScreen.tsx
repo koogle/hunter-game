@@ -135,36 +135,52 @@ Tips:
     setCommand("");
 
     try {
-      const response = await fetch(`/api/games/${gameState.id}/message`, {
+      // Step 1: Precheck for validity and skill check
+      const precheckResponse = await fetch(`/api/games/${gameState.id}/message/precheck`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: cmd }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error("Failed to send message:", {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        });
+      const precheck = await precheckResponse.json();
+      if (!precheck.valid) {
+        setTempMessage({ role: "assistant", content: precheck.reason || "That action is not allowed." });
         return;
       }
-
-      // Await the full JSON response
-      const data = await response.json();
+      // If skill check required, show progress message
+      if (precheck.skillCheck && precheck.skillCheck.required) {
+        setTempMessage({ role: "assistant", content: `Skill check in progress... (${precheck.skillCheck.stat?.toUpperCase()} vs ${precheck.skillCheck.difficulty})` });
+      }
+      // Step 2: Resolve the action (with skillCheck info if needed)
+      const resolveResponse = await fetch(`/api/games/${gameState.id}/message/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: cmd, skillCheck: precheck.skillCheck }),
+      });
+      if (!resolveResponse.ok) {
+        const errorData = await resolveResponse.json().catch(() => null);
+        setTempMessage({ role: "assistant", content: errorData?.error || "Failed to process action." });
+        return;
+      }
+      const data = await resolveResponse.json();
+      // Show skill check result if present
+      let skillCheckMsg: GameMessage | null = null;
+      if (data.skillCheckResult && data.skillCheckResult.performed) {
+        skillCheckMsg = {
+          role: "assistant",
+          content: `Skill Check Result: ${data.skillCheckResult.stat?.toUpperCase()} (${data.skillCheckResult.statValue}) + d12 (${data.skillCheckResult.roll}) vs ${data.skillCheckResult.difficulty} → ${data.skillCheckResult.success ? "SUCCESS" : "FAILURE"} (Δ${data.skillCheckResult.degree})${data.skillCheckResult.reason ? ": " + data.skillCheckResult.reason : ""}`
+        };
+      }
       const assistantMessage: GameMessage = {
         role: "assistant",
         content: data.shortAnswer || data.message || "(No response)"
       };
-      // Append the assistant's response to the chat
+      // Append the skill check result if any, then the DM's response
+      const newMessages = skillCheckMsg
+        ? [...gameState.messages, { role: "user", content: cmd }, skillCheckMsg, assistantMessage]
+        : [...gameState.messages, { role: "user", content: cmd }, assistantMessage];
       onGameStateUpdate({
-        ...gameState,
-        messages: [...gameState.messages, { role: "user", content: cmd }, assistantMessage]
+        ...gameState
       });
-
-      // Optionally, update local game state with stateChanges here if desired
-
       // Refresh the game state after the message is processed
       const updatedGameResponse = await fetch(`/api/games/${gameState.id}`);
       if (!updatedGameResponse.ok) {
@@ -174,11 +190,11 @@ Tips:
         });
         return;
       }
-
       const updatedGame = await updatedGameResponse.json();
       onGameStateUpdate(updatedGame);
     } catch (error) {
       console.error("Error processing command:", error);
+      setTempMessage({ role: "assistant", content: "An error occurred while processing your action." });
     } finally {
       setIsLoading(false);
       setStreamedResponse("");
