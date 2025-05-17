@@ -147,14 +147,34 @@ Tips:
         return;
       }
       // If skill check required, show progress message
+      let skillCheckResult = null;
       if (precheck.skillCheck && precheck.skillCheck.required) {
         setTempMessage({ role: "assistant", content: `Skill check in progress... (${precheck.skillCheck.stat?.toUpperCase()} vs ${precheck.skillCheck.difficulty})` });
+        // Call skillcheck endpoint
+        const skillCheckResponse = await fetch(`/api/games/${gameState.id}/message/skillcheck`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gameState, skillCheck: precheck.skillCheck }),
+        });
+        if (!skillCheckResponse.ok) {
+          const errorData = await skillCheckResponse.json().catch(() => null);
+          setTempMessage({ role: "assistant", content: errorData?.error || "Failed to perform skill check." });
+          return;
+        }
+        skillCheckResult = await skillCheckResponse.json();
+        // Show skill check result to user
+        setTempMessage({
+          role: "assistant",
+          content: `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs ${skillCheckResult.difficulty} → ${skillCheckResult.success ? "SUCCESS" : "FAILURE"} (Δ${skillCheckResult.degree})${skillCheckResult.reason ? ": " + skillCheckResult.reason : ""}`
+        });
+        // Optionally, wait a moment so user can see it
+        await new Promise(res => setTimeout(res, 1200));
       }
-      // Step 2: Resolve the action (with skillCheck info if needed)
+      // Step 2: Resolve the action (with skillCheckResult if needed)
       const resolveResponse = await fetch(`/api/games/${gameState.id}/message/resolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: cmd, skillCheck: precheck.skillCheck, gameState }),
+        body: JSON.stringify({ message: cmd, skillCheck: skillCheckResult, gameState }),
       });
       if (!resolveResponse.ok) {
         const errorData = await resolveResponse.json().catch(() => null);
@@ -162,7 +182,7 @@ Tips:
         return;
       }
       const data = await resolveResponse.json();
-      // Show skill check result if present
+      // Show skill check result if present (from backend, for compatibility)
       let skillCheckMsg: GameMessage | null = null;
       if (data.skillCheckResult && data.skillCheckResult.performed) {
         skillCheckMsg = {

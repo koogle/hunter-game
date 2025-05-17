@@ -14,11 +14,10 @@ export async function POST(request: NextRequest) {
     }
     const dm = new DungeonMaster(gameState);
     const openaiService = OpenAIService.getInstance();
-    // If skillCheck is provided, perform it, else null
-    let skillCheckResult = null;
-    if (skillCheck && skillCheck.required && skillCheck.stat && skillCheck.difficulty) {
-      skillCheckResult = dm.performSkillCheck(skillCheck.stat, skillCheck.difficulty, gameState);
-    }
+    // Use skillCheckResult if provided (frontend is now responsible for running the skill check)
+    const skillCheckResult = (typeof skillCheck === 'object' && skillCheck !== null && 'performed' in skillCheck)
+      ? skillCheck
+      : null;
     // Continue with the rest of the DM pipeline
     const { monologue, response } = await dm.getMonologueAndResponse(message, gameState, skillCheckResult, openaiService);
     const dmResponse = await dm.getDiffAndShortAnswer(response, gameState, openaiService);
