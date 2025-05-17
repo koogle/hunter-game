@@ -1,6 +1,7 @@
 import { GameState } from "@/types/game";
 import { z } from 'zod';
 import OpenAI from "openai";
+import OpenAIService from "./openai-service";
 
 // Types for DM's internal state
 export interface DMNotes {
@@ -86,7 +87,7 @@ export class DungeonMaster {
   public async precheckAction(
     action: string,
     gameState: GameState,
-    openaiService: any
+    openaiService: OpenAIService
   ): Promise<{ valid: boolean; reason: string | null; skillCheck: SkillCheckRequest | null }> {
     const validityPromise = this.isValidAction(action, gameState, openaiService);
     const skillCheckPromise = this.getSkillCheckRequest(action, gameState, openaiService);
@@ -101,7 +102,7 @@ export class DungeonMaster {
   public async isValidAction(
     action: string,
     gameState: GameState,
-    openaiService: any
+    openaiService: OpenAIService
   ): Promise<{ valid: boolean; reason: string | null }> {
     console.log("[DM] isValidAction called", { action, gameState });
     const schema = z.object({
@@ -122,7 +123,7 @@ export class DungeonMaster {
   public async getSkillCheckRequest(
     action: string,
     gameState: GameState,
-    openaiService: any
+    openaiService: OpenAIService
   ): Promise<SkillCheckRequest> {
     console.log("[DM] getSkillCheckRequest called", { action, gameState });
     const schema = z.object({
@@ -185,12 +186,12 @@ export class DungeonMaster {
   }
 
   // Step 4: LLM generates DM's internal monologue and player-facing response
-  public async getMonologueAndResponse(
+  public async getResponse(
     action: string,
     gameState: GameState,
     skillCheckResult: SkillCheckResult | null,
-    openaiService: any
-  ): Promise<{ monologue: string; response: string }> {
+    openaiService: OpenAIService
+  ): Promise<string> {
     console.log("[DM] getMonologueAndResponse called", { action, gameState, skillCheckResult });
     let prompt = `Player action: "${action}"\n`;
     if (skillCheckResult && skillCheckResult.performed) {
@@ -208,19 +209,18 @@ export class DungeonMaster {
     });
     const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0.5 });
     console.log("[DM] getMonologueAndResponse response", result);
-    return result;
+    return result.response;
   }
 
   // Step 5: LLM parses for state changes and short answer
   public async getDiffAndShortAnswer(
     longAnswer: string,
     gameState: GameState,
-    openaiService: any
+    openaiService: OpenAIService
   ): Promise<DMResponse> {
     console.log("[DM] getDiffAndShortAnswer called", { longAnswer, gameState });
 
     const stats = ["health", "mana", "experience", "strength", "dexterity", "intelligence", "luck"] as const;
-    const inventory = gameState.inventory || [];
     const statChanges: Record<string, number> = {};
 
     // Helper to ask if a stat should change
@@ -256,7 +256,12 @@ export class DungeonMaster {
     });
 
     // Inventory: ask if it should change
-    let inventoryChanges: any = null;
+    let inventoryChanges: {
+      action: "add" | "remove";
+      name: string;
+      quantity: number;
+      description?: string | undefined;
+    }[] | null = null;
     const shouldChangeInventory = async () => {
       const prompt = `Given this DM narrative:\n${longAnswer}\n\nShould the player's inventory change as a result of this action? Answer "yes" or "no" only.`;
       const schema = z.object({ change: z.enum(["yes", "no"]) });
@@ -307,6 +312,7 @@ export class DungeonMaster {
     await Promise.all([...statChangeChecks, inventoryCheck(), getShortAnswer()]);
 
     // Merge changes
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stateChanges: any = {};
     if (Object.keys(statChanges).length > 0) {
       stateChanges.statChanges = statChanges;
@@ -327,11 +333,10 @@ export class DungeonMaster {
   public async processPlayerAction(
     action: string,
     gameState: GameState,
-    openaiService: any
+    openaiService: OpenAIService
   ): Promise<{
     skillCheckRequest: SkillCheckRequest | null;
     skillCheckResult: SkillCheckResult | null;
-    monologue: string;
     dmResponse: DMResponse;
     actionValidity: { valid: boolean; reason: string | null };
   }> {
@@ -347,7 +352,7 @@ export class DungeonMaster {
       return {
         skillCheckRequest: null,
         skillCheckResult: null,
-        monologue: '',
+
         dmResponse: {
           shortAnswer: validity.reason || 'Invalid action',
           message: '',
@@ -368,17 +373,15 @@ export class DungeonMaster {
       );
     }
 
-
-
     // Step 3: LLM generates DM's internal monologue and player-facing response
-    const { monologue, response } = await this.getMonologueAndResponse(action, gameState, skillCheckResult, openaiService);
+    const response = await this.getResponse(action, gameState, skillCheckResult, openaiService);
     // Step 4: LLM - parse for diff and short answer, using the DM's response to the player
     const dmResponse = await this.getDiffAndShortAnswer(response, gameState, openaiService);
     // Step 5: Error handling for malformed output is in each step
     return {
       skillCheckRequest: skillCheck,
       skillCheckResult,
-      monologue,
+
       dmResponse,
       actionValidity: { valid: validity.valid, reason: validity.reason }
     };

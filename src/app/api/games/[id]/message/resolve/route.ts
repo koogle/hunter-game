@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { GameState } from "@/types/game";
 import OpenAIService from "../../../../../../lib/openai-service";
 import { DungeonMaster } from "../../../../../../lib/dm-agent";
 
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest) {
       ? skillCheck
       : null;
     // Continue with the rest of the DM pipeline
-    const { monologue, response } = await dm.getMonologueAndResponse(message, gameState, skillCheckResult, openaiService);
+    const response = await dm.getResponse(message, gameState, skillCheckResult, openaiService);
     const dmResponse = await dm.getDiffAndShortAnswer(response, gameState, openaiService);
     // Apply state changes
     const updatedGame = dm.applyStateChanges({
@@ -50,27 +49,5 @@ export async function POST(request: NextRequest) {
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
-  }
-}
-
-async function fetchGameState(origin: string, gameId: string): Promise<GameState> {
-  const gameResponse = await fetch(`${origin}/api/games/${gameId}`);
-  if (!gameResponse.ok) {
-    throw new Error(`Failed to fetch game state: ${gameResponse.status} ${gameResponse.statusText}`);
-  }
-  return await gameResponse.json();
-}
-
-async function updateGameState(origin: string, gameId: string, updatedGame: GameState): Promise<void> {
-  const updateResponse = await fetch(
-    `${origin}/api/games/${gameId}`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedGame),
-    },
-  );
-  if (!updateResponse.ok) {
-    throw new Error(`Failed to update game state: ${updateResponse.status} ${updateResponse.statusText}`);
   }
 }

@@ -23,7 +23,6 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
   };
 
   const [streamedResponse, setStreamedResponse] = useState("");
-  const [lastCommand, setLastCommand] = useState("");
 
   const [tempMessage, setTempMessage] = useState<GameMessage | null>(null);
 
@@ -112,10 +111,7 @@ Tips:
   const handleCommand = async (cmd: string) => {
     if (!cmd.trim()) return;
 
-    // Clear any temporary message when user enters a new command
     setTempMessage(null);
-
-    setLastCommand(cmd);
     setStreamedResponse("");
 
     // Check for special commands first
@@ -254,33 +250,14 @@ Tips:
                 </div>
               );
             }
-            // Try to parse DM message as JSON
-            let parsed: any = null;
-            try {
-              parsed = typeof message.content === 'string' ? JSON.parse(message.content) : null;
-            } catch (e) {
-              parsed = null;
-            }
-            if (parsed && typeof parsed === 'object' && parsed.narrative) {
-              return (
-                <div key={index} className="mb-4 leading-relaxed">
-                  <div className="flex items-start gap-2">
-                    <span className="text-green-500 font-bold">DM:</span>
-                    <span className="whitespace-pre-line">{typeof parsed.narrative === 'string' ? parsed.narrative : String(parsed.narrative)}</span>
-                  </div>
+            return (
+              <div key={index} className="mb-4 leading-relaxed">
+                <div className="flex items-start gap-2">
+                  <span className="text-green-500 font-bold">DM:</span>
+                  <span>{message.content}</span>
                 </div>
-              );
-            } else {
-              // fallback: show as plain text
-              return (
-                <div key={index} className="mb-4 leading-relaxed">
-                  <div className="flex items-start gap-2">
-                    <span className="text-green-500 font-bold">DM:</span>
-                    <span>{message.content}</span>
-                  </div>
-                </div>
-              );
-            }
+              </div>
+            );
           })}
           {/* Display temporary help/reset message */}
           {tempMessage && (

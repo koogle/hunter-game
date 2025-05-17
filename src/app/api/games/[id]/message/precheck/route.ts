@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { GameState } from "@/types/game";
 import OpenAIService from "../../../../../../lib/openai-service";
 import { DungeonMaster } from "../../../../../../lib/dm-agent";
 
