@@ -196,7 +196,7 @@ export class DungeonMaster {
     if (skillCheckResult && skillCheckResult.performed) {
       prompt += `Skill check performed: ${skillCheckResult.stat} (value: ${skillCheckResult.statValue}) + d12 roll (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty}. Result: ${skillCheckResult.success ? 'Success' : 'Failure'} (degree: ${skillCheckResult.degree}).\n`;
     }
-    prompt += `Game state: ${JSON.stringify(gameState)}\nDM Notes: ${JSON.stringify(this.notes)}\n\nPlease do the following:\n1. Write the DM's internal monologue (thoughts, reasoning, world logic, NPC motivations, etc.) about what happens next, based on the action, game state, and DM notes.\n2. Then, write the DM's response to the player (what the player hears or sees).\n\nFormat your output as JSON with two fields: { "monologue": string, "response": string }. Do not output any status changes yet.`;
+    prompt += `Game state: ${JSON.stringify(gameState)}\nDM Notes: ${JSON.stringify(this.notes)}\n\nPlease do the following:\n1. Write the DM's internal monologue (thoughts, reasoning, world logic, NPC motivations, etc.) about what happens next, based on the action, game state, and DM notes.\n2. Then, write the DM's response to the player (what the player hears or sees).\n\nFormat your output as JSON with two fields: { "monologue": string, "response": string }`;
     const messages = [
       { role: 'system', content: 'You are a creative RPG game master.' },
       { role: 'user', content: prompt }
@@ -206,7 +206,7 @@ export class DungeonMaster {
       monologue: z.string(),
       response: z.string()
     });
-    const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0.8 });
+    const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0.5 });
     console.log("[DM] getMonologueAndResponse response", result);
     return result;
   }
@@ -286,27 +286,25 @@ export class DungeonMaster {
       return res.changes;
     };
 
-    const inventoryCheck = (async () => {
+    const inventoryCheck = async () => {
       if (await shouldChangeInventory()) {
         inventoryChanges = await getInventoryChange();
       }
-    })();
+    };
 
-    // Short answer (always)
+    let shortAnswer = "";
     const getShortAnswer = async () => {
-      const prompt = `Given this DM narrative:\n${longAnswer}\n\nWrite a short answer for the user (1-2 sentences).`;
+      const prompt = `Given this DM narrative:\n${longAnswer}\n\nWrite a short answer for the user. Aim for one or two sentences but if more happens aim for a paragraph.`;
       const schema = z.object({ shortAnswer: z.string() });
       const messages = [
         { role: 'system', content: 'You are a precise RPG game master.' },
         { role: 'user', content: prompt }
       ];
       const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
-      return res.shortAnswer;
+      shortAnswer = res.shortAnswer;
     };
 
-    // Run all in parallel
-    await Promise.all([...statChangeChecks, inventoryCheck]);
-    const shortAnswer = await getShortAnswer();
+    await Promise.all([...statChangeChecks, inventoryCheck(), getShortAnswer()]);
 
     // Merge changes
     const stateChanges: any = {};

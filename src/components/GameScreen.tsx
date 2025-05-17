@@ -370,22 +370,6 @@ Tips:
             </div>
           </div>
 
-          {/* 
-          {activeQuests.length > 0 && (
-            <div className="mb-4 border border-green-800 p-2 bg-black/50">
-              <div className="text-center mb-2 text-green-300">ACTIVE QUESTS</div>
-              <ul className="list-none pl-0">
-                {activeQuests.map((quest, index) => (
-                  <li key={index} className="mb-2">
-                    <div className="text-yellow-400">{quest.name}</div>
-                    <div className="text-xs text-gray-400">{quest.description}</div>
-                    <div className="mt-1 font-mono text-xs">{createTextBar(quest.progress, 100, 10)}</div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}Quests Section */}
-
           {/* Inventory Section */}
           <div className="border-t-2 border-green-500 pt-4 mt-4">
             <div className="mb-2 text-xl text-center text-green-300">INVENTORY</div>
