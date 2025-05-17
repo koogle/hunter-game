@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     }
 
     const openaiService = OpenAIService.getInstance();
-    const messages: OpenAI.Chat.ChatCompletionCreateParams[] = [
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
         role: "system",
         content: `You are a creative game master. Create a rich, detailed description for a game scenario. 

@@ -29,14 +29,14 @@ export type SkillDifficulty = "easy" | "somewhat easy" | "medium" | "hard" | "ve
 
 export interface SkillCheckRequest {
   required: boolean;
-  stat?: 'strength' | 'dexterity' | 'intelligence' | 'luck';
-  difficultyCategory?: SkillDifficulty;
-  reason?: string;
+  stat: 'strength' | 'dexterity' | 'intelligence' | 'luck' | null;
+  difficultyCategory: SkillDifficulty | null;
+  reason: string | null;
 }
 
 export interface SkillCheckResult {
   performed: boolean;
-  stat?: 'strength' | 'dexterity' | 'intelligence' | 'luck';
+  stat?: 'strength' | 'dexterity' | 'intelligence' | 'luck' | null;
   roll?: number;
   statValue?: number;
   difficulty?: number;
@@ -472,7 +472,7 @@ Your response must be in JSON format according to the provided schema.`;
         .map(msg => ({
           role: msg.role === "user" ? "user" : "assistant",
           content: msg.content,
-        })) as OpenAI.Chat.ChatCompletionMessageParam[]),
+        })) as OpenAI.Chat.ChatCompletionMessage[]),
     ];
   }
 

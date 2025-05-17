@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { z } from 'zod';
 import { zodTextFormat } from 'openai/helpers/zod';
 
-type CompletionOptions = Omit<OpenAI.Chat.ChatCompletionCreateParams, 'messages'>;
+type CompletionOptions = Omit<OpenAI.Chat.ChatCompletionCreateParams, 'messages' | 'model'>;
 
 class OpenAIService {
     private static instance: OpenAIService;
@@ -35,7 +35,7 @@ class OpenAIService {
 
     // Abstracted method for chat completions
     public async createChatCompletion(
-        messages: OpenAI.Chat.ChatCompletionCreateParams[],
+        messages: OpenAI.Chat.ChatCompletionMessageParam[],
         options?: CompletionOptions
     ): Promise<string> {
         try {
@@ -76,7 +76,7 @@ class OpenAIService {
 
     // Method for streaming chat completions
     public async createStreamingChatCompletion(
-        messages: OpenAI.Chat.ChatCompletionCreateParams[],
+        messages: OpenAI.Chat.ChatCompletionMessageParam[],
         options?: CompletionOptions
     ) {
         try {
