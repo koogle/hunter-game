@@ -5,25 +5,19 @@ import { DungeonMaster } from "../../../../../../lib/dm-agent";
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
-    const gameId = request.nextUrl.pathname.split("/")[3];
-    if (!gameId) {
-      return new Response(JSON.stringify({ error: "Game ID is required" }), {
+    const { message, gameState } = await request.json();
+    if (!gameState) {
+      return new Response(JSON.stringify({ error: "Game state is required" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
-    // Get the current game state
-    const game = await fetchGameState(request.nextUrl.origin, gameId);
-    const dm = new DungeonMaster(game);
+    const dm = new DungeonMaster(gameState);
     const openaiService = OpenAIService.getInstance();
-    // Run validity and skill check LLM calls in parallel
-    const [validity, skillCheck] = await Promise.all([
-      dm.isValidAction(message, game, openaiService),
-      dm.getSkillCheckRequest(message, game, openaiService)
-    ]);
+    // Use the new precheckAction method
+    const result = await dm.precheckAction(message, gameState, openaiService);
     return new Response(
-      JSON.stringify({ valid: validity.valid, reason: validity.reason, skillCheck }),
+      JSON.stringify(result),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
@@ -36,12 +30,4 @@ export async function POST(request: NextRequest) {
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
-}
-
-async function fetchGameState(origin: string, gameId: string): Promise<GameState> {
-  const gameResponse = await fetch(`${origin}/api/games/${gameId}`);
-  if (!gameResponse.ok) {
-    throw new Error(`Failed to fetch game state: ${gameResponse.status} ${gameResponse.statusText}`);
-  }
-  return await gameResponse.json();
 }

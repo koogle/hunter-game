@@ -73,6 +73,25 @@ export class DungeonMaster {
     this.notes = this.initializeNotes(gameState);
   }
 
+  /**
+   * Run both validity and skill check in parallel, but only await skill check if valid.
+   * Returns: { valid, reason, skillCheck }
+   */
+  public async precheckAction(
+    action: string,
+    gameState: GameState,
+    openaiService: any
+  ): Promise<{ valid: boolean; reason: string | null; skillCheck: SkillCheckRequest | null }> {
+    const validityPromise = this.isValidAction(action, gameState, openaiService);
+    const skillCheckPromise = this.getSkillCheckRequest(action, gameState, openaiService);
+    const validity = await validityPromise;
+    let skillCheck: SkillCheckRequest | null = null;
+    if (validity.valid) {
+      skillCheck = await skillCheckPromise;
+    }
+    return { valid: validity.valid, reason: validity.reason, skillCheck };
+  }
+
   public async isValidAction(
     action: string,
     gameState: GameState,

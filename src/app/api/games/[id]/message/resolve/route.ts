@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { GameState } from "@/types/game";
 import OpenAIService from "../../../../../../lib/openai-service";
-import { DungeonMaster, SkillCheckRequest } from "../../../../../../lib/dm-agent";
+import { DungeonMaster } from "../../../../../../lib/dm-agent";
 
 export async function POST(request: NextRequest) {
   try {
