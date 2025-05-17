@@ -231,7 +231,7 @@ export class DungeonMaster {
         { role: 'system', content: 'You are a precise RPG game master.' },
         { role: 'user', content: prompt }
       ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
       return res.change === "yes";
     };
 
@@ -243,7 +243,7 @@ export class DungeonMaster {
         { role: 'system', content: 'You are a precise RPG game master.' },
         { role: 'user', content: prompt }
       ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
       return res.value;
     };
 
@@ -269,7 +269,7 @@ export class DungeonMaster {
         { role: 'system', content: 'You are a precise RPG game master.' },
         { role: 'user', content: prompt }
       ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
       return res.change === "yes";
     };
 
@@ -287,7 +287,7 @@ export class DungeonMaster {
         { role: 'system', content: 'You are a precise RPG game master.' },
         { role: 'user', content: prompt }
       ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
       return res.changes;
     };
 
