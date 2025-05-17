@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const openaiService = OpenAIService.getInstance();
 
     // Call the DM agent for all LLM logic
-    const { skillCheckRequest, skillCheckResult, longAnswer, dmResponse } = await dm.processPlayerAction(message, game, openaiService);
+    const { skillCheckRequest, skillCheckResult, monologue, dmResponse } = await dm.processPlayerAction(message, game, openaiService);
 
     // Apply state changes to the game state (pure)
     const updatedGame = dm.applyStateChanges({

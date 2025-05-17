@@ -167,7 +167,7 @@ export class DungeonMaster {
       monologue: z.string(),
       response: z.string()
     });
-    const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4', temperature: 0.8 });
+    const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o-2024-08-06', temperature: 0.8 });
     console.log("[DM] getMonologueAndResponse response", result);
     return result;
   }
@@ -180,69 +180,15 @@ export class DungeonMaster {
   ): Promise<DMResponse> {
     console.log("[DM] getDiffAndShortAnswer called", { longAnswer, gameState });
     // Zod schema for DMResponse
-    const DMResponseSchema = z.object({
-      message: z.string(),
-      stateChanges: z.object({
-        inventoryChanges: z.union([
-          z.object({
-            add: z.union([
-              z.array(z.object({
-                name: z.string(),
-                quantity: z.union([z.number().int(), z.null()]),
-                description: z.union([z.string(), z.null()])
-              })),
-              z.null()
-            ]),
-            remove: z.union([
-              z.array(z.object({
-                name: z.string(),
-                quantity: z.union([z.number().int(), z.null()]) // must be >= 1
-              })),
-              z.null()
-            ])
-          }),
-          z.null()
-        ]),
-        statChanges: z.union([
-          z.object({
-            health: z.union([z.number(), z.null()]),
-            mana: z.union([z.number(), z.null()]),
-            experience: z.union([z.number(), z.null()]),
-            strength: z.union([z.number(), z.null()]),
-            dexterity: z.union([z.number(), z.null()]),
-            intelligence: z.union([z.number(), z.null()]),
-            luck: z.union([z.number(), z.null()])
-          }),
-          z.null()
-        ]),
-        questUpdates: z.union([
-          z.array(z.object({
-            questId: z.string(),
-            status: z.enum(["active", "completed", "failed"])
-          })),
-          z.null()
-        ]),
-        dmNotesUpdates: z.union([
-          z.object({
-            worldState: z.union([z.string(), z.null()]),
-            playerAssessment: z.union([z.string(), z.null()]),
-            hiddenObjectives: z.union([z.array(z.string()), z.null()]),
-            plotHooks: z.union([z.array(z.string()), z.null()]),
-            keyLocations: z.union([z.record(z.string()), z.null()]),
-            keyCharacters: z.union([z.record(z.string()), z.null()])
-          }),
-          z.null()
-        ])
-      }),
-      shortAnswer: z.string()
-    });
+    const schema = this.getResponseSchema();
     const prompt = `Given the following DM narrative:\n${longAnswer}\n\nBased on this, generate:\n1. A JSON diff for changes to stats, inventory, and quests (do not invent new stats, only update existing ones). For any inventory quantity, the value must be an integer greater than or equal to 1.\n2. A short answer for the user (preferably one sentence, or a short paragraph if needed).`;
     const messages = [
       { role: 'system', content: 'You are a precise RPG game master.' },
       { role: 'user', content: prompt }
     ];
     console.log("[DM] getDiffAndShortAnswer prompt", prompt);
-    const response = await openaiService.createStructuredChatCompletion(messages, DMResponseSchema, { model: 'gpt-4o', temperature: 0 });
+
+    const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'gpt-4o', temperature: 0 });
     console.log("[DM] getDiffAndShortAnswer response", response);
     return response;
   }
@@ -482,97 +428,64 @@ Your response must be in JSON format according to the provided schema.`;
 
 
 
-  // Get the JSON schema for the DM response
-  public getResponseSchema(): object {
-    return {
-      type: "object",
-      properties: {
-        message: {
-          type: "string",
-          description: "The narrative response to the player"
-        },
-        stateChanges: {
-          type: "object",
-          properties: {
-            inventoryChanges: {
-              type: "object",
-              properties: {
-                add: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      name: { type: "string" },
-                      quantity: { type: "integer", minimum: 1 },
-                      description: { type: "string" }
-                    },
-                    required: ["name", "quantity"]
-                  }
-                },
-                remove: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      name: { type: "string" },
-                      quantity: { type: "integer", minimum: 1 }
-                    },
-                    required: ["name", "quantity"]
-                  }
-                }
-              }
-            },
-            statChanges: {
-              type: "object",
-              properties: {
-                health: { type: "integer" },
-                mana: { type: "integer" },
-                experience: { type: "integer" },
-                strength: { type: "integer" },
-                dexterity: { type: "integer" },
-                intelligence: { type: "integer" },
-                luck: { type: "integer" }
-              }
-            },
-            questUpdates: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  questId: { type: "string" },
-                  status: { type: "string", enum: ["active", "completed", "failed"] }
-                },
-                required: ["questId", "status"]
-              }
-            },
-            dmNotesUpdates: {
-              type: "object",
-              properties: {
-                worldState: { type: "string" },
-                playerAssessment: { type: "string" },
-                hiddenObjectives: {
-                  type: "array",
-                  items: { type: "string" }
-                },
-                plotHooks: {
-                  type: "array",
-                  items: { type: "string" }
-                },
-                keyLocations: {
-                  type: "object",
-                  additionalProperties: { type: "string" }
-                },
-                keyCharacters: {
-                  type: "object",
-                  additionalProperties: { type: "string" }
-                }
-              }
-            }
-          },
-          required: ["message"]
-        }
-      },
-      required: ["message", "stateChanges"]
-    };
+  // Get the Zod schema for the DM response
+  public getResponseSchema(): z.ZodType {
+    const DMResponseSchema = z.object({
+      message: z.string(),
+      stateChanges: z.object({
+        inventoryChanges: z.union([
+          z.object({
+            add: z.union([
+              z.array(z.object({
+                name: z.string(),
+                quantity: z.union([z.number().int(), z.null()]),
+                description: z.union([z.string(), z.null()])
+              })),
+              z.null()
+            ]),
+            remove: z.union([
+              z.array(z.object({
+                name: z.string(),
+                quantity: z.union([z.number().int(), z.null()]) // must be >= 1
+              })),
+              z.null()
+            ])
+          }),
+          z.null()
+        ]),
+        statChanges: z.union([
+          z.object({
+            health: z.union([z.number(), z.null()]),
+            mana: z.union([z.number(), z.null()]),
+            experience: z.union([z.number(), z.null()]),
+            strength: z.union([z.number(), z.null()]),
+            dexterity: z.union([z.number(), z.null()]),
+            intelligence: z.union([z.number(), z.null()]),
+            luck: z.union([z.number(), z.null()])
+          }),
+          z.null()
+        ]),
+        questUpdates: z.union([
+          z.array(z.object({
+            questId: z.string(),
+            status: z.enum(["active", "completed", "failed"])
+          })),
+          z.null()
+        ]),
+        dmNotesUpdates: z.union([
+          z.object({
+            worldState: z.union([z.string(), z.null()]),
+            playerAssessment: z.union([z.string(), z.null()]),
+            hiddenObjectives: z.union([z.array(z.string()), z.null()]),
+            plotHooks: z.union([z.array(z.string()), z.null()]),
+            keyLocations: z.union([z.record(z.string()), z.null()]),
+            keyCharacters: z.union([z.record(z.string()), z.null()])
+          }),
+          z.null()
+        ])
+      }),
+      shortAnswer: z.string()
+    });
+    return DMResponseSchema;
   }
 }
