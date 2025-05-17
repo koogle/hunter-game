@@ -5,43 +5,40 @@ import { DungeonMaster } from "../../../../../../lib/dm-agent";
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, skillCheck } = await request.json();
-    const gameId = request.nextUrl.pathname.split("/")[3];
-    if (!gameId) {
-      return new Response(JSON.stringify({ error: "Game ID is required" }), {
+    const { message, skillCheck, gameState } = await request.json();
+    if (!gameState) {
+      return new Response(JSON.stringify({ error: "Game state is required" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
-    // Get the current game state
-    const game = await fetchGameState(request.nextUrl.origin, gameId);
-    const dm = new DungeonMaster(game);
+    const dm = new DungeonMaster(gameState);
     const openaiService = OpenAIService.getInstance();
     // If skillCheck is provided, perform it, else null
     let skillCheckResult = null;
     if (skillCheck && skillCheck.required && skillCheck.stat && skillCheck.difficulty) {
-      skillCheckResult = dm.performSkillCheck(skillCheck.stat, skillCheck.difficulty, game);
+      skillCheckResult = dm.performSkillCheck(skillCheck.stat, skillCheck.difficulty, gameState);
     }
     // Continue with the rest of the DM pipeline
-    const { monologue, response } = await dm.getMonologueAndResponse(message, game, skillCheckResult, openaiService);
-    const dmResponse = await dm.getDiffAndShortAnswer(response, game, openaiService);
+    const { monologue, response } = await dm.getMonologueAndResponse(message, gameState, skillCheckResult, openaiService);
+    const dmResponse = await dm.getDiffAndShortAnswer(response, gameState, openaiService);
     // Apply state changes
     const updatedGame = dm.applyStateChanges({
-      ...game,
+      ...gameState,
       lastUpdatedAt: new Date().toISOString(),
       messages: [
-        ...game.messages,
+        ...gameState.messages,
         { role: "user", content: message },
         { role: "assistant", content: dmResponse.message }
       ]
     }, dmResponse);
-    await updateGameState(request.nextUrl.origin, gameId, updatedGame);
     return new Response(
       JSON.stringify({
         shortAnswer: dmResponse.shortAnswer,
         message: dmResponse.message,
         stateChanges: dmResponse.stateChanges,
-        skillCheckResult
+        skillCheckResult,
+        updatedGame
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

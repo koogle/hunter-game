@@ -139,7 +139,7 @@ Tips:
       const precheckResponse = await fetch(`/api/games/${gameState.id}/message/precheck`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: cmd }),
+        body: JSON.stringify({ message: cmd, gameState }),
       });
       const precheck = await precheckResponse.json();
       if (!precheck.valid) {
@@ -154,7 +154,7 @@ Tips:
       const resolveResponse = await fetch(`/api/games/${gameState.id}/message/resolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: cmd, skillCheck: precheck.skillCheck }),
+        body: JSON.stringify({ message: cmd, skillCheck: precheck.skillCheck, gameState }),
       });
       if (!resolveResponse.ok) {
         const errorData = await resolveResponse.json().catch(() => null);
@@ -176,22 +176,18 @@ Tips:
       };
       // Append the skill check result if any, then the DM's response
       const newMessages = skillCheckMsg
-        ? [...gameState.messages, { role: "user", content: cmd }, skillCheckMsg, assistantMessage]
-        : [...gameState.messages, { role: "user", content: cmd }, assistantMessage];
-      onGameStateUpdate({
-        ...gameState
-      });
-      // Refresh the game state after the message is processed
-      const updatedGameResponse = await fetch(`/api/games/${gameState.id}`);
-      if (!updatedGameResponse.ok) {
-        console.error("Failed to fetch updated game state:", {
-          status: updatedGameResponse.status,
-          statusText: updatedGameResponse.statusText
+        ? [...gameState.messages, { role: "user" as const, content: cmd }, skillCheckMsg, assistantMessage]
+        : [...gameState.messages, { role: "user" as const, content: cmd }, assistantMessage];
+      // Use updatedGame from the response
+      if (data.updatedGame) {
+        onGameStateUpdate(data.updatedGame);
+      } else {
+        // fallback: update messages only
+        onGameStateUpdate({
+          ...gameState,
+          messages: newMessages
         });
-        return;
       }
-      const updatedGame = await updatedGameResponse.json();
-      onGameStateUpdate(updatedGame);
     } catch (error) {
       console.error("Error processing command:", error);
       setTempMessage({ role: "assistant", content: "An error occurred while processing your action." });
