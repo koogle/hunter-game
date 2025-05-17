@@ -58,6 +58,7 @@ Tips:
 
       // Set the temporary message instead of updating game state
       setTempMessage(helpMessage);
+      setCommand("");
 
       return true;
     }
@@ -121,7 +122,6 @@ Tips:
     if (handleSpecialCommand(cmd)) {
       return;
     }
-
 
 
     setIsLoading(true);

@@ -237,8 +237,8 @@ export class DungeonMaster {
 
     // Helper to get the new value for a stat
     const getStatChange = async (stat: string) => {
-      const prompt = `Given this DM narrative:\n${longAnswer}\n\nWhat should the player's ${stat} be after this action? Return an integer between 0 and 100.`;
-      const schema = z.object({ value: z.number().int().min(0).max(100) });
+      const prompt = `Given this DM narrative:\n${longAnswer}\n\nWhat should the player's ${stat} be after this action? Return an integer between 0 and 100. Do not exceed these bounds.`;
+      const schema = z.object({ value: z.number().int() });
       const messages = [
         { role: 'system', content: 'You are a precise RPG game master.' },
         { role: 'user', content: prompt }
@@ -269,12 +269,12 @@ export class DungeonMaster {
     };
 
     const getInventoryChange = async () => {
-      const prompt = `Given this DM narrative:\n${longAnswer}\n\nDescribe the inventory changes (add/remove) as a JSON array of objects with { action: "add"|"remove", name: string, quantity: number, description?: string }.`;
+      const prompt = `Given this DM narrative:\n${longAnswer}\n\nDescribe the inventory changes (add/remove) as a JSON array of objects with { action: "add"|"remove", name: string, quantity: number (this has to be minimum 1 but should reflect the added or removed number of items), description?: string }.`;
       const schema = z.object({
         changes: z.array(z.object({
           action: z.enum(["add", "remove"]),
           name: z.string(),
-          quantity: z.number().int().min(1),
+          quantity: z.number().int(),
           description: z.string().optional()
         }))
       });
