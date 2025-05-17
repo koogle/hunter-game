@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const openaiService = OpenAIService.getInstance();
 
     // Call the DM agent for all LLM logic
-    const { skillCheckRequest, skillCheckResult, monologue, dmResponse } = await dm.processPlayerAction(message, game, openaiService);
+    const { skillCheckRequest, skillCheckResult, monologue, dmResponse, actionValidity } = await dm.processPlayerAction(message, game, openaiService);
 
     // Apply state changes to the game state (pure)
     const updatedGame = dm.applyStateChanges({
@@ -39,12 +39,15 @@ export async function POST(request: NextRequest) {
     // Persist the updated game state
     await updateGameState(request.nextUrl.origin, gameId, updatedGame);
 
-    // Return only the relevant fields
+    // Return only the relevant fields, including skill check and validity info
     return new Response(
       JSON.stringify({
         shortAnswer: dmResponse.shortAnswer,
         message: dmResponse.message,
-        stateChanges: dmResponse.stateChanges
+        stateChanges: dmResponse.stateChanges,
+        skillCheckRequest,
+        skillCheckResult,
+        actionValidity
       }),
       {
         status: 200,

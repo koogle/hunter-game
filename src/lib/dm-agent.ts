@@ -73,7 +73,40 @@ export class DungeonMaster {
     this.notes = this.initializeNotes(gameState);
   }
 
-  // Use LLM to judge if action is valid in the current RPG context
+  /**
+   * Combined validity and skill check in a single LLM call.
+   * Uses o4-mini-2025-04-16 for cost efficiency.
+   * Returns: { valid, reason, skillCheck: { required, stat, difficulty, reason } }
+   */
+  public async checkActionAndSkill(
+    action: string,
+    gameState: GameState,
+    openaiService: any
+  ): Promise<{
+    valid: boolean;
+    reason: string | null;
+    skillCheck: SkillCheckRequest;
+  }> {
+    const schema = z.object({
+      valid: z.boolean(),
+      reason: z.union([z.string(), z.null()]),
+      skillCheck: z.object({
+        required: z.boolean(),
+        stat: z.union([z.enum(['strength', 'dexterity', 'intelligence', 'luck']), z.null()]),
+        difficulty: z.union([z.number().int(), z.null()]),
+        reason: z.union([z.string(), z.null()])
+      })
+    });
+    const prompt = `Given the following player action: "${action}", and the current RPG game state: ${JSON.stringify(gameState)}, 1) Judge if this is a valid in-character action for a text adventure RPG (no meta-questions, out-of-character, or game-breaking actions). 2) If valid, decide if a skill check is required (and if so, specify stat and difficulty). Respond strictly in the provided JSON schema.`;
+    const messages = [
+      { role: 'system', content: 'You are an expert RPG game master.' },
+      { role: 'user', content: prompt }
+    ];
+    const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: 'o4-mini-2025-04-16', temperature: 0 });
+    return response;
+  }
+
+  // DEPRECATED: Use checkActionAndSkill instead.
   public async isValidAction(
     action: string,
     gameState: GameState,
@@ -95,7 +128,7 @@ export class DungeonMaster {
     return (await response).valid === true;
   }
 
-  // Step 2: Ask LLM if a skill check is needed
+  // DEPRECATED: Use checkActionAndSkill instead.
   public async getSkillCheckRequest(
     action: string,
     gameState: GameState,
@@ -203,24 +236,31 @@ export class DungeonMaster {
     skillCheckResult: SkillCheckResult | null;
     monologue: string;
     dmResponse: DMResponse;
+    actionValidity: { valid: boolean; reason: string | null };
   }> {
     console.log("[DM] processPlayerAction called", { action, gameState });
-    // Step 1: Validate action
-    if (!await this.isValidAction(action, gameState, openaiService)) {
-      throw new Error('Invalid action. Please try a different command.');
+    // Step 1: Combined validity and skill check
+    const result = await this.checkActionAndSkill(action, gameState, openaiService);
+    if (!result.valid) {
+      throw new Error(result.reason || 'Invalid action. Please try a different command.');
     }
-    // Step 2: LLM - should we do a skill check?
-    const skillCheckRequest = await this.getSkillCheckRequest(action, gameState, openaiService);
+    // Step 2: Skill check
     let skillCheckResult: SkillCheckResult | null = null;
-    if (skillCheckRequest.required && skillCheckRequest.stat && skillCheckRequest.difficulty) {
-      skillCheckResult = this.performSkillCheck(skillCheckRequest.stat, skillCheckRequest.difficulty, gameState);
+    if (result.skillCheck.required && result.skillCheck.stat && result.skillCheck.difficulty) {
+      skillCheckResult = this.performSkillCheck(result.skillCheck.stat, result.skillCheck.difficulty, gameState);
     }
     // Step 3: LLM - generate DM monologue and player-facing response (with skill check result if any)
     const { monologue, response } = await this.getMonologueAndResponse(action, gameState, skillCheckResult, openaiService);
     // Step 4: LLM - parse for diff and short answer, using the DM's response to the player
     const dmResponse = await this.getDiffAndShortAnswer(response, gameState, openaiService);
     // Step 5: Error handling for malformed output is in each step
-    return { skillCheckRequest, skillCheckResult, monologue, dmResponse };
+    return {
+      skillCheckRequest: result.skillCheck,
+      skillCheckResult,
+      monologue,
+      dmResponse,
+      actionValidity: { valid: result.valid, reason: result.reason }
+    };
   }
 
   private initializeNotes(gameState: GameState): DMNotes {
