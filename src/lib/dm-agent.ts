@@ -20,10 +20,12 @@ export interface DMNotes {
 }
 
 // Types for structured output from the DM
+export type SkillDifficulty = "easy" | "somewhat easy" | "medium" | "hard" | "very hard" | "extremely hard";
+
 export interface SkillCheckRequest {
   required: boolean;
   stat?: 'strength' | 'dexterity' | 'intelligence' | 'luck';
-  difficulty?: number;
+  difficultyCategory?: SkillDifficulty;
   reason?: string;
 }
 
@@ -122,10 +124,13 @@ export class DungeonMaster {
     const schema = z.object({
       required: z.boolean(),
       stat: z.union([z.enum(['strength', 'dexterity', 'intelligence', 'luck']), z.null()]),
-      difficulty: z.union([z.number().int(), z.null()]),
+      difficultyCategory: z.union([
+        z.enum(["easy", "somewhat easy", "medium", "hard", "very hard", "extremely hard"]),
+        z.null()
+      ]),
       reason: z.union([z.string(), z.null()])
     });
-    const prompt = `Given the following player action: "${action}", and the available stats: strength, dexterity, intelligence, luck, decide if a skill check is required. Only suggest a skill check if it makes sense in context. If so, pick the most appropriate stat and a difficulty (must be an integer between 1 and 20).`;
+    const prompt = `Given the following player action: "${action}", and the available stats: strength, dexterity, intelligence, luck, decide if a skill check is required. Only suggest a skill check if it makes sense in context. If so, pick the most appropriate stat and a difficulty category from: easy, somewhat easy, medium, hard, very hard, extremely hard.`;
     const messages = [
       { role: 'system', content: 'You are an expert RPG game master.' },
       { role: 'user', content: prompt }
@@ -139,13 +144,25 @@ export class DungeonMaster {
   // Step 3: Perform the skill check
   public performSkillCheck(
     stat: 'strength' | 'dexterity' | 'intelligence' | 'luck',
-    difficulty: number,
+    difficultyCategory: SkillDifficulty,
     gameState: GameState
   ): SkillCheckResult {
-    console.log("[DM] performSkillCheck called", { stat, difficulty, gameState });
+    console.log("[DM] performSkillCheck called", { stat, difficultyCategory, gameState });
     const statValue = gameState.stats[stat];
     const roll = Math.ceil(Math.random() * 12);
+    // Map difficulty category to a numeric offset
+    const base = 8; // average check
+    const categoryOffsets: Record<SkillDifficulty, number> = {
+      easy: -3,
+      "somewhat easy": -1,
+      medium: 0,
+      hard: 2,
+      "very hard": 4,
+      "extremely hard": 6
+    };
+    const difficulty = base + categoryOffsets[difficultyCategory];
     const total = statValue + roll;
+    // Never guarantee success/failure, always possible to roll a 1 or 12
     const success = total >= difficulty;
     const degree = total - difficulty;
     const result = {
@@ -153,6 +170,7 @@ export class DungeonMaster {
       stat,
       roll,
       statValue,
+      difficultyCategory,
       difficulty,
       total,
       success,
@@ -250,7 +268,7 @@ export class DungeonMaster {
     if (skillCheck && skillCheck.required) {
       skillCheckResult = this.performSkillCheck(
         skillCheck.stat!,
-        skillCheck.difficulty!,
+        skillCheck.difficultyCategory!,
         gameState
       );
     }

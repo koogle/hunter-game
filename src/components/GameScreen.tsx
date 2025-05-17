@@ -149,7 +149,7 @@ Tips:
       // If skill check required, show progress message
       let skillCheckResult = null;
       if (precheck.skillCheck && precheck.skillCheck.required) {
-        setTempMessage({ role: "assistant", content: `Skill check in progress... (${precheck.skillCheck.stat?.toUpperCase()} vs ${precheck.skillCheck.difficulty})` });
+        setTempMessage({ role: "assistant", content: `Skill check in progress... (${precheck.skillCheck.stat?.toUpperCase()} - ${precheck.skillCheck.difficultyCategory})` });
         // Call skillcheck endpoint
         const skillCheckResponse = await fetch(`/api/games/${gameState.id}/message/skillcheck`, {
           method: "POST",
@@ -165,7 +165,7 @@ Tips:
         // Show skill check result to user
         setTempMessage({
           role: "assistant",
-          content: `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs ${skillCheckResult.difficulty} → ${skillCheckResult.success ? "SUCCESS" : "FAILURE"} (Δ${skillCheckResult.degree})${skillCheckResult.reason ? ": " + skillCheckResult.reason : ""}`
+          content: `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs ${skillCheckResult.difficultyCategory} → ${skillCheckResult.success ? "SUCCESS" : "FAILURE"} (Δ${skillCheckResult.degree})${skillCheckResult.reason ? ": " + skillCheckResult.reason : ""}`
         });
         // Optionally, wait a moment so user can see it
         await new Promise(res => setTimeout(res, 1200));
@@ -187,7 +187,7 @@ Tips:
       if (data.skillCheckResult && data.skillCheckResult.performed) {
         skillCheckMsg = {
           role: "assistant",
-          content: `Skill Check Result: ${data.skillCheckResult.stat?.toUpperCase()} (${data.skillCheckResult.statValue}) + d12 (${data.skillCheckResult.roll}) vs ${data.skillCheckResult.difficulty} → ${data.skillCheckResult.success ? "SUCCESS" : "FAILURE"} (Δ${data.skillCheckResult.degree})${data.skillCheckResult.reason ? ": " + data.skillCheckResult.reason : ""}`
+          content: `Skill Check Result: ${data.skillCheckResult.stat?.toUpperCase()} (${data.skillCheckResult.statValue}) + d12 (${data.skillCheckResult.roll}) vs ${data.skillCheckResult.difficultyCategory} → ${data.skillCheckResult.success ? "SUCCESS" : "FAILURE"} (Δ${data.skillCheckResult.degree})${data.skillCheckResult.reason ? ": " + data.skillCheckResult.reason : ""}`
         };
       }
       const assistantMessage: GameMessage = {

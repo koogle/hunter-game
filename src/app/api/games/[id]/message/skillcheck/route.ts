@@ -4,14 +4,14 @@ import { DungeonMaster } from "../../../../../../lib/dm-agent";
 export async function POST(request: NextRequest) {
   try {
     const { gameState, skillCheck } = await request.json();
-    if (!gameState || !skillCheck || !skillCheck.stat || !skillCheck.difficulty) {
+    if (!gameState || !skillCheck || !skillCheck.stat || !skillCheck.difficultyCategory) {
       return new Response(
         JSON.stringify({ error: "Missing gameState or skillCheck data" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
     const dm = new DungeonMaster(gameState);
-    const result = dm.performSkillCheck(skillCheck.stat, skillCheck.difficulty, gameState);
+    const result = dm.performSkillCheck(skillCheck.stat, skillCheck.difficultyCategory, gameState);
     return new Response(
       JSON.stringify(result),
       { status: 200, headers: { "Content-Type": "application/json" } }
