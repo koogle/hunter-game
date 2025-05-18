@@ -189,7 +189,7 @@ export class DungeonMaster {
   public async getResponse(
     action: string,
     gameState: GameState,
-    skillCheckResult: SkillCheckResult | null,
+    skillCheckResult: SkillCheckResult | undefined,
     openaiService: OpenAIService
   ): Promise<string> {
     console.log("[DM] getResponse called", { action, gameState, skillCheckResult });
@@ -333,14 +333,14 @@ export class DungeonMaster {
     };
   }
 
-  // Main DM agent loop
+  // Man DM agent loop
   public async processPlayerAction(
     action: string,
     gameState: GameState,
     openaiService: OpenAIService
   ): Promise<{
     skillCheckRequest: SkillCheckRequest | undefined;
-    skillCheckResult: SkillCheckResult | null;
+    skillCheckResult: SkillCheckResult | undefined;
     dmResponse: DMResponse;
     actionValidity: { valid: boolean; reason: string | null };
   }> {
@@ -355,7 +355,7 @@ export class DungeonMaster {
 
       return {
         skillCheckRequest: undefined,
-        skillCheckResult: null,
+        skillCheckResult: undefined,
         dmResponse: {
           shortAnswer: validity.reason || 'Invalid action',
           message: '',
@@ -367,14 +367,6 @@ export class DungeonMaster {
       skillCheck = await skillCheckPromise;
     }
 
-    let skillCheckResult: SkillCheckResult | null = null;
-    if (skillCheck && skillCheck.required) {
-      skillCheckResult = this.performSkillCheck(
-        skillCheck.stat!,
-        skillCheck.difficultyCategory!,
-        gameState
-      );
-    }
 
     // Step 3: LLM generates DM's internal monologue and player-facing response
     const response = await this.getResponse(action, gameState, skillCheckResult, openaiService);

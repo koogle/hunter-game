@@ -57,8 +57,8 @@ export const processPlayerAction = async (
   action: string,
   gameState: GameState
 ): Promise<{
-  skillCheckRequest: SkillCheckRequest | null;
-  skillCheckResult: SkillCheckResult | null;
+  skillCheckRequest: SkillCheckRequest | undefined;
+  skillCheckResult: SkillCheckResult | undefined;
   dmResponse: DMResponse;
   actionValidity: { valid: boolean; reason: string | null };
   updatedGame: GameState;
@@ -69,11 +69,11 @@ export const processPlayerAction = async (
   try {
     // Step 1: Check if action is valid
     const actionValidity = await dm.isValidAction(action, gameState, openaiService);
-    
+
     if (!actionValidity.valid) {
       return {
-        skillCheckRequest: null,
-        skillCheckResult: null,
+        skillCheckRequest: undefined,
+        skillCheckResult: undefined,
         dmResponse: {
           message: actionValidity.reason || 'Invalid action',
           shortAnswer: actionValidity.reason || 'Invalid action',
@@ -86,9 +86,9 @@ export const processPlayerAction = async (
 
     // Step 2: Get skill check request if needed
     const skillCheckRequest = await dm.getSkillCheckRequest(action, gameState, openaiService);
-    
+
     // Step 3: Perform skill check if required
-    let skillCheckResult: SkillCheckResult | null = null;
+    let skillCheckResult: SkillCheckResult | undefined = undefined;
     if (skillCheckRequest && skillCheckRequest.required) {
       skillCheckResult = dm.performSkillCheck(
         skillCheckRequest.stat!,
@@ -99,10 +99,10 @@ export const processPlayerAction = async (
 
     // Step 4: Generate DM response
     const response = await dm.getResponse(action, gameState, skillCheckResult, openaiService);
-    
+
     // Step 5: Parse for state changes and short answer
     const dmResponse = await dm.getDiffAndShortAnswer(response, gameState, openaiService);
-    
+
     // Step 6: Apply state changes to game state
     const updatedMessages = [
       ...gameState.messages,
