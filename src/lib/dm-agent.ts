@@ -333,55 +333,6 @@ export class DungeonMaster {
     };
   }
 
-  // Man DM agent loop
-  public async processPlayerAction(
-    action: string,
-    gameState: GameState,
-    openaiService: OpenAIService
-  ): Promise<{
-    skillCheckRequest: SkillCheckRequest | undefined;
-    skillCheckResult: SkillCheckResult | undefined;
-    dmResponse: DMResponse;
-    actionValidity: { valid: boolean; reason: string | null };
-  }> {
-    console.log("[DM] processPlayerAction called", { action, gameState });
-
-    const validityPromise = this.isValidAction(action, gameState, openaiService);
-    const skillCheckPromise = this.getSkillCheckRequest(action, gameState, openaiService);
-
-    const validity = await validityPromise;
-    let skillCheck: SkillCheckRequest | undefined;
-    if (!validity.valid) {
-
-      return {
-        skillCheckRequest: undefined,
-        skillCheckResult: undefined,
-        dmResponse: {
-          shortAnswer: validity.reason || 'Invalid action',
-          message: '',
-          stateChanges: {},
-        },
-        actionValidity: { valid: validity.valid, reason: validity.reason }
-      };
-    } else {
-      skillCheck = await skillCheckPromise;
-    }
-
-
-    // Step 3: LLM generates DM's internal monologue and player-facing response
-    const response = await this.getResponse(action, gameState, skillCheckResult, openaiService);
-    // Step 4: LLM - parse for diff and short answer, using the DM's response to the player
-    const dmResponse = await this.getDiffAndShortAnswer(response, gameState, openaiService);
-    // Step 5: Error handling for malformed output is in each step
-    return {
-      skillCheckRequest: skillCheck,
-      skillCheckResult,
-
-      dmResponse,
-      actionValidity: { valid: validity.valid, reason: validity.reason }
-    };
-  }
-
   private initializeNotes(gameState: GameState): DMNotes {
     // Create initial DM notes based on the game scenario
     return {
@@ -445,11 +396,12 @@ INSTRUCTIONS:
 3. Push back against players who try to break the game or act unrealistically.
 4. Maintain a consistent world and narrative.
 5. Actions should have consequences.
+6. **Any changes to the world state (including player stats, inventory, quests, or any other aspect of the game) MUST be clearly and explicitly spelled out in your answer to the user. Do not imply or leave changes ambiguous. If there are no changes, state that explicitly.**
 
 When responding to the player, follow this process:
 1. Validate if the action is valid in an RPG context (reject meta-game questions or out-of-character requests).
 2. Generate a response with appropriate narrative.
-3. Determine any changes to game state (inventory, stats, quests).
+3. Determine any changes to game state (inventory, stats, quests, etc.) and clearly list them in your response.
 
 Your response must be in JSON format according to the provided schema.`;
   }

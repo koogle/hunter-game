@@ -26,3 +26,11 @@ When starting a new project or feature:
 
 Remember to balance creative storytelling with technical constraints while maintaining a focus on user experience and system reliability.
 
+The main loop for the DM is:
+main loop which is 
+- get user request
+- check if valid and if skill check necessary in parallel
+- if not valid return early
+- if valid , and skill check needed perform skill check (also send update to the frontend that skill check is perofrmend, and send update to show result)
+- with skill check result (if necessary) create the repsonse from the dm and stream it to the frontend 
+- then perform a parsing of the resposne to determine value changes such as stat or inventory changes based on the response and update the world state, finally inform the user about the updates (updates can be parsed in parallel
