@@ -58,7 +58,7 @@ class OpenAIService {
         messages: { role: string; content: string }[],
         schema: z.ZodType<T>,
         options?: CompletionOptions
-    ): Promise<T | null> {
+    ): Promise<T | undefined> {
         try {
             const response = await this.client.responses.parse({
                 model: options?.model || this.defaultModel,
@@ -68,7 +68,11 @@ class OpenAIService {
                     format: zodTextFormat(schema, "output"),
                 },
             });
-            return response.output_parsed;
+            if (!response.output_parsed) {
+                return undefined;
+            } else {
+                return response.output_parsed;
+            }
         } catch (error) {
             console.error('Error creating structured chat completion:', error);
             throw error;

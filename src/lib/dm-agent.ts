@@ -88,11 +88,11 @@ export class DungeonMaster {
     action: string,
     gameState: GameState,
     openaiService: OpenAIService
-  ): Promise<{ valid: boolean; reason: string | null; skillCheck: SkillCheckRequest | null }> {
+  ): Promise<{ valid: boolean; reason: string | null; skillCheck: SkillCheckRequest | undefined }> {
     const validityPromise = this.isValidAction(action, gameState, openaiService);
     const skillCheckPromise = this.getSkillCheckRequest(action, gameState, openaiService);
     const validity = await validityPromise;
-    let skillCheck: SkillCheckRequest | null = null;
+    let skillCheck: SkillCheckRequest | undefined;
     if (validity.valid) {
       skillCheck = await skillCheckPromise;
     }
@@ -117,14 +117,14 @@ export class DungeonMaster {
     console.log("[DM] isValidAction prompt", prompt);
     const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
     console.log("[DM] isValidAction response", response);
-    return { valid: response.valid === true, reason: response.reason ?? null };
+    return { valid: response?.valid === true, reason: response?.reason ?? null };
   }
 
   public async getSkillCheckRequest(
     action: string,
     gameState: GameState,
     openaiService: OpenAIService
-  ): Promise<SkillCheckRequest | null> {
+  ): Promise<SkillCheckRequest | undefined> {
     console.log("[DM] getSkillCheckRequest called", { action, gameState });
     const schema = z.object({
       required: z.boolean(),
@@ -207,7 +207,7 @@ export class DungeonMaster {
     const schema = z.object({ response: z.string() });
     const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0.5, max_tokens: 300 });
     console.log("[DM] getResponse response", result);
-    return result.response;
+    return result?.response ?? "";
   }
 
   // Step 5: LLM parses for state changes and short answer
@@ -230,6 +230,9 @@ export class DungeonMaster {
         { role: 'user', content: prompt }
       ];
       const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
+      if (!res) {
+        throw new Error("Failed to get shouldChangeStat result");
+      }
       return res.change === "yes";
     };
 
@@ -242,14 +245,16 @@ export class DungeonMaster {
         { role: 'user', content: prompt }
       ];
       const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
-      return res.value;
+      return res?.value;
     };
 
     // Parallel check for all stats
     const statChangeChecks = stats.map(async (stat) => {
       if (await shouldChangeStat(stat)) {
         const newValue = await getStatChange(stat);
-        statChanges[stat] = newValue;
+        if (newValue !== undefined) {
+          statChanges[stat] = newValue;
+        }
       }
     });
 
@@ -268,7 +273,7 @@ export class DungeonMaster {
         { role: 'user', content: prompt }
       ];
       const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
-      return res.change === "yes";
+      return res?.change === "yes";
     };
 
     const getInventoryChange = async () => {
@@ -286,7 +291,7 @@ export class DungeonMaster {
         { role: 'user', content: prompt }
       ];
       const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
-      return res.changes;
+      return res?.changes || [];
     };
 
     const inventoryCheck = async () => {
@@ -304,7 +309,7 @@ export class DungeonMaster {
         { role: 'user', content: prompt }
       ];
       const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0, max_tokens: 120 });
-      shortAnswer = res.shortAnswer;
+      shortAnswer = res?.shortAnswer ?? "";
     };
 
 
@@ -334,7 +339,7 @@ export class DungeonMaster {
     gameState: GameState,
     openaiService: OpenAIService
   ): Promise<{
-    skillCheckRequest: SkillCheckRequest | null;
+    skillCheckRequest: SkillCheckRequest | undefined;
     skillCheckResult: SkillCheckResult | null;
     dmResponse: DMResponse;
     actionValidity: { valid: boolean; reason: string | null };
@@ -345,13 +350,12 @@ export class DungeonMaster {
     const skillCheckPromise = this.getSkillCheckRequest(action, gameState, openaiService);
 
     const validity = await validityPromise;
-    let skillCheck: SkillCheckRequest | null = null;
+    let skillCheck: SkillCheckRequest | undefined;
     if (!validity.valid) {
 
       return {
-        skillCheckRequest: null,
+        skillCheckRequest: undefined,
         skillCheckResult: null,
-
         dmResponse: {
           shortAnswer: validity.reason || 'Invalid action',
           message: '',
