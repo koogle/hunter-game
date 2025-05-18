@@ -32,7 +32,7 @@ export const websocketClient: WebSocketClientInstance = {
 export const initWebSocketClient = () => {
   // Only create the socket on the client side
   if (typeof window === 'undefined') return null;
-  
+
   if (websocketClient.initialized && websocketClient.socket) {
     return websocketClient.socket;
   }
@@ -113,7 +113,7 @@ export const leaveGame = () => {
 export const sendPlayerAction = async (action: string, gameState: GameState) => {
   if (!websocketClient.socket || !websocketClient.gameId) {
     console.error('WebSocket client not initialized or no game joined');
-    
+
     // Fallback to HTTP API if WebSocket is not available
     try {
       const response = await fetch(`/api/socket`, {
@@ -125,11 +125,11 @@ export const sendPlayerAction = async (action: string, gameState: GameState) => 
           gameState,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to send player action via HTTP');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Error sending player action via HTTP:', error);
