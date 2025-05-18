@@ -462,7 +462,7 @@ When responding to the player, follow this process:
 Your response must be in JSON format according to the provided schema.`;
   }
 
-  public createMessages(gameState: GameState): OpenAI.Chat.ChatCompletionCreateParams[] {
+  public createMessages(gameState: GameState): OpenAI.Chat.ChatCompletionMessageParam[] {
     const systemPrompt = this.createSystemPrompt(gameState);
 
     return [
@@ -475,7 +475,7 @@ Your response must be in JSON format according to the provided schema.`;
         .map(msg => ({
           role: msg.role === "user" ? "user" : "assistant",
           content: msg.content,
-        })) as OpenAI.Chat.ChatCompletionMessage[]),
+        })) as OpenAI.Chat.ChatCompletionMessageParam[]),
     ];
   }
 
