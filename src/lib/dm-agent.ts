@@ -124,7 +124,7 @@ export class DungeonMaster {
     action: string,
     gameState: GameState,
     openaiService: OpenAIService
-  ): Promise<SkillCheckRequest> {
+  ): Promise<SkillCheckRequest | null> {
     console.log("[DM] getSkillCheckRequest called", { action, gameState });
     const schema = z.object({
       required: z.boolean(),
@@ -185,30 +185,28 @@ export class DungeonMaster {
     return result;
   }
 
-  // Step 4: LLM generates DM's internal monologue and player-facing response
+  // Step 4: LLM generates only the player-facing response
   public async getResponse(
     action: string,
     gameState: GameState,
     skillCheckResult: SkillCheckResult | null,
     openaiService: OpenAIService
   ): Promise<string> {
-    console.log("[DM] getMonologueAndResponse called", { action, gameState, skillCheckResult });
+    console.log("[DM] getResponse called", { action, gameState, skillCheckResult });
     let prompt = `Player action: "${action}"\n`;
     if (skillCheckResult && skillCheckResult.performed) {
       prompt += `Skill check performed: ${skillCheckResult.stat} (value: ${skillCheckResult.statValue}) + d12 roll (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty}. Result: ${skillCheckResult.success ? 'Success' : 'Failure'} (degree: ${skillCheckResult.degree}).\n`;
     }
-    prompt += `Game state: ${JSON.stringify(gameState)}\nDM Notes: ${JSON.stringify(this.notes)}\n\nPlease do the following:\n1. Write the DM's internal monologue (thoughts, reasoning, world logic, NPC motivations, etc.) about what happens next, based on the action, game state, and DM notes.\n2. Then, write the DM's response to the player (what the player hears or sees).\n\nFormat your output as JSON with two fields: { "monologue": string, "response": string }`;
+    prompt += `Game state: ${JSON.stringify(gameState)}\nDM Notes: ${JSON.stringify(this.notes)}\n\nWrite the DM's response to the player (what the player hears or sees). Be concise.`;
     const messages = [
       { role: 'system', content: 'You are a creative RPG game master.' },
       { role: 'user', content: prompt }
     ];
-    console.log("[DM] getMonologueAndResponse prompt", prompt);
-    const schema = z.object({
-      monologue: z.string(),
-      response: z.string()
-    });
-    const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0.5 });
-    console.log("[DM] getMonologueAndResponse response", result);
+    console.log("[DM] getResponse prompt", prompt);
+    // Only expect a single string back
+    const schema = z.object({ response: z.string() });
+    const result = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0.5, max_tokens: 300 });
+    console.log("[DM] getResponse response", result);
     return result.response;
   }
 
@@ -305,9 +303,10 @@ export class DungeonMaster {
         { role: 'system', content: 'You are a precise RPG game master.' },
         { role: 'user', content: prompt }
       ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
+      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0, max_tokens: 120 });
       shortAnswer = res.shortAnswer;
     };
+
 
     await Promise.all([...statChangeChecks, inventoryCheck(), getShortAnswer()]);
 

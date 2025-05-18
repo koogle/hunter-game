@@ -103,17 +103,33 @@ export class GameStorage {
     const game = await this.getGame(id);
     if (!game) return null;
 
+    // Ensure messages are properly merged and not overwritten
+    let mergedMessages = game.messages || [];
+    if (updates.messages) {
+      // If updates contain messages, merge them with existing messages
+      // This ensures we don't lose message history
+      mergedMessages = updates.messages;
+    }
+
     const updatedGame: GameState = normalizeGameState({
       ...game,
       ...updates,
+      messages: mergedMessages, // Use the merged messages
       id: game.id, // Ensure ID cannot be changed
       lastUpdatedAt: new Date().toISOString(),
     });
 
-    await fs.writeFile(
-      path.join(GAMES_DIR, `${id}.json`),
-      JSON.stringify(updatedGame, null, 2)
-    );
+    // Save the game state to disk
+    try {
+      await fs.writeFile(
+        path.join(GAMES_DIR, `${id}.json`),
+        JSON.stringify(updatedGame, null, 2)
+      );
+      console.log(`[Storage] Game ${id} updated successfully`);
+    } catch (error) {
+      console.error(`[Storage] Error updating game ${id}:`, error);
+      throw error;
+    }
 
     return updatedGame;
   }

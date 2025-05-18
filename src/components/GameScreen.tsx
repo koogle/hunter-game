@@ -2,29 +2,79 @@
 
 import { useEffect, useRef, useState } from "react";
 import { GameState, GameMessage } from "@/types/game";
+import { initWebSocketClient, joinGame, leaveGame, sendPlayerAction, setCallbacks } from "@/lib/websocket-client";
+import { SkillCheckResult } from "@/lib/dm-agent";
 
 interface GameScreenProps {
   gameState: GameState;
-  onGameStateUpdate: (gameState: GameState | ((prevState: GameState) => GameState)) => void;
+  onGameStateUpdate: React.SetStateAction<GameState>;
 }
 
 export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenProps) {
   const [command, setCommand] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [streamedResponse, setStreamedResponse] = useState("");
+  const [tempMessage, setTempMessage] = useState<GameMessage | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [gameState.messages]);
 
+  // Initialize websocket connection
+  useEffect(() => {
+    if (!gameState || !gameState.id) return;
+
+    // Initialize the websocket client
+    const socket = initWebSocketClient();
+
+    // Join the game room
+    joinGame(gameState.id);
+
+    // Set up callbacks for websocket events
+    setCallbacks({
+      onDMResponseChunk: (chunk: string) => {
+        setStreamedResponse(prev => prev + chunk);
+      },
+      onSkillCheckResult: (result: SkillCheckResult) => {
+        setTempMessage({
+          role: 'assistant',
+          content: `Skill Check Result: ${result.stat?.toUpperCase()} (${result.statValue}) + d12 (${result.roll}) vs difficulty ${result.difficulty} → ${result.success ? 'SUCCESS' : 'FAILURE'} (Δ${result.degree})${result.reason ? ': ' + result.reason : ''}`
+        });
+      },
+      onActionValidity: (validity: { valid: boolean; reason: string | null }) => {
+        if (!validity.valid) {
+          setTempMessage({
+            role: 'assistant',
+            content: validity.reason || 'That action is not allowed.'
+          });
+          setIsLoading(false);
+        }
+      },
+      onGameUpdate: (updatedGameState: GameState) => {
+        onGameStateUpdate(updatedGameState);
+        setIsLoading(false);
+        setStreamedResponse("");
+      }
+    });
+
+    // Clean up on unmount
+    return () => {
+      if (gameState.id) {
+        leaveGame();
+      }
+    };
+  }, [gameState.id, onGameStateUpdate]);
+
   const createTextBar = (value: number, max: number, length = 16, filled = "█", empty = "░") => {
-    const filledLength = Math.floor((value / max) * length);
-    return `${filled.repeat(filledLength)}${empty.repeat(length - filledLength)}`;
+    let filledLength = Math.floor((value / max) * length);
+    filledLength = Math.max(0, Math.min(length, filledLength));
+    const emptyLength = Math.max(0, length - filledLength);
+    return `${filled.repeat(filledLength)}${empty.repeat(emptyLength)}`;
   };
 
-  const [streamedResponse, setStreamedResponse] = useState("");
 
-  const [tempMessage, setTempMessage] = useState<GameMessage | null>(null);
+
 
   // Handle special commands like <help> and <reset>
   const handleSpecialCommand = (cmd: string): boolean => {
@@ -119,7 +169,6 @@ Tips:
       return;
     }
 
-
     setIsLoading(true);
     setCommand("");
 
@@ -128,95 +177,22 @@ Tips:
       role: "user" as const,
       content: `${cmd}`
     };
-    onGameStateUpdate({
-      ...gameState,
-      messages: [...gameState.messages, userMessage]
-    });
+
+    // Update local state to show the user message immediately
+    onGameStateUpdate((prevState: GameState): GameState => ({
+      ...prevState,
+      messages: [...prevState.messages, userMessage]
+    }));
 
     try {
-      // Step 1: Precheck for validity and skill check
-      const precheckResponse = await fetch(`/api/games/${gameState.id}/message/precheck`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: cmd, gameState }),
-      });
-      const precheck = await precheckResponse.json();
-      if (!precheck.valid) {
-        setTempMessage({ role: "assistant", content: precheck.reason || "That action is not allowed." });
-        // Remove the last user message from history since it was invalid
-        // Remove the last user message if invalid, using functional update to avoid race conditions
-        onGameStateUpdate((prevState: GameState): GameState => ({
-          ...prevState,
-          messages: prevState.messages.slice(0, -1)
-        }));
-        return;
-      }
-      // If skill check required, show progress message
-      let skillCheckResult = null;
-      if (precheck.skillCheck && precheck.skillCheck.required) {
-        setTempMessage({ role: "assistant", content: `Skill check in progress... (${precheck.skillCheck.stat?.toUpperCase()} - ${precheck.skillCheck.difficultyCategory})` });
-        // Call skillcheck endpoint
-        const skillCheckResponse = await fetch(`/api/games/${gameState.id}/message/skillcheck`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ gameState, skillCheck: precheck.skillCheck }),
-        });
-        if (!skillCheckResponse.ok) {
-          const errorData = await skillCheckResponse.json().catch(() => null);
-          setTempMessage({ role: "assistant", content: errorData?.error || "Failed to perform skill check." });
-          return;
-        }
-        skillCheckResult = await skillCheckResponse.json();
-        // Show skill check result to user
-        setTempMessage({
-          role: "assistant",
-          content: `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs ${skillCheckResult.difficultyCategory} → ${skillCheckResult.success ? "SUCCESS" : "FAILURE"} (Δ${skillCheckResult.degree})${skillCheckResult.reason ? ": " + skillCheckResult.reason : ""}`
-        });
-      }
-      // Step 2: Resolve the action (with skillCheckResult if needed)
-      const resolveResponse = await fetch(`/api/games/${gameState.id}/message/resolve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: cmd, skillCheck: skillCheckResult, gameState }),
-      });
-      if (!resolveResponse.ok) {
-        const errorData = await resolveResponse.json().catch(() => null);
-        setTempMessage({ role: "assistant", content: errorData?.error || "Failed to process action." });
-        return;
-      }
-      const data = await resolveResponse.json();
-      // Show skill check result if present (from backend, for compatibility)
-      let skillCheckMsg: GameMessage | null = null;
-      if (data.skillCheckResult && data.skillCheckResult.performed) {
-        skillCheckMsg = {
-          role: "assistant",
-          content: `Skill Check Result: ${data.skillCheckResult.stat?.toUpperCase()} (${data.skillCheckResult.statValue}) + d12 (${data.skillCheckResult.roll}) vs ${data.skillCheckResult.difficultyCategory} → ${data.skillCheckResult.success ? "SUCCESS" : "FAILURE"} (Δ${data.skillCheckResult.degree})${data.skillCheckResult.reason ? ": " + data.skillCheckResult.reason : ""}`
-        };
-      }
-      const assistantMessage: GameMessage = {
-        role: "assistant",
-        content: data.shortAnswer || data.message || "(No response)"
-      };
-      // Append the skill check result if any, then the DM's response
-      const newMessages = skillCheckMsg
-        ? [...gameState.messages, { role: "user" as const, content: cmd }, skillCheckMsg, assistantMessage]
-        : [...gameState.messages, { role: "user" as const, content: cmd }, assistantMessage];
-      // Use updatedGame from the response
-      if (data.updatedGame) {
-        onGameStateUpdate(data.updatedGame);
-      } else {
-        // fallback: update messages only
-        onGameStateUpdate({
-          ...gameState,
-          messages: newMessages
-        });
-      }
+      // Send the player action via websocket
+      sendPlayerAction(cmd, gameState);
+
+      // The rest of the process will be handled by the websocket callbacks
     } catch (error) {
       console.error("Error processing command:", error);
       setTempMessage({ role: "assistant", content: "An error occurred while processing your action." });
-    } finally {
       setIsLoading(false);
-      setStreamedResponse("");
     }
   };
 

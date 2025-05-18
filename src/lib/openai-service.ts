@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { z } from 'zod';
 import { zodTextFormat } from 'openai/helpers/zod';
 
-type CompletionOptions = Omit<OpenAI.Chat.ChatCompletionCreateParams, 'messages' | 'model'>;
+type CompletionOptions = Omit<OpenAI.Chat.ChatCompletionCreateParams, 'messages' | 'model'> & { model?: string };
 
 class OpenAIService {
     private static instance: OpenAIService;
@@ -55,14 +55,15 @@ class OpenAIService {
 
     // Method for structured chat completions
     public async createStructuredChatCompletion<T>(
-        messages: OpenAI.Chat.ChatCompletionMessageParam[],
+        messages: { role: string; content: string }[],
         schema: z.ZodType<T>,
         options?: CompletionOptions
-    ): Promise<T> {
+    ): Promise<T | null> {
         try {
             const response = await this.client.responses.parse({
                 model: options?.model || this.defaultModel,
-                input: messages,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                input: messages as any,
                 text: {
                     format: zodTextFormat(schema, "output"),
                 },
