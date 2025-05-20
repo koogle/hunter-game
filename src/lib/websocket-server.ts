@@ -76,7 +76,6 @@ export const processPlayerAction = async (
         skillCheckResult: undefined,
         dmResponse: {
           message: actionValidity.reason || 'Invalid action',
-          shortAnswer: actionValidity.reason || 'Invalid action',
           stateChanges: {},
         },
         actionValidity,

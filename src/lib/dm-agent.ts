@@ -68,7 +68,6 @@ export interface DMResponse {
     }[];
     dmNotesUpdates?: Partial<DMNotes>;
   };
-  shortAnswer: string;
 }
 
 
@@ -300,23 +299,8 @@ export class DungeonMaster {
       }
     };
 
-    let shortAnswer = "";
-    const getShortAnswer = async () => {
-      const prompt = `Given this DM narrative:\n${longAnswer}\n\nWrite a short answer for the user. Aim for one or two sentences but if more happens aim for a paragraph.`;
-      const schema = z.object({ shortAnswer: z.string() });
-      const messages = [
-        { role: 'system', content: 'You are a precise RPG game master.' },
-        { role: 'user', content: prompt }
-      ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0, max_tokens: 120 });
-      shortAnswer = res?.shortAnswer ?? "";
-    };
-
-
-    await Promise.all([...statChangeChecks, inventoryCheck(), getShortAnswer()]);
-
-    // Merge changes
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Remove shortAnswer logic and helpers
+    // Always build up stateChanges object
     const stateChanges: any = {};
     if (Object.keys(statChanges).length > 0) {
       stateChanges.statChanges = statChanges;
@@ -324,38 +308,12 @@ export class DungeonMaster {
     if (inventoryChanges) {
       stateChanges.inventoryChanges = inventoryChanges;
     }
-
-    // Compose DMResponse
+    // Return only message and stateChanges
     return {
       message: longAnswer,
       stateChanges,
-      shortAnswer,
     };
-  }
 
-  private initializeNotes(gameState: GameState): DMNotes {
-    // Create initial DM notes based on the game scenario
-    return {
-      worldState: `World based on scenario: ${gameState.customScenario || gameState.scenario}`,
-      hiddenObjectives: [
-        "Guide player to discover the main quest",
-        "Create challenging but fair encounters",
-        "Adapt the world based on player choices"
-      ],
-      activeQuests: [
-        {
-          id: "main-quest",
-          name: "The Beginning",
-          description: "Start your adventure and discover your purpose",
-          objective: "Explore the surroundings and find a lead",
-          status: "active"
-        }
-      ],
-      playerAssessment: "New player, assessing play style",
-      keyLocations: {},
-      keyCharacters: {},
-      plotHooks: []
-    };
   }
 
   public getNotes(): DMNotes {
@@ -436,14 +394,14 @@ Your response must be in JSON format according to the provided schema.`;
       return {
         message: responseText,
         stateChanges: {},
-        shortAnswer: responseText
+
       };
     } catch (error) {
       console.error("Error parsing DM response:", error);
       return {
         message: responseText,
         stateChanges: {},
-        shortAnswer: responseText
+
       };
     }
   }
