@@ -26,7 +26,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     if (!gameState || !gameState.id) return;
 
     // Initialize the websocket client
-    const socket = initWebSocketClient();
+    initWebSocketClient();
 
     // Join the game room
     joinGame(gameState.id);

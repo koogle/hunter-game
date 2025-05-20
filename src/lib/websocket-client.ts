@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { GameState, GameMessage } from '@/types/game';
+import { GameState } from '@/types/game';
 import { SkillCheckResult } from './dm-agent';
 
 // Ensure we only initialize the socket once on the client side

@@ -1,7 +1,6 @@
 import { Server } from 'socket.io';
 import { Server as NetServer } from 'http';
-import { NextApiRequest } from 'next';
-import { NextApiResponse } from 'next';
+
 import { GameState, GameMessage } from '@/types/game';
 import { DungeonMaster, SkillCheckRequest, SkillCheckResult, DMResponse } from './dm-agent';
 import OpenAIService from './openai-service';
@@ -28,7 +27,8 @@ export const initWebSocketServer = (server: NetServer) => {
     },
   });
 
-  io.on('connection', (socket: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+io.on('connection', (socket: any) => {
     console.log('Client connected:', socket.id);
 
     socket.on('join-game', (gameId: string) => {

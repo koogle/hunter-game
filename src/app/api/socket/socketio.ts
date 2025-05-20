@@ -14,12 +14,14 @@ export const config = {
 const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
   if (res.socket && !('io' in res.socket.server)) {
     const httpServer: NetServer = res.socket.server as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const io = new SocketIOServer(httpServer, {
       path: '/api/socket',
       addTrailingSlash: false,
     });
 
-    io.on('connection', (socket) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    io.on('connection', (socket: any) => {
       console.log('Client connected:', socket.id);
 
       socket.on('join-game', (gameId: string) => {
@@ -32,7 +34,7 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
         socket.leave(gameId);
       });
 
-      socket.on('player-action', async ({ gameId, action, gameState }) => {
+      socket.on('player-action', async ({ gameId, action, gameState }: { gameId: string; action: string; gameState: import('@/types/game').GameState }) => {
         try {
           console.log(`Processing player action for game ${gameId}: ${action}`);
 

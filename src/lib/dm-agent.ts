@@ -327,6 +327,7 @@ export class DungeonMaster {
 
     // Remove shortAnswer logic and helpers
     // Always build up stateChanges object
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stateChanges: any = {};
     if (Object.keys(statChanges).length > 0) {
       stateChanges.statChanges = statChanges;
