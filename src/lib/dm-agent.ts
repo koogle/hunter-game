@@ -79,6 +79,32 @@ export class DungeonMaster {
     this.notes = this.initializeNotes(gameState);
   }
 
+  private initializeNotes(gameState: GameState): DMNotes {
+    return {
+      worldState: `World based on scenario: ${gameState.customScenario || gameState.scenario}`,
+      hiddenObjectives: [
+        "Guide player to discover the main quest",
+        "Create challenging but fair encounters",
+        "Adapt the world based on player choices"
+      ],
+      activeQuests: [
+        {
+          id: "main-quest",
+          name: "The Beginning",
+          description: "Start your adventure and discover your purpose",
+          objective: "Explore the surroundings and find a lead",
+          status: "active"
+        }
+      ],
+      playerAssessment: "New player, assessing play style",
+      keyLocations: {},
+      keyCharacters: {},
+      plotHooks: []
+    };
+  }
+
+
+
   /**
    * Run both validity and skill check in parallel, but only await skill check if valid.
    * Returns: { valid, reason, skillCheck }
