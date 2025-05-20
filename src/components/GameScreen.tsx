@@ -7,7 +7,7 @@ import { SkillCheckResult } from "@/lib/dm-agent";
 
 interface GameScreenProps {
   gameState: GameState;
-  onGameStateUpdate: React.SetStateAction<GameState>;
+  onGameStateUpdate: (gameState: GameState) => void;
 }
 
 export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenProps) {
@@ -179,10 +179,10 @@ Tips:
     };
 
     // Update local state to show the user message immediately
-    onGameStateUpdate((prevState: GameState): GameState => ({
-      ...prevState,
-      messages: [...prevState.messages, userMessage]
-    }));
+    onGameStateUpdate({
+      ...gameState,
+      messages: [...gameState.messages, userMessage]
+    });
 
     try {
       // Send the player action via websocket

@@ -28,7 +28,7 @@ export const initWebSocketServer = (server: NetServer) => {
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-io.on('connection', (socket: any) => {
+  io.on('connection', (socket: any) => {
     console.log('Client connected:', socket.id);
 
     socket.on('join-game', (gameId: string) => {
