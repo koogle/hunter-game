@@ -100,7 +100,7 @@ export const processPlayerAction = async (
     const response = await dm.getResponse(action, gameState, skillCheckResult, openaiService);
 
     // Step 5: Parse for state changes and short answer
-    const dmResponse = await dm.getDiffAndShortAnswer(response, gameState, openaiService);
+    const dmResponse = await dm.parseStateChanges(response, gameState, openaiService);
 
     // Step 6: Apply state changes to game state
     const updatedMessages = [

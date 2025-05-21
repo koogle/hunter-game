@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       : null;
     // Continue with the rest of the DM pipeline
     const response = await dm.getResponse(message, gameState, skillCheckResult, openaiService);
-    const dmResponse = await dm.getDiffAndShortAnswer(response, gameState, openaiService);
+    const dmResponse = await dm.parseStateChanges(response, gameState, openaiService);
     // Apply state changes
     const updatedGame = dm.applyStateChanges({
       ...gameState,
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }, dmResponse);
     return new Response(
       JSON.stringify({
-        shortAnswer: dmResponse.shortAnswer,
+
         message: dmResponse.message,
         stateChanges: dmResponse.stateChanges,
         skillCheckResult,

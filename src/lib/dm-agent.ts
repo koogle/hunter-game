@@ -235,13 +235,13 @@ export class DungeonMaster {
     return result?.response ?? "";
   }
 
-  // Step 5: LLM parses for state changes and short answer
-  public async getDiffAndShortAnswer(
+  // Step 5: Parse DM response for state changes
+  public async parseStateChanges(
     longAnswer: string,
     gameState: GameState,
     openaiService: OpenAIService
   ): Promise<DMResponse> {
-    console.log("[DM] getDiffAndShortAnswer called", { longAnswer, gameState });
+    console.log("[DM] parseStateChanges called", { longAnswer, gameState });
 
     const stats = ["health", "mana", "experience", "strength", "dexterity", "intelligence", "luck"] as const;
     const statChanges: Record<string, number> = {};
