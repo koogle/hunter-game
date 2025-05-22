@@ -14,14 +14,12 @@ export const config = {
 const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
   if (res.socket && !('io' in res.socket.server)) {
     const httpServer: NetServer = res.socket.server as any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const io = new SocketIOServer(httpServer, {
       path: '/api/socket',
       addTrailingSlash: false,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    io.on('connection', (socket: any) => {
+    io.on('connection', (socket) => {
       console.log('Client connected:', socket.id);
 
       socket.on('join-game', (gameId: string) => {

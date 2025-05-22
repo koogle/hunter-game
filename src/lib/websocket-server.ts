@@ -141,7 +141,7 @@ export const processPlayerAction = async (
   }
 };
 
-export const emitGameUpdate = (gameId: string, data: any) => {
+export const emitGameUpdate = (gameId: string, data: GameState) => {
   if (!websocketServer.io) {
     console.error('WebSocket server not initialized');
     return;

@@ -325,17 +325,16 @@ export class DungeonMaster {
       }
     };
 
-    // Remove shortAnswer logic and helpers
-    // Always build up stateChanges object
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stateChanges: any = {};
+    await Promise.all([statChangeChecks, inventoryCheck()]);
+
+    const stateChanges: DMResponse["stateChanges"] = {};
+
     if (Object.keys(statChanges).length > 0) {
       stateChanges.statChanges = statChanges;
     }
     if (inventoryChanges) {
       stateChanges.inventoryChanges = inventoryChanges;
     }
-    // Return only message and stateChanges
     return {
       message: longAnswer,
       stateChanges,

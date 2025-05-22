@@ -64,7 +64,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
         leaveGame();
       }
     };
-  }, [gameState.id, onGameStateUpdate]);
+  }, [gameState.id, onGameStateUpdate, gameState]);
 
   const createTextBar = (value: number, max: number, length = 16, filled = "█", empty = "░") => {
     let filledLength = Math.floor((value / max) * length);
