@@ -1,7 +1,6 @@
-import { Server as NetServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { NextApiRequest } from 'next';
-import { NextApiResponse } from 'next';
+import { NextApiResponseWithSocket, SocketServer } from './typings';
 import { processPlayerAction } from '@/lib/websocket-server';
 import { GameStorage } from '@/lib/storage';
 
@@ -11,9 +10,9 @@ export const config = {
   },
 };
 
-const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
-  if (res.socket && !('io' in res.socket.server)) {
-    const httpServer: NetServer = res.socket.server as any;
+const ioHandler = (_req: NextApiRequest, res: NextApiResponseWithSocket) => {
+  if (!res.socket.server.io) {
+    const httpServer: SocketServer = res.socket.server;
     const io = new SocketIOServer(httpServer, {
       path: '/api/socket',
       addTrailingSlash: false,
@@ -72,7 +71,7 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
       });
     });
 
-    (res.socket.server as any).io = io;
+    res.socket.server.io = io;
   }
 
   res.end();
