@@ -38,28 +38,20 @@ const ioHandler = (_req: NextApiRequest, res: NextApiResponseWithSocket) => {
             socket.on('player-action', async ({ gameId, action, gameState }: { gameId: string; action: string; gameState: GameState }) => {
                 try {
                     console.log(`Processing player action for game ${gameId}: ${action}`);
-                    const result = await processPlayerAction(gameId, action, gameState);
+                    const result = await processPlayerAction(gameId, action, gameState, socket.id);
 
                     if (result.updatedGame) {
                         await GameStorage.updateGame(gameId, result.updatedGame);
                     }
 
-                    if (result.actionValidity && !result.actionValidity.valid) {
-                        socket.emit('action-validity', result.actionValidity);
-                        return;
-                    }
+                    // Note: Individual events are now emitted in real-time during processPlayerAction
+                    // We only need to handle the final completion here
+                    socket.emit('action-complete', {
+                        success: true,
+                        gameId,
+                        timestamp: new Date().toISOString()
+                    });
 
-                    if (result.skillCheckResult) {
-                        socket.emit('skill-check-result', result.skillCheckResult);
-                    }
-
-                    if (result.dmResponse) {
-                        socket.emit('dm-response', result.dmResponse);
-                    }
-
-                    if (result.updatedGame) {
-                        socket.emit('game-update', result.updatedGame);
-                    }
                 } catch (error) {
                     console.error('Error processing player action:', error);
                     socket.emit('error', { message: 'Failed to process player action' });

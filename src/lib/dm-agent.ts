@@ -1,4 +1,4 @@
-import { GameState } from "@/types/game";
+import { GameState, GameMessage } from "@/types/game";
 import { z } from 'zod';
 import OpenAI from "openai";
 import OpenAIService from "./openai-service";
@@ -582,5 +582,161 @@ Your response must be in JSON format according to the provided schema.`;
       shortAnswer: z.string()
     });
     return DMResponseSchema;
+  }
+
+  // New method for handling real-time streaming interactions
+  public async processActionWithStreaming(
+    action: string,
+    gameState: GameState,
+    openaiService: OpenAIService,
+    callbacks: {
+      onSkillCheckNotification?: (request: SkillCheckRequest) => void;
+      onSkillCheckResult?: (result: SkillCheckResult) => void;
+      onStreamChunk?: (chunk: string) => void;
+      onActionValidity?: (validity: { valid: boolean; reason: string | null }) => void;
+      onError?: (message: string) => void;
+    }
+  ): Promise<{
+    skillCheckRequest: SkillCheckRequest | undefined;
+    skillCheckResult: SkillCheckResult | undefined;
+    dmResponse: DMResponse;
+    actionValidity: { valid: boolean; reason: string | null };
+    updatedGame: GameState;
+  }> {
+    try {
+      // Step 1: Check if action is valid
+      const actionValidity = await this.isValidAction(action, gameState, openaiService);
+
+      if (!actionValidity.valid) {
+        callbacks.onActionValidity?.(actionValidity);
+        return {
+          skillCheckRequest: undefined,
+          skillCheckResult: undefined,
+          dmResponse: {
+            message: actionValidity.reason || 'Invalid action',
+            stateChanges: {},
+          },
+          actionValidity,
+          updatedGame: gameState,
+        };
+      }
+
+      // Step 2: Get skill check request if needed
+      const skillCheckRequest = await this.getSkillCheckRequest(action, gameState, openaiService);
+
+      // Emit skill check notification immediately if required
+      if (skillCheckRequest && skillCheckRequest.required) {
+        callbacks.onSkillCheckNotification?.(skillCheckRequest);
+      }
+
+      // Step 3: Perform skill check if required
+      let skillCheckResult: SkillCheckResult | undefined = undefined;
+      if (skillCheckRequest && skillCheckRequest.required) {
+        skillCheckResult = this.performSkillCheck(
+          skillCheckRequest.stat!,
+          skillCheckRequest.difficultyCategory!,
+          gameState
+        );
+        
+        // Emit skill check result immediately
+        callbacks.onSkillCheckResult?.(skillCheckResult);
+      }
+
+      // Step 4: Generate DM response with streaming
+      const response = await this.getStreamingResponse(action, gameState, skillCheckResult, openaiService, callbacks.onStreamChunk);
+
+      // Step 5: Parse for state changes and short answer (in parallel)
+      const dmResponsePromise = this.parseStateChanges(response, gameState, openaiService);
+
+      // Step 6: Prepare updated messages while parsing happens
+      const updatedMessages = [
+        ...gameState.messages,
+        { role: 'user', content: action } as GameMessage,
+      ];
+
+      // Add skill check message if performed
+      if (skillCheckResult && skillCheckResult.performed) {
+        updatedMessages.push({
+          role: 'assistant',
+          content: `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty} → ${skillCheckResult.success ? 'SUCCESS' : 'FAILURE'} (Δ${skillCheckResult.degree})${skillCheckResult.reason ? ': ' + skillCheckResult.reason : ''}`
+        } as GameMessage);
+      }
+
+      // Wait for parsing to complete
+      const dmResponse = await dmResponsePromise;
+
+      // Add DM response
+      updatedMessages.push({
+        role: 'assistant',
+        content: dmResponse.message
+      } as GameMessage);
+
+      const updatedGame = this.applyStateChanges({
+        ...gameState,
+        lastUpdatedAt: new Date().toISOString(),
+        messages: updatedMessages
+      }, dmResponse);
+
+      return {
+        skillCheckRequest,
+        skillCheckResult,
+        dmResponse,
+        actionValidity,
+        updatedGame,
+      };
+    } catch (error) {
+      console.error('Error processing player action with streaming:', error);
+      callbacks.onError?.('Failed to process player action');
+      throw error;
+    }
+  }
+
+  // Helper method for streaming DM response
+  private async getStreamingResponse(
+    action: string,
+    gameState: GameState,
+    skillCheckResult: SkillCheckResult | undefined,
+    openaiService: OpenAIService,
+    onStreamChunk?: (chunk: string) => void
+  ): Promise<string> {
+    const messages = this.createMessages(gameState);
+    
+    // Add the player action
+    messages.push({ role: 'user', content: action });
+    
+    // Add skill check context if available
+    if (skillCheckResult && skillCheckResult.performed) {
+      const skillCheckContext = `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty}. Result: ${skillCheckResult.success ? 'Success' : 'Failure'} (degree: ${skillCheckResult.degree}).\n`;
+      messages.push({ role: 'system', content: `The player just performed a skill check with the following result: ${skillCheckContext}. Incorporate this result into your response naturally.` });
+    }
+
+    try {
+      const stream = await openaiService.createStreamingChatCompletion(messages, {
+        model: BIG_MODEL,
+        temperature: 0.7,
+        max_tokens: 1000
+      });
+
+      let fullResponse = '';
+      
+      // Emit stream start notification
+      onStreamChunk?.('__STREAM_START__');
+      
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          fullResponse += content;
+          onStreamChunk?.(content);
+        }
+      }
+      
+      // Emit stream end notification
+      onStreamChunk?.('__STREAM_END__');
+      
+      return fullResponse;
+    } catch (error) {
+      console.error('Error streaming DM response:', error);
+      throw error;
+    }
   }
 }

@@ -14,11 +14,19 @@
     {
       "role": "assistant",
       "content": "You stand amidst towering trees cloaked in a shimmering mist, their roots curling around fragments of ancient stonework. Faint, glowing runes pulse beneath your boots with each step. To your left, a weathered statue of a forgotten hero rises from a bed of wildflowers and moss; to your right, the remains of an overgrown archway lead deeper into shadowy thickets. Farther ahead, the path splits—one trail winding toward a sun-dappled ruin, the other vanishing beneath tangled vines and flickering shadows. The air hums with distant, haunting melodies, and somewhere in the gloom, unseen eyes seem to watch your every move."
+    },
+    {
+      "role": "user",
+      "content": "I try to think about what my purpose is"
+    },
+    {
+      "role": "assistant",
+      "content": "Jakob stands amidst the ancient forest, letting the strange air and haunting melodies wash over him. As he focuses inward, the pulsing glow of the runes intensifies beneath his feet. A gentle, almost imperceptible voice seems to echo through the mist and into his mind:\n\n\"Seeker... Restore what was lost. Find the heart of Eldoria. Your purpose lies within its ruins. The shadows watch, but so do the hopes of the fallen.\"\n\nThe moment passes. The forest seems unchanged, yet Jakob feels a newfound sense of destiny pressing him forward."
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-22T22:59:28.164Z",
+  "lastUpdatedAt": "2025-05-26T01:48:05.845Z",
   "stats": {
     "health": 100,
     "mana": 100,

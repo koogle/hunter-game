@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import { Server as NetServer } from 'http';
 
-import { GameState, GameMessage } from '@/types/game';
+import { GameState } from '@/types/game';
 import { DungeonMaster, SkillCheckRequest, SkillCheckResult, DMResponse } from './dm-agent';
 import OpenAIService from './openai-service';
 
@@ -55,7 +55,8 @@ export const initWebSocketServer = (server: NetServer) => {
 export const processPlayerAction = async (
   gameId: string,
   action: string,
-  gameState: GameState
+  gameState: GameState,
+  socketId?: string
 ): Promise<{
   skillCheckRequest: SkillCheckRequest | undefined;
   skillCheckResult: SkillCheckResult | undefined;
@@ -67,114 +68,96 @@ export const processPlayerAction = async (
   const openaiService = OpenAIService.getInstance();
 
   try {
-    // Step 1: Check if action is valid
-    const actionValidity = await dm.isValidAction(action, gameState, openaiService);
+    // Use the DM agent's streaming method with websocket callbacks
+    const result = await dm.processActionWithStreaming(action, gameState, openaiService, {
+      onSkillCheckNotification: (request) => emitSkillCheckNotification(gameId, request, socketId),
+      onSkillCheckResult: (result) => emitSkillCheckResult(gameId, result, socketId),
+      onStreamChunk: (chunk) => emitDMResponseStream(gameId, chunk, socketId),
+      onActionValidity: (validity) => emitActionValidity(gameId, validity, socketId),
+      onError: (message) => emitError(gameId, message, socketId),
+    });
 
-    if (!actionValidity.valid) {
-      return {
-        skillCheckRequest: undefined,
-        skillCheckResult: undefined,
-        dmResponse: {
-          message: actionValidity.reason || 'Invalid action',
-          stateChanges: {},
-        },
-        actionValidity,
-        updatedGame: gameState,
-      };
-    }
+    // Emit final game update
+    emitGameUpdate(gameId, result.updatedGame, socketId);
 
-    // Step 2: Get skill check request if needed
-    const skillCheckRequest = await dm.getSkillCheckRequest(action, gameState, openaiService);
-
-    // Step 3: Perform skill check if required
-    let skillCheckResult: SkillCheckResult | undefined = undefined;
-    if (skillCheckRequest && skillCheckRequest.required) {
-      skillCheckResult = dm.performSkillCheck(
-        skillCheckRequest.stat!,
-        skillCheckRequest.difficultyCategory!,
-        gameState
-      );
-    }
-
-    // Step 4: Generate DM response
-    const response = await dm.getResponse(action, gameState, skillCheckResult, openaiService);
-
-    // Step 5: Parse for state changes and short answer
-    const dmResponse = await dm.parseStateChanges(response, gameState, openaiService);
-
-    // Step 6: Apply state changes to game state
-    const updatedMessages = [
-      ...gameState.messages,
-      { role: 'user', content: action } as GameMessage,
-    ];
-
-    // Add skill check message if performed
-    if (skillCheckResult && skillCheckResult.performed) {
-      updatedMessages.push({
-        role: 'assistant',
-        content: `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty} → ${skillCheckResult.success ? 'SUCCESS' : 'FAILURE'} (Δ${skillCheckResult.degree})${skillCheckResult.reason ? ': ' + skillCheckResult.reason : ''}`
-      } as GameMessage);
-    }
-
-    // Add DM response
-    updatedMessages.push({
-      role: 'assistant',
-      content: dmResponse.message
-    } as GameMessage);
-
-    const updatedGame = dm.applyStateChanges({
-      ...gameState,
-      lastUpdatedAt: new Date().toISOString(),
-      messages: updatedMessages
-    }, dmResponse);
-
-    return {
-      skillCheckRequest,
-      skillCheckResult,
-      dmResponse,
-      actionValidity,
-      updatedGame,
-    };
+    return result;
   } catch (error) {
     console.error('Error processing player action:', error);
+    emitError(gameId, 'Failed to process player action', socketId);
     throw error;
   }
 };
 
-export const emitGameUpdate = (gameId: string, data: GameState) => {
+export const emitGameUpdate = (gameId: string, data: GameState, socketId?: string) => {
   if (!websocketServer.io) {
     console.error('WebSocket server not initialized');
     return;
   }
 
   websocketServer.io.to(gameId).emit('game-update', data);
+  if (socketId) {
+    websocketServer.io.to(socketId).emit('game-update', data);
+  }
 };
 
-export const emitDMResponseStream = (gameId: string, chunk: string) => {
+export const emitDMResponseStream = (gameId: string, chunk: string, socketId?: string) => {
   if (!websocketServer.io) {
     console.error('WebSocket server not initialized');
     return;
   }
 
   websocketServer.io.to(gameId).emit('dm-response-chunk', chunk);
+  if (socketId) {
+    websocketServer.io.to(socketId).emit('dm-response-chunk', chunk);
+  }
 };
 
-export const emitSkillCheckResult = (gameId: string, result: SkillCheckResult) => {
+export const emitSkillCheckResult = (gameId: string, result: SkillCheckResult, socketId?: string) => {
   if (!websocketServer.io) {
     console.error('WebSocket server not initialized');
     return;
   }
 
   websocketServer.io.to(gameId).emit('skill-check-result', result);
+  if (socketId) {
+    websocketServer.io.to(socketId).emit('skill-check-result', result);
+  }
 };
 
-export const emitActionValidity = (gameId: string, validity: { valid: boolean; reason: string | null }) => {
+export const emitActionValidity = (gameId: string, validity: { valid: boolean; reason: string | null }, socketId?: string) => {
   if (!websocketServer.io) {
     console.error('WebSocket server not initialized');
     return;
   }
 
   websocketServer.io.to(gameId).emit('action-validity', validity);
+  if (socketId) {
+    websocketServer.io.to(socketId).emit('action-validity', validity);
+  }
+};
+
+export const emitSkillCheckNotification = (gameId: string, request: SkillCheckRequest, socketId?: string) => {
+  if (!websocketServer.io) {
+    console.error('WebSocket server not initialized');
+    return;
+  }
+
+  websocketServer.io.to(gameId).emit('skill-check-notification', request);
+  if (socketId) {
+    websocketServer.io.to(socketId).emit('skill-check-notification', request);
+  }
+};
+
+export const emitError = (gameId: string, message: string, socketId?: string) => {
+  if (!websocketServer.io) {
+    console.error('WebSocket server not initialized');
+    return;
+  }
+
+  websocketServer.io.to(gameId).emit('error', message);
+  if (socketId) {
+    websocketServer.io.to(socketId).emit('error', message);
+  }
 };
 
 export default websocketServer;

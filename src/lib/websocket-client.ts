@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { GameState } from '@/types/game';
-import { SkillCheckResult } from './dm-agent';
+import { SkillCheckResult, SkillCheckRequest } from './dm-agent';
 
 // Ensure we only initialize the socket once on the client side
 let socket: Socket | null = null;
@@ -11,9 +11,12 @@ interface WebSocketClientInstance {
   gameId: string | null;
   callbacks: {
     onDMResponseChunk: ((chunk: string) => void) | null;
+    onSkillCheckNotification: ((request: SkillCheckRequest) => void) | null;
     onSkillCheckResult: ((result: SkillCheckResult) => void) | null;
     onActionValidity: ((validity: { valid: boolean; reason: string | null }) => void) | null;
     onGameUpdate: ((gameState: GameState) => void) | null;
+    onActionComplete: ((data: { success: boolean; gameId: string; timestamp: string }) => void) | null;
+    onError: ((message: string) => void) | null;
   };
 }
 
@@ -23,9 +26,12 @@ export const websocketClient: WebSocketClientInstance = {
   gameId: null,
   callbacks: {
     onDMResponseChunk: null,
+    onSkillCheckNotification: null,
     onSkillCheckResult: null,
     onActionValidity: null,
     onGameUpdate: null,
+    onActionComplete: null,
+    onError: null,
   },
 };
 
@@ -68,6 +74,12 @@ export const initWebSocketClient = () => {
     }
   });
 
+  socket.on('skill-check-notification', (request: SkillCheckRequest) => {
+    if (websocketClient.callbacks.onSkillCheckNotification) {
+      websocketClient.callbacks.onSkillCheckNotification(request);
+    }
+  });
+
   socket.on('skill-check-result', (result: SkillCheckResult) => {
     if (websocketClient.callbacks.onSkillCheckResult) {
       websocketClient.callbacks.onSkillCheckResult(result);
@@ -83,6 +95,18 @@ export const initWebSocketClient = () => {
   socket.on('game-update', (gameState: GameState) => {
     if (websocketClient.callbacks.onGameUpdate) {
       websocketClient.callbacks.onGameUpdate(gameState);
+    }
+  });
+
+  socket.on('action-complete', (data: { success: boolean; gameId: string; timestamp: string }) => {
+    if (websocketClient.callbacks.onActionComplete) {
+      websocketClient.callbacks.onActionComplete(data);
+    }
+  });
+
+  socket.on('error', (message: string) => {
+    if (websocketClient.callbacks.onError) {
+      websocketClient.callbacks.onError(message);
     }
   });
 
@@ -147,17 +171,26 @@ export const sendPlayerAction = async (action: string, gameState: GameState) => 
 
 export const setCallbacks = ({
   onDMResponseChunk,
+  onSkillCheckNotification,
   onSkillCheckResult,
   onActionValidity,
   onGameUpdate,
+  onActionComplete,
+  onError,
 }: {
   onDMResponseChunk?: (chunk: string) => void;
+  onSkillCheckNotification?: (request: SkillCheckRequest) => void;
   onSkillCheckResult?: (result: SkillCheckResult) => void;
   onActionValidity?: (validity: { valid: boolean; reason: string | null }) => void;
   onGameUpdate?: (gameState: GameState) => void;
+  onActionComplete?: (data: { success: boolean; gameId: string; timestamp: string }) => void;
+  onError?: (message: string) => void;
 }) => {
   if (onDMResponseChunk) {
     websocketClient.callbacks.onDMResponseChunk = onDMResponseChunk;
+  }
+  if (onSkillCheckNotification) {
+    websocketClient.callbacks.onSkillCheckNotification = onSkillCheckNotification;
   }
   if (onSkillCheckResult) {
     websocketClient.callbacks.onSkillCheckResult = onSkillCheckResult;
@@ -167,6 +200,12 @@ export const setCallbacks = ({
   }
   if (onGameUpdate) {
     websocketClient.callbacks.onGameUpdate = onGameUpdate;
+  }
+  if (onActionComplete) {
+    websocketClient.callbacks.onActionComplete = onActionComplete;
+  }
+  if (onError) {
+    websocketClient.callbacks.onError = onError;
   }
 };
 
