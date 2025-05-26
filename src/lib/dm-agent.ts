@@ -353,7 +353,7 @@ export class DungeonMaster {
   public createSystemPrompt(gameState: GameState): string {
     const { notes } = this;
 
-    return `You are a game master (DM) in a text adventure RPG. The game is set in: ${gameState.customScenario || gameState.scenario}.
+    return `You are a game master (DM) in a text adventure RPG. The game is set in: ${gameState.customScenario || gameState.scenario}. The player's name is ${gameState.name}.
 
 GAME STATE:
 - Player Health: ${gameState.stats.health}/100
@@ -380,7 +380,7 @@ INSTRUCTIONS:
 3. Push back against players who try to break the game or act unrealistically.
 4. Maintain a consistent world and narrative.
 5. Actions should have consequences.
-6. **ALWAYS refer to the player as "you" in your responses, never use their name.**
+6. **Prefer to refer to the player as "you" in your responses, but you may occasionally use their name for variety and immersion.**
 7. **Any changes to the world state (including player stats, inventory, quests, or any other aspect of the game) MUST be clearly and explicitly spelled out in your answer to the user. Do not imply or leave changes ambiguous. If there are no changes, state that explicitly.**
 
 When responding to the player, follow this process:
