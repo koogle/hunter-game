@@ -399,7 +399,14 @@ Your response must be in JSON format according to the provided schema.`;
         content: systemPrompt,
       },
       ...(gameState.messages
-        .filter(msg => msg.content !== undefined && msg.content !== null && msg.content.trim() !== "")
+        .filter(msg => {
+          // Only include user and assistant messages, exclude system messages
+          // System messages are for UI display only (errors, skill checks, etc.)
+          return (msg.role === "user" || msg.role === "assistant") &&
+                 msg.content !== undefined && 
+                 msg.content !== null && 
+                 msg.content.trim() !== "";
+        })
         .map(msg => ({
           role: msg.role === "user" ? "user" : "assistant",
           content: msg.content,
