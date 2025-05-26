@@ -588,7 +588,6 @@ Your response must be in JSON format according to the provided schema.`;
   public async processActionWithStreaming(
     action: string,
     gameState: GameState,
-    openaiService: OpenAIService,
     callbacks: {
       onSkillCheckNotification?: (request: SkillCheckRequest) => void;
       onSkillCheckResult?: (result: SkillCheckResult) => void;
@@ -603,6 +602,8 @@ Your response must be in JSON format according to the provided schema.`;
     actionValidity: { valid: boolean; reason: string | null };
     updatedGame: GameState;
   }> {
+    const openaiService = OpenAIService.getInstance();
+    
     try {
       // Step 1: Check if action is valid
       const actionValidity = await this.isValidAction(action, gameState, openaiService);
