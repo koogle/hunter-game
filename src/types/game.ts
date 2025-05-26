@@ -1,6 +1,8 @@
 export type GameMessage = {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
+  type?: "normal" | "error" | "skill-check" | "action-invalid";
+  timestamp?: string;
 };
 
 export type GameState = {

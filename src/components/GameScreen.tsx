@@ -36,25 +36,11 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
       onDMResponseChunk: (chunk: string) => {
         setStreamedResponse(prev => prev + chunk);
       },
-      onSkillCheckResult: (result: SkillCheckResult) => {
-        setTempMessage({
-          role: 'assistant',
-          content: `Skill Check Result: ${result.stat?.toUpperCase()} (${result.statValue}) + d12 (${result.roll}) vs difficulty ${result.difficulty} → ${result.success ? 'SUCCESS' : 'FAILURE'} (Δ${result.degree})${result.reason ? ': ' + result.reason : ''}`
-        });
-      },
-      onActionValidity: (validity: { valid: boolean; reason: string | null }) => {
-        if (!validity.valid) {
-          setTempMessage({
-            role: 'assistant',
-            content: validity.reason || 'That action is not allowed.'
-          });
-          setIsLoading(false);
-        }
-      },
       onGameUpdate: (updatedGameState: GameState) => {
         onGameStateUpdate(updatedGameState);
         setIsLoading(false);
         setStreamedResponse("");
+        setTempMessage(null); // Clear any temporary messages
       }
     });
 
@@ -226,12 +212,70 @@ Tips:
                 </div>
               );
             }
+            
+            // Handle system messages (errors, skill checks, etc.)
+            if (message.role === "system") {
+              const getSystemMessageStyle = (type?: string) => {
+                switch (type) {
+                  case "error":
+                    return {
+                      labelClass: "text-red-400 font-bold",
+                      contentClass: "text-red-300",
+                      containerClass: "bg-red-900/20 border border-red-800 p-2 rounded"
+                    };
+                  case "action-invalid":
+                    return {
+                      labelClass: "text-orange-400 font-bold",
+                      contentClass: "text-orange-300",
+                      containerClass: "bg-orange-900/20 border border-orange-800 p-2 rounded"
+                    };
+                  case "skill-check":
+                    return {
+                      labelClass: "text-blue-400 font-bold",
+                      contentClass: "text-blue-300",
+                      containerClass: "bg-blue-900/20 border border-blue-800 p-2 rounded"
+                    };
+                  default:
+                    return {
+                      labelClass: "text-gray-400 font-bold",
+                      contentClass: "text-gray-300",
+                      containerClass: "bg-gray-900/20 border border-gray-800 p-2 rounded"
+                    };
+                }
+              };
+              
+              const style = getSystemMessageStyle(message.type);
+              const label = message.type === "error" ? "ERROR:" : 
+                           message.type === "action-invalid" ? "INVALID:" :
+                           message.type === "skill-check" ? "SKILL CHECK:" : "SYSTEM:";
+              
+              return (
+                <div key={index} className={`mb-4 leading-relaxed ${style.containerClass}`}>
+                  <div className="flex items-start gap-2">
+                    <span className={style.labelClass}>{label}</span>
+                    <span className={style.contentClass}>{message.content}</span>
+                  </div>
+                  {message.timestamp && (
+                    <div className="text-xs text-gray-500 mt-1 ml-2">
+                      {new Date(message.timestamp).toLocaleTimeString()}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            
+            // Handle assistant messages (DM responses)
             return (
               <div key={index} className="mb-4 leading-relaxed">
                 <div className="flex items-start gap-2">
                   <span className="text-green-500 font-bold">DM:</span>
                   <span>{message.content}</span>
                 </div>
+                {message.timestamp && (
+                  <div className="text-xs text-gray-500 mt-1 ml-2">
+                    {new Date(message.timestamp).toLocaleTimeString()}
+                  </div>
+                )}
               </div>
             );
           })}

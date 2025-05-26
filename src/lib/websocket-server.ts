@@ -65,25 +65,19 @@ export const processPlayerAction = async (
 }> => {
   const dm = new DungeonMaster(gameState);
 
-  try {
-    // Use the DM agent's streaming method with websocket callbacks
-    const result = await dm.processActionWithStreaming(action, gameState, {
-      onSkillCheckNotification: (request: SkillCheckRequest) => emitToGame(gameId, 'skill-check-notification', request, socketId),
-      onSkillCheckResult: (result: SkillCheckResult) => emitToGame(gameId, 'skill-check-result', result, socketId),
-      onStreamChunk: (chunk: string) => emitToGame(gameId, 'dm-response-chunk', chunk, socketId),
-      onActionValidity: (validity: { valid: boolean; reason: string | null }) => emitToGame(gameId, 'action-validity', validity, socketId),
-      onError: (message: string) => emitToGame(gameId, 'error', message, socketId),
-    });
+  // Use the DM agent's streaming method with websocket callbacks
+  const result = await dm.processActionWithStreaming(action, gameState, {
+    onSkillCheckNotification: (request: SkillCheckRequest) => emitToGame(gameId, 'skill-check-notification', request, socketId),
+    onSkillCheckResult: (result: SkillCheckResult) => emitToGame(gameId, 'skill-check-result', result, socketId),
+    onStreamChunk: (chunk: string) => emitToGame(gameId, 'dm-response-chunk', chunk, socketId),
+    onActionValidity: (validity: { valid: boolean; reason: string | null }) => emitToGame(gameId, 'action-validity', validity, socketId),
+    onError: (message: string) => emitToGame(gameId, 'error', message, socketId),
+  });
 
-    // Emit final game update
-    emitToGame(gameId, 'game-update', result.updatedGame, socketId);
+  // Always emit final game update (errors are now part of the game history)
+  emitToGame(gameId, 'game-update', result.updatedGame, socketId);
 
-    return result;
-  } catch (error) {
-    console.error('Error processing player action:', error);
-    emitToGame(gameId, 'error', 'Failed to process player action', socketId);
-    throw error;
-  }
+  return result;
 };
 
 // Generic emit function to replace all the specific emit functions

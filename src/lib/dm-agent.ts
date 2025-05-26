@@ -610,15 +610,35 @@ Your response must be in JSON format according to the provided schema.`;
 
       if (!actionValidity.valid) {
         callbacks.onActionValidity?.(actionValidity);
+        
+        // Add error message to game history
+        const errorMessage = actionValidity.reason || 'Invalid action';
+        const updatedMessages = [
+          ...gameState.messages,
+          { role: 'user', content: action } as GameMessage,
+          { 
+            role: 'system', 
+            content: errorMessage,
+            type: 'action-invalid',
+            timestamp: new Date().toISOString()
+          } as GameMessage,
+        ];
+        
+        const updatedGame = {
+          ...gameState,
+          messages: updatedMessages,
+          lastUpdatedAt: new Date().toISOString()
+        };
+        
         return {
           skillCheckRequest: undefined,
           skillCheckResult: undefined,
           dmResponse: {
-            message: actionValidity.reason || 'Invalid action',
+            message: errorMessage,
             stateChanges: {},
           },
           actionValidity,
-          updatedGame: gameState,
+          updatedGame,
         };
       }
 
@@ -652,14 +672,16 @@ Your response must be in JSON format according to the provided schema.`;
       // Step 6: Prepare updated messages while parsing happens
       const updatedMessages = [
         ...gameState.messages,
-        { role: 'user', content: action } as GameMessage,
+        { role: 'user', content: action, timestamp: new Date().toISOString() } as GameMessage,
       ];
 
       // Add skill check message if performed
       if (skillCheckResult && skillCheckResult.performed) {
         updatedMessages.push({
-          role: 'assistant',
-          content: `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty} → ${skillCheckResult.success ? 'SUCCESS' : 'FAILURE'} (Δ${skillCheckResult.degree})${skillCheckResult.reason ? ': ' + skillCheckResult.reason : ''}`
+          role: 'system',
+          content: `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty} → ${skillCheckResult.success ? 'SUCCESS' : 'FAILURE'} (Δ${skillCheckResult.degree})${skillCheckResult.reason ? ': ' + skillCheckResult.reason : ''}`,
+          type: 'skill-check',
+          timestamp: new Date().toISOString()
         } as GameMessage);
       }
 
@@ -669,7 +691,9 @@ Your response must be in JSON format according to the provided schema.`;
       // Add DM response
       updatedMessages.push({
         role: 'assistant',
-        content: dmResponse.message
+        content: dmResponse.message,
+        type: 'normal',
+        timestamp: new Date().toISOString()
       } as GameMessage);
 
       const updatedGame = this.applyStateChanges({
@@ -687,8 +711,37 @@ Your response must be in JSON format according to the provided schema.`;
       };
     } catch (error) {
       console.error('Error processing player action with streaming:', error);
-      callbacks.onError?.('Failed to process player action');
-      throw error;
+      const errorMessage = 'Failed to process player action';
+      callbacks.onError?.(errorMessage);
+      
+      // Add error message to game history even when there's an exception
+      const updatedMessages = [
+        ...gameState.messages,
+        { role: 'user', content: action, timestamp: new Date().toISOString() } as GameMessage,
+        { 
+          role: 'system', 
+          content: errorMessage,
+          type: 'error',
+          timestamp: new Date().toISOString()
+        } as GameMessage,
+      ];
+      
+      const updatedGameWithError = {
+        ...gameState,
+        messages: updatedMessages,
+        lastUpdatedAt: new Date().toISOString()
+      };
+      
+      return {
+        skillCheckRequest: undefined,
+        skillCheckResult: undefined,
+        dmResponse: {
+          message: errorMessage,
+          stateChanges: {},
+        },
+        actionValidity: { valid: false, reason: errorMessage },
+        updatedGame: updatedGameWithError,
+      };
     }
   }
 
