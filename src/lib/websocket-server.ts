@@ -81,6 +81,7 @@ export const processPlayerAction = async (
 };
 
 // Generic emit function to replace all the specific emit functions
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const emitToGame = (gameId: string, event: string, data: any, socketId?: string) => {
   if (!websocketServer.io) {
     console.error('WebSocket server not initialized');
@@ -89,7 +90,7 @@ const emitToGame = (gameId: string, event: string, data: any, socketId?: string)
 
   // Emit to the game room
   websocketServer.io.to(gameId).emit(event, data);
-  
+
   // Also emit to specific socket if provided
   if (socketId) {
     websocketServer.io.to(socketId).emit(event, data);

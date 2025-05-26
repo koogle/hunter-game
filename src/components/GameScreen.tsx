@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { GameState, GameMessage } from "@/types/game";
 import { initWebSocketClient, joinGame, leaveGame, sendPlayerAction, setCallbacks } from "@/lib/websocket-client";
-import { SkillCheckResult } from "@/lib/dm-agent";
 
 interface GameScreenProps {
   gameState: GameState;
@@ -212,7 +211,7 @@ Tips:
                 </div>
               );
             }
-            
+
             // Handle system messages (errors, skill checks, etc.)
             if (message.role === "system") {
               const getSystemMessageStyle = (type?: string) => {
@@ -243,12 +242,12 @@ Tips:
                     };
                 }
               };
-              
+
               const style = getSystemMessageStyle(message.type);
-              const label = message.type === "error" ? "ERROR:" : 
-                           message.type === "action-invalid" ? "INVALID:" :
-                           message.type === "skill-check" ? "SKILL CHECK:" : "SYSTEM:";
-              
+              const label = message.type === "error" ? "ERROR:" :
+                message.type === "action-invalid" ? "INVALID:" :
+                  message.type === "skill-check" ? "SKILL CHECK:" : "SYSTEM:";
+
               return (
                 <div key={index} className={`mb-4 leading-relaxed ${style.containerClass}`}>
                   <div className="flex items-start gap-2">
@@ -263,7 +262,7 @@ Tips:
                 </div>
               );
             }
-            
+
             // Handle assistant messages (DM responses)
             return (
               <div key={index} className="mb-4 leading-relaxed">
