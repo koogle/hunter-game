@@ -206,7 +206,7 @@ Tips:
                 <div key={index} className="mb-4 leading-relaxed">
                   <div className="flex items-start gap-2">
                     <span className="text-yellow-400 font-bold">You:</span>
-                    <span>{message.content}</span>
+                    <span>{typeof message.content === "string" ? message.content : JSON.stringify(message.content, null, 2)}</span>
                   </div>
                 </div>
               );
@@ -266,7 +266,7 @@ Tips:
                 <div key={index} className={`mb-4 leading-relaxed ${style.containerClass}`}>
                   <div className="flex items-start gap-2">
                     <span className={style.labelClass}>{label}</span>
-                    <span className={style.contentClass}>{message.content}</span>
+                    <span className={style.contentClass}>{typeof message.content === "string" ? message.content : JSON.stringify(message.content, null, 2)}</span>
                   </div>
                   {message.timestamp && (
                     <div className="text-xs text-gray-500 mt-1 ml-2">
@@ -282,7 +282,7 @@ Tips:
               <div key={index} className="mb-4 leading-relaxed">
                 <div className="flex items-start gap-2">
                   <span className="text-green-500 font-bold">DM:</span>
-                  <span>{message.content}</span>
+                  <span>{typeof message.content === "string" ? message.content : JSON.stringify(message.content, null, 2)}</span>
                 </div>
                 {message.timestamp && (
                   <div className="text-xs text-gray-500 mt-1 ml-2">
