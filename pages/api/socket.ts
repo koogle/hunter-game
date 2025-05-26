@@ -38,10 +38,16 @@ const ioHandler = (_req: NextApiRequest, res: NextApiResponseWithSocket) => {
             socket.on('player-action', async ({ gameId, action, gameState }: { gameId: string; action: string; gameState: GameState }) => {
                 try {
                     console.log(`Processing player action for game ${gameId}: ${action}`);
-                    const result = await processPlayerAction(gameId, action, gameState, socket.id);
+                    const result = await processPlayerAction(gameId, action, gameState, socket.id, io);
 
                     if (result.updatedGame) {
                         await GameStorage.updateGame(gameId, result.updatedGame);
+                    }
+
+                    // Emit the final game update
+                    io.to(gameId).emit('game-update', result.updatedGame);
+                    if (socket.id) {
+                        io.to(socket.id).emit('game-update', result.updatedGame);
                     }
 
                     // Note: Individual events are now emitted in real-time during processPlayerAction

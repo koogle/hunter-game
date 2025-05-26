@@ -171,6 +171,78 @@ export class DungeonMaster {
     return response;
   }
 
+  /**
+   * Combined validity and skill check in a single LLM call
+   */
+  public async validateAndCheckSkill(
+    action: string,
+    gameState: GameState,
+    openaiService: OpenAIService
+  ): Promise<{ 
+    valid: boolean; 
+    reason: string | null; 
+    skillCheck: SkillCheckRequest | undefined 
+  }> {
+    console.log("[DM] validateAndCheckSkill called", { action, gameState });
+    
+    const schema = z.object({
+      valid: z.boolean(),
+      invalidReason: z.union([z.string(), z.null()]),
+      requiresSkillCheck: z.boolean(),
+      skillCheckDetails: z.union([
+        z.object({
+          stat: z.enum(['strength', 'dexterity', 'intelligence', 'luck']),
+          difficulty: z.enum(['trivial', 'easy', 'medium', 'hard', 'extreme']),
+          reason: z.string()
+        }),
+        z.null()
+      ])
+    });
+    
+    const prompt = `Analyze this player action in an RPG context:
+Action: "${action}"
+Game State: ${JSON.stringify(gameState)}
+
+Determine:
+1. Is this a valid in-character action? (reject meta-questions, out-of-character, or game-breaking actions)
+2. If valid, does it require a skill check? If so, which stat and difficulty?
+
+Respond with your analysis.`;
+    
+    const messages = [
+      { role: 'system', content: 'You are an expert RPG game master who evaluates player actions.' },
+      { role: 'user', content: prompt }
+    ];
+    
+    const response = await openaiService.createStructuredChatCompletion(messages, schema, { 
+      model: SMALL_MODEL, 
+      temperature: 0 
+    });
+    
+    console.log("[DM] validateAndCheckSkill response", response);
+    
+    if (!response) {
+      return { valid: false, reason: 'Failed to validate action', skillCheck: undefined };
+    }
+    
+    // Build skill check request if needed
+    let skillCheck: SkillCheckRequest | undefined;
+    if (response.valid && response.requiresSkillCheck && response.skillCheckDetails) {
+      skillCheck = {
+        required: true,
+        stat: response.skillCheckDetails.stat,
+        difficultyCategory: response.skillCheckDetails.difficulty as SkillDifficulty,
+        reason: response.skillCheckDetails.reason
+      };
+    }
+    
+    return {
+      valid: response.valid,
+      reason: response.invalidReason,
+      skillCheck
+    };
+  }
+
   // Step 3: Perform the skill check
   public performSkillCheck(
     stat: 'strength' | 'dexterity' | 'intelligence' | 'luck',
@@ -237,109 +309,85 @@ export class DungeonMaster {
 
   // Step 5: Parse DM response for state changes
   public async parseStateChanges(
-    longAnswer: string,
+    narrative: string,
     gameState: GameState,
     openaiService: OpenAIService
   ): Promise<DMResponse> {
-    console.log("[DM] parseStateChanges called", { longAnswer, gameState });
-
-    const stats = ["health", "mana", "experience", "strength", "dexterity", "intelligence", "luck"] as const;
-    const statChanges: Record<string, number> = {};
-
-    // Helper to ask if a stat should change
-    const shouldChangeStat = async (stat: string) => {
-      const prompt = `Given this DM narrative:\n${longAnswer}\n\nShould the player's ${stat} change as a result of this action? Answer "yes" or "no" only.`;
-      const schema = z.object({ change: z.enum(["yes", "no"]) });
-      const messages = [
-        { role: 'system', content: 'You are a precise RPG game master.' },
-        { role: 'user', content: prompt }
-      ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
-      if (!res) {
-        throw new Error("Failed to get shouldChangeStat result");
-      }
-      return res.change === "yes";
-    };
-
-    // Helper to get the new value for a stat
-    const getStatChange = async (stat: string) => {
-      const prompt = `Given this DM narrative:\n${longAnswer}\n\nWhat should the player's ${stat} be after this action? Return an integer between 0 and 100. Do not exceed these bounds.`;
-      const schema = z.object({ value: z.number().int() });
-      const messages = [
-        { role: 'system', content: 'You are a precise RPG game master.' },
-        { role: 'user', content: prompt }
-      ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
-      return res?.value;
-    };
-
-    // Parallel check for all stats
-    const statChangeChecks = stats.map(async (stat) => {
-      if (await shouldChangeStat(stat)) {
-        const newValue = await getStatChange(stat);
-        if (newValue !== undefined) {
-          statChanges[stat] = newValue;
-        }
-      }
+    const schema = z.object({
+      stateChanges: z.object({
+        inventoryChanges: z.object({
+          add: z.array(z.object({
+            name: z.string(),
+            quantity: z.number(),
+            description: z.string().optional()
+          })).optional(),
+          remove: z.array(z.object({
+            name: z.string(),
+            quantity: z.number()
+          })).optional()
+        }).optional(),
+        statChanges: z.object({
+          health: z.number().optional(),
+          mana: z.number().optional(),
+          experience: z.number().optional(),
+          strength: z.number().optional(),
+          dexterity: z.number().optional(),
+          intelligence: z.number().optional(),
+          luck: z.number().optional()
+        }).optional(),
+        questUpdates: z.array(z.object({
+          questId: z.string().optional(),
+          status: z.enum(["active", "completed", "failed"]).optional()
+        })).optional(),
+        dmNotesUpdates: z.object({
+          worldState: z.string().optional(),
+          playerAssessment: z.string().optional(),
+          activeQuests: z.array(z.object({
+            id: z.string(),
+            name: z.string(),
+            description: z.string(),
+            objective: z.string(),
+            status: z.enum(["active", "completed", "failed"])
+          })).optional(),
+          hiddenObjectives: z.array(z.string()).optional()
+        }).optional()
+      })
     });
+    
+    const prompt = `Analyze this DM narrative response and extract any state changes that occurred:
 
-    // Inventory: ask if it should change
-    let inventoryChanges: {
-      action: "add" | "remove";
-      name: string;
-      quantity: number;
-      description?: string | undefined;
-    }[] | null = null;
-    const shouldChangeInventory = async () => {
-      const prompt = `Given this DM narrative:\n${longAnswer}\n\nShould the player's inventory change as a result of this action? Answer "yes" or "no" only.`;
-      const schema = z.object({ change: z.enum(["yes", "no"]) });
-      const messages = [
-        { role: 'system', content: 'You are a precise RPG game master.' },
-        { role: 'user', content: prompt }
-      ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
-      return res?.change === "yes";
-    };
+Narrative: "${narrative}"
 
-    const getInventoryChange = async () => {
-      const prompt = `Given this DM narrative:\n${longAnswer}\n\nDescribe the inventory changes (add/remove) as a JSON array of objects with { action: "add"|"remove", name: string, quantity: number (this has to be minimum 1 but should reflect the added or removed number of items), description?: string }.`;
-      const schema = z.object({
-        changes: z.array(z.object({
-          action: z.enum(["add", "remove"]),
-          name: z.string(),
-          quantity: z.number().int(),
-          description: z.string().optional()
-        }))
-      });
-      const messages = [
-        { role: 'system', content: 'You are a precise RPG game master.' },
-        { role: 'user', content: prompt }
-      ];
-      const res = await openaiService.createStructuredChatCompletion(messages, schema, { model: BIG_MODEL, temperature: 0 });
-      return res?.changes || [];
-    };
+Current Game State:
+- Health: ${gameState.stats.health}/100
+- Mana: ${gameState.stats.mana}/100
+- Experience: ${gameState.stats.experience}
+- Stats: Str ${gameState.stats.strength}, Dex ${gameState.stats.dexterity}, Int ${gameState.stats.intelligence}, Luck ${gameState.stats.luck}
+- Inventory: ${gameState.inventory.map(item => `${item.name} (${item.quantity})`).join(', ') || "Empty"}
 
-    const inventoryCheck = async () => {
-      if (await shouldChangeInventory()) {
-        inventoryChanges = await getInventoryChange();
-      }
-    };
-
-    await Promise.all([statChangeChecks, inventoryCheck()]);
-
-    const stateChanges: DMResponse["stateChanges"] = {};
-
-    if (Object.keys(statChanges).length > 0) {
-      stateChanges.statChanges = statChanges;
+Extract any changes to inventory, stats, or quests that are implied or stated in the narrative. Be conservative - only extract changes that are clearly indicated.`;
+    
+    const messages = [
+      { role: 'system', content: 'You are an expert at parsing RPG narratives to extract game state changes. Be conservative and only extract changes that are clearly indicated in the narrative.' },
+      { role: 'user', content: prompt }
+    ];
+    
+    const response = await openaiService.createStructuredChatCompletion(messages, schema, { 
+      model: SMALL_MODEL, 
+      temperature: 0 
+    });
+    
+    if (!response) {
+      return {
+        message: narrative,
+        stateChanges: {}
+      };
     }
-    if (inventoryChanges) {
-      stateChanges.inventoryChanges = inventoryChanges;
-    }
+    
     return {
-      message: longAnswer,
-      stateChanges,
+      message: narrative,
+      stateChanges: response.stateChanges || {}
     };
-
   }
 
   public getNotes(): DMNotes {
@@ -380,15 +428,10 @@ INSTRUCTIONS:
 3. Push back against players who try to break the game or act unrealistically.
 4. Maintain a consistent world and narrative.
 5. Actions should have consequences.
-6. **Prefer to refer to the player as "you" in your responses, but you may occasionally use their name for variety and immersion.**
-7. **Any changes to the world state (including player stats, inventory, quests, or any other aspect of the game) MUST be clearly and explicitly spelled out in your answer to the user. Do not imply or leave changes ambiguous. If there are no changes, state that explicitly.**
+6. Prefer to refer to the player as "you" in your responses.
+7. Focus on describing what happens narratively - do NOT explicitly list stat changes or inventory updates.
 
-When responding to the player, follow this process:
-1. Validate if the action is valid in an RPG context (reject meta-game questions or out-of-character requests).
-2. Generate a response with appropriate narrative.
-3. Determine any changes to game state (inventory, stats, quests, etc.) and clearly list them in your response.
-
-Your response must be in JSON format according to the provided schema.`;
+Your role is to narrate the story and describe what the player experiences. Be immersive and descriptive.`;
   }
 
   public createMessages(gameState: GameState): OpenAI.Chat.ChatCompletionMessageParam[] {
@@ -613,14 +656,14 @@ Your response must be in JSON format according to the provided schema.`;
     const openaiService = OpenAIService.getInstance();
     
     try {
-      // Step 1: Check if action is valid
-      const actionValidity = await this.isValidAction(action, gameState, openaiService);
-
-      if (!actionValidity.valid) {
-        callbacks.onActionValidity?.(actionValidity);
+      // Step 1: Combined validation and skill check determination
+      const validationResult = await this.validateAndCheckSkill(action, gameState, openaiService);
+      
+      if (!validationResult.valid) {
+        callbacks.onActionValidity?.(validationResult);
         
         // Add error message to game history
-        const errorMessage = actionValidity.reason || 'Invalid action';
+        const errorMessage = validationResult.reason || 'Invalid action';
         const updatedMessages = [
           ...gameState.messages,
           { role: 'user', content: action } as GameMessage,
@@ -645,25 +688,20 @@ Your response must be in JSON format according to the provided schema.`;
             message: errorMessage,
             stateChanges: {},
           },
-          actionValidity,
+          actionValidity: validationResult,
           updatedGame,
         };
       }
 
-      // Step 2: Get skill check request if needed
-      const skillCheckRequest = await this.getSkillCheckRequest(action, gameState, openaiService);
-
-      // Emit skill check notification immediately if required
-      if (skillCheckRequest && skillCheckRequest.required) {
-        callbacks.onSkillCheckNotification?.(skillCheckRequest);
-      }
-
-      // Step 3: Perform skill check if required
+      // Step 2: Perform skill check if required
       let skillCheckResult: SkillCheckResult | undefined = undefined;
-      if (skillCheckRequest && skillCheckRequest.required) {
+      if (validationResult.skillCheck && validationResult.skillCheck.required) {
+        // Emit skill check notification
+        callbacks.onSkillCheckNotification?.(validationResult.skillCheck);
+        
         skillCheckResult = this.performSkillCheck(
-          skillCheckRequest.stat!,
-          skillCheckRequest.difficultyCategory!,
+          validationResult.skillCheck.stat!,
+          validationResult.skillCheck.difficultyCategory!,
           gameState
         );
         
@@ -671,13 +709,13 @@ Your response must be in JSON format according to the provided schema.`;
         callbacks.onSkillCheckResult?.(skillCheckResult);
       }
 
-      // Step 4: Generate DM response with streaming
+      // Step 3: Generate DM response with streaming (narrative only)
       const response = await this.getStreamingResponse(action, gameState, skillCheckResult, openaiService, callbacks.onStreamChunk);
 
-      // Step 5: Parse for state changes and short answer (in parallel)
+      // Step 4: Parse for state changes based on the narrative
       const dmResponsePromise = this.parseStateChanges(response, gameState, openaiService);
 
-      // Step 6: Prepare updated messages while parsing happens
+      // Step 5: Prepare updated messages while parsing happens
       const updatedMessages = [
         ...gameState.messages,
         { role: 'user', content: action, timestamp: new Date().toISOString() } as GameMessage,
@@ -699,11 +737,20 @@ Your response must be in JSON format according to the provided schema.`;
       // Add DM response
       updatedMessages.push({
         role: 'assistant',
-        content: dmResponse.message,
+        content: response, // Use the raw narrative response, not dmResponse.message
         type: 'normal',
         timestamp: new Date().toISOString()
       } as GameMessage);
-
+      
+      const updatedGame = this.applyStateChanges({
+        ...gameState,
+        lastUpdatedAt: new Date().toISOString(),
+        messages: updatedMessages
+      }, dmResponse);
+      
+      // Add system messages for state changes after applying them
+      const finalMessages = [...updatedGame.messages];
+      
       // Add inventory change messages if any
       if (dmResponse.stateChanges.inventoryChanges) {
         const { inventoryChanges } = dmResponse.stateChanges;
@@ -711,7 +758,7 @@ Your response must be in JSON format according to the provided schema.`;
         // Handle added items
         if (inventoryChanges.add && inventoryChanges.add.length > 0) {
           for (const item of inventoryChanges.add) {
-            updatedMessages.push({
+            finalMessages.push({
               role: 'system',
               content: `Inventory Update: Added ${item.quantity}x ${item.name}${item.description ? ` - ${item.description}` : ''}`,
               type: 'inventory-change',
@@ -723,7 +770,7 @@ Your response must be in JSON format according to the provided schema.`;
         // Handle removed items
         if (inventoryChanges.remove && inventoryChanges.remove.length > 0) {
           for (const item of inventoryChanges.remove) {
-            updatedMessages.push({
+            finalMessages.push({
               role: 'system',
               content: `Inventory Update: Removed ${item.quantity}x ${item.name}`,
               type: 'inventory-change',
@@ -781,7 +828,7 @@ Your response must be in JSON format according to the provided schema.`;
         }
         
         if (statMessages.length > 0) {
-          updatedMessages.push({
+          finalMessages.push({
             role: 'system',
             content: `Status Update: ${statMessages.join(', ')}`,
             type: 'stat-change',
@@ -789,19 +836,22 @@ Your response must be in JSON format according to the provided schema.`;
           } as GameMessage);
         }
       }
-
-      const updatedGame = this.applyStateChanges({
-        ...gameState,
-        lastUpdatedAt: new Date().toISOString(),
-        messages: updatedMessages
-      }, dmResponse);
+      
+      // Update the game with final messages
+      const finalGame = {
+        ...updatedGame,
+        messages: finalMessages
+      };
       
       return {
-        skillCheckRequest,
+        skillCheckRequest: validationResult.skillCheck,
         skillCheckResult,
-        dmResponse,
-        actionValidity,
-        updatedGame,
+        dmResponse: {
+          ...dmResponse,
+          message: response // Ensure the dmResponse contains the narrative
+        },
+        actionValidity: validationResult,
+        updatedGame: finalGame,
       };
     } catch (error) {
       console.error('Error processing player action with streaming:', error);
