@@ -234,6 +234,18 @@ Tips:
                       contentClass: "text-blue-300",
                       containerClass: "bg-blue-900/20 border border-blue-800 p-2 rounded"
                     };
+                  case "inventory-change":
+                    return {
+                      labelClass: "text-purple-400 font-bold",
+                      contentClass: "text-purple-300",
+                      containerClass: "bg-purple-900/20 border border-purple-800 p-2 rounded"
+                    };
+                  case "stat-change":
+                    return {
+                      labelClass: "text-cyan-400 font-bold",
+                      contentClass: "text-cyan-300",
+                      containerClass: "bg-cyan-900/20 border border-cyan-800 p-2 rounded"
+                    };
                   default:
                     return {
                       labelClass: "text-gray-400 font-bold",
@@ -246,7 +258,9 @@ Tips:
               const style = getSystemMessageStyle(message.type);
               const label = message.type === "error" ? "ERROR:" :
                 message.type === "action-invalid" ? "INVALID:" :
-                  message.type === "skill-check" ? "SKILL CHECK:" : "SYSTEM:";
+                  message.type === "skill-check" ? "SKILL CHECK:" : 
+                  message.type === "inventory-change" ? "INVENTORY:" :
+                  message.type === "stat-change" ? "STATUS:" : "SYSTEM:";
 
               return (
                 <div key={index} className={`mb-4 leading-relaxed ${style.containerClass}`}>

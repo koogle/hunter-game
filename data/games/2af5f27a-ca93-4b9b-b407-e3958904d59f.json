@@ -2,67 +2,18 @@
   "name": "Jakob",
   "scenario": "The Lost Kingdom",
   "customScenario": "In the heart of an ancient, uncharted forest known as Valenwood, whispers of a once-mighty kingdom echo through the thick canopy of emerald leaves. The Lost Kingdom of Eldoria, as it was called, is said to have thrived centuries ago, its splendor rivaling that of the sun itself, before mysteriously vanishing from the annals of history. As your party steps deeper into the forest, the air grows thick with a magical mist that seems to shimmer under the light of the sun, revealing glimpses of crumbling stonework and overgrown archways entwined with vibrant moss and wildflowers. The path beneath your feet is strewn with ancient runes, half-concealed by the roots of giant trees, each step sparking a faint glow and an echo of forgotten incantations.\n\nAt the heart of Valenwood lies the fabled Eldorian Crystal, a source of immense power said to be embedded within the ruins of the royal palace. Surrounding the palace are remnants of the kingdom’s grandeur: majestic statues of forgotten heroes, their faces worn but resolute, and sprawling gardens where the once vibrant flora has become a canvas of nature’s reclamation. Darkened shadows flit between the trees, hinting at lurking dangers—mythical beasts, enchanted guardians of the realm, and the restless spirits of Eldoria’s last defenders. As night falls, the forest comes alive with ethereal lights and haunting melodies, beckoning adventurers to uncover the kingdom’s secrets, confront the malevolent force that caused its demise, and perhaps even bring a flicker of its lost glory back to life. Will your party uncover the truth hidden within the ruins, or will Eldoria’s mysteries claim yet another set of souls? The Lost Kingdom awaits your exploration, filled with promise and peril alike.",
-  "messages": [
-    {
-      "role": "user",
-      "content": "test"
-    },
-    {
-      "role": "user",
-      "content": "what is around me"
-    },
-    {
-      "role": "assistant",
-      "content": "You stand amidst towering trees cloaked in a shimmering mist, their roots curling around fragments of ancient stonework. Faint, glowing runes pulse beneath your boots with each step. To your left, a weathered statue of a forgotten hero rises from a bed of wildflowers and moss; to your right, the remains of an overgrown archway lead deeper into shadowy thickets. Farther ahead, the path splits—one trail winding toward a sun-dappled ruin, the other vanishing beneath tangled vines and flickering shadows. The air hums with distant, haunting melodies, and somewhere in the gloom, unseen eyes seem to watch your every move."
-    },
-    {
-      "role": "user",
-      "content": "I try to think about what my purpose is"
-    },
-    {
-      "role": "assistant",
-      "content": "Jakob stands amidst the ancient forest, letting the strange air and haunting melodies wash over him. As he focuses inward, the pulsing glow of the runes intensifies beneath his feet. A gentle, almost imperceptible voice seems to echo through the mist and into his mind:\n\n\"Seeker... Restore what was lost. Find the heart of Eldoria. Your purpose lies within its ruins. The shadows watch, but so do the hopes of the fallen.\"\n\nThe moment passes. The forest seems unchanged, yet Jakob feels a newfound sense of destiny pressing him forward."
-    },
-    {
-      "role": "user",
-      "content": "I try to juggle some balls"
-    },
-    {
-      "role": "user",
-      "content": "I am looking on the floor for some thing to juggle"
-    },
-    {
-      "role": "assistant",
-      "content": "Jakob scans the forest floor, spotting no juggling balls—but something catches his eye: three small, moss-covered stones, perfectly rounded as if shaped by patient hands. As he picks them up and tests their balance, he finds they fit neatly in his palms. The faint glow of the forest runes reflects off the stones as he tosses them into the air. The rhythm of his juggling seems to resonate with the magical energy around, and for a moment, the mist swirls in time with Jakob’s movement. A pulse of ancient magic thrums through his fingertips—a subtle sense that playfulness, too, is honored in Eldoria’s woods."
-    },
-    {
-      "role": "user",
-      "content": "I pick up the stones"
-    },
-    {
-      "role": "assistant",
-      "content": "As you gather the mossy stones from the ground, a faint warmth pulses through them. When your fingers close around the set, the runes beneath your feet glow a little brighter. For a split second, you hear a distant child’s laughter echoing through the forest, mingling with the melodic hum of magic in the air. It’s as if the forest itself acknowledges your playful spirit. The stones now sit comfortably in your hand, subtly humming with gentle energy—perhaps they're more than just ordinary rocks. What will you do next?"
-    },
-    {
-      "role": "user",
-      "content": "I go in circles"
-    },
-    {
-      "role": "assistant",
-      "content": "Jakob begins to walk in circles, the mossy stones quietly humming in his palm. As he treads the same ground, the runes beneath his boots pulse with a stronger, almost impatient light. The mist thickens, spiraling overhead in lazy coils. After a few loops, you realize — though you circle the same patch of earth, each pass offers a shifting glimpse: a glimpse of a shadowy figure watching from behind an ancient archway, then a patch of vibrant blue wildflowers where none were before. The forest seems to nudge you, softly reminding you that while time is easy to lose in Eldoria, wandering without aim can also lead to strange discoveries… if you pay close attention."
-    }
-  ],
+  "messages": [],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-26T02:10:32.605Z",
+  "lastUpdatedAt": "2025-05-26T21:09:43.095Z",
   "stats": {
     "health": 100,
     "mana": 100,
-    "experience": 162,
+    "experience": 0,
     "strength": 10,
     "intelligence": 10,
     "dexterity": 10,
-    "luck": 155
+    "luck": 10
   },
   "inventory": [],
   "playerNotes": ""

@@ -704,12 +704,98 @@ Your response must be in JSON format according to the provided schema.`;
         timestamp: new Date().toISOString()
       } as GameMessage);
 
+      // Add inventory change messages if any
+      if (dmResponse.stateChanges.inventoryChanges) {
+        const { inventoryChanges } = dmResponse.stateChanges;
+        
+        // Handle added items
+        if (inventoryChanges.add && inventoryChanges.add.length > 0) {
+          for (const item of inventoryChanges.add) {
+            updatedMessages.push({
+              role: 'system',
+              content: `Inventory Update: Added ${item.quantity}x ${item.name}${item.description ? ` - ${item.description}` : ''}`,
+              type: 'inventory-change',
+              timestamp: new Date().toISOString()
+            } as GameMessage);
+          }
+        }
+        
+        // Handle removed items
+        if (inventoryChanges.remove && inventoryChanges.remove.length > 0) {
+          for (const item of inventoryChanges.remove) {
+            updatedMessages.push({
+              role: 'system',
+              content: `Inventory Update: Removed ${item.quantity}x ${item.name}`,
+              type: 'inventory-change',
+              timestamp: new Date().toISOString()
+            } as GameMessage);
+          }
+        }
+      }
+
+      // Add stat change messages if any
+      if (dmResponse.stateChanges.statChanges) {
+        const statChanges = dmResponse.stateChanges.statChanges;
+        const statMessages: string[] = [];
+        
+        if (statChanges.health !== undefined) {
+          const newHealth = Math.max(0, Math.min(100, gameState.stats.health + statChanges.health));
+          const change = statChanges.health > 0 ? `+${statChanges.health}` : `${statChanges.health}`;
+          statMessages.push(`Health: ${gameState.stats.health} → ${newHealth} (${change})`);
+        }
+        
+        if (statChanges.mana !== undefined) {
+          const newMana = Math.max(0, Math.min(100, gameState.stats.mana + statChanges.mana));
+          const change = statChanges.mana > 0 ? `+${statChanges.mana}` : `${statChanges.mana}`;
+          statMessages.push(`Mana: ${gameState.stats.mana} → ${newMana} (${change})`);
+        }
+        
+        if (statChanges.experience !== undefined) {
+          const newExp = Math.max(0, gameState.stats.experience + statChanges.experience);
+          const change = statChanges.experience > 0 ? `+${statChanges.experience}` : `${statChanges.experience}`;
+          statMessages.push(`Experience: ${gameState.stats.experience} → ${newExp} (${change})`);
+        }
+        
+        if (statChanges.strength !== undefined) {
+          const newStrength = Math.max(1, gameState.stats.strength + statChanges.strength);
+          const change = statChanges.strength > 0 ? `+${statChanges.strength}` : `${statChanges.strength}`;
+          statMessages.push(`Strength: ${gameState.stats.strength} → ${newStrength} (${change})`);
+        }
+        
+        if (statChanges.dexterity !== undefined) {
+          const newDexterity = Math.max(1, gameState.stats.dexterity + statChanges.dexterity);
+          const change = statChanges.dexterity > 0 ? `+${statChanges.dexterity}` : `${statChanges.dexterity}`;
+          statMessages.push(`Dexterity: ${gameState.stats.dexterity} → ${newDexterity} (${change})`);
+        }
+        
+        if (statChanges.intelligence !== undefined) {
+          const newIntelligence = Math.max(1, gameState.stats.intelligence + statChanges.intelligence);
+          const change = statChanges.intelligence > 0 ? `+${statChanges.intelligence}` : `${statChanges.intelligence}`;
+          statMessages.push(`Intelligence: ${gameState.stats.intelligence} → ${newIntelligence} (${change})`);
+        }
+        
+        if (statChanges.luck !== undefined) {
+          const newLuck = Math.max(1, gameState.stats.luck + statChanges.luck);
+          const change = statChanges.luck > 0 ? `+${statChanges.luck}` : `${statChanges.luck}`;
+          statMessages.push(`Luck: ${gameState.stats.luck} → ${newLuck} (${change})`);
+        }
+        
+        if (statMessages.length > 0) {
+          updatedMessages.push({
+            role: 'system',
+            content: `Status Update: ${statMessages.join(', ')}`,
+            type: 'stat-change',
+            timestamp: new Date().toISOString()
+          } as GameMessage);
+        }
+      }
+
       const updatedGame = this.applyStateChanges({
         ...gameState,
         lastUpdatedAt: new Date().toISOString(),
         messages: updatedMessages
       }, dmResponse);
-
+      
       return {
         skillCheckRequest,
         skillCheckResult,

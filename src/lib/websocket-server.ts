@@ -55,7 +55,8 @@ export const processPlayerAction = async (
   gameId: string,
   action: string,
   gameState: GameState,
-  socketId?: string
+  socketId?: string,
+  io?: Server
 ): Promise<{
   skillCheckRequest: SkillCheckRequest | undefined;
   skillCheckResult: SkillCheckResult | undefined;
@@ -64,20 +65,31 @@ export const processPlayerAction = async (
   updatedGame: GameState;
 }> => {
   const dm = new DungeonMaster(gameState);
-
-  // Use the DM agent's streaming method with websocket callbacks
-  const result = await dm.processActionWithStreaming(action, gameState, {
-    onSkillCheckNotification: (request: SkillCheckRequest) => emitToGame(gameId, 'skill-check-notification', request, socketId),
-    onSkillCheckResult: (result: SkillCheckResult) => emitToGame(gameId, 'skill-check-result', result, socketId),
-    onStreamChunk: (chunk: string) => emitToGame(gameId, 'dm-response-chunk', chunk, socketId),
-    onActionValidity: (validity: { valid: boolean; reason: string | null }) => emitToGame(gameId, 'action-validity', validity, socketId),
-    onError: (message: string) => emitToGame(gameId, 'error', message, socketId),
+  
+  // Create a local emit function that uses the passed io instance or falls back to the global one
+  const emit = (event: string, data: any) => {
+    const ioInstance = io || websocketServer.io;
+    if (!ioInstance) {
+      console.error('WebSocket server not initialized');
+      return;
+    }
+    
+    // Emit to the game room
+    ioInstance.to(gameId).emit(event, data);
+    
+    // Also emit to specific socket if provided
+    if (socketId) {
+      ioInstance.to(socketId).emit(event, data);
+    }
+  };
+  
+  return dm.processActionWithStreaming(action, gameState, {
+    onSkillCheckNotification: (request) => emit('skill-check-notification', { gameId, request }),
+    onSkillCheckResult: (result) => emit('skill-check-result', { gameId, result }),
+    onStreamChunk: (chunk) => emit('dm-response-chunk', { gameId, chunk }),
+    onActionValidity: (validity) => emit('action-validity', { gameId, validity }),
+    onError: (message) => emit('error', { gameId, message }),
   });
-
-  // Always emit final game update (errors are now part of the game history)
-  emitToGame(gameId, 'game-update', result.updatedGame, socketId);
-
-  return result;
 };
 
 // Generic emit function to replace all the specific emit functions
