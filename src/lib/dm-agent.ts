@@ -782,60 +782,82 @@ Your role is to narrate the story and describe what the player experiences. Be i
 
       // Add stat change messages if any
       if (dmResponse.stateChanges.statChanges) {
-        const statChanges = dmResponse.stateChanges.statChanges;
-        const statMessages: string[] = [];
-        
-        if (statChanges.health !== undefined) {
-          const newHealth = Math.max(0, Math.min(100, gameState.stats.health + statChanges.health));
-          const change = statChanges.health > 0 ? `+${statChanges.health}` : `${statChanges.health}`;
-          statMessages.push(`Health: ${gameState.stats.health} → ${newHealth} (${change})`);
-        }
-        
-        if (statChanges.mana !== undefined) {
-          const newMana = Math.max(0, Math.min(100, gameState.stats.mana + statChanges.mana));
-          const change = statChanges.mana > 0 ? `+${statChanges.mana}` : `${statChanges.mana}`;
-          statMessages.push(`Mana: ${gameState.stats.mana} → ${newMana} (${change})`);
-        }
-        
-        if (statChanges.experience !== undefined) {
-          const newExp = Math.max(0, gameState.stats.experience + statChanges.experience);
-          const change = statChanges.experience > 0 ? `+${statChanges.experience}` : `${statChanges.experience}`;
-          statMessages.push(`Experience: ${gameState.stats.experience} → ${newExp} (${change})`);
-        }
-        
-        if (statChanges.strength !== undefined) {
-          const newStrength = Math.max(1, gameState.stats.strength + statChanges.strength);
-          const change = statChanges.strength > 0 ? `+${statChanges.strength}` : `${statChanges.strength}`;
-          statMessages.push(`Strength: ${gameState.stats.strength} → ${newStrength} (${change})`);
-        }
-        
-        if (statChanges.dexterity !== undefined) {
-          const newDexterity = Math.max(1, gameState.stats.dexterity + statChanges.dexterity);
-          const change = statChanges.dexterity > 0 ? `+${statChanges.dexterity}` : `${statChanges.dexterity}`;
-          statMessages.push(`Dexterity: ${gameState.stats.dexterity} → ${newDexterity} (${change})`);
-        }
-        
-        if (statChanges.intelligence !== undefined) {
-          const newIntelligence = Math.max(1, gameState.stats.intelligence + statChanges.intelligence);
-          const change = statChanges.intelligence > 0 ? `+${statChanges.intelligence}` : `${statChanges.intelligence}`;
-          statMessages.push(`Intelligence: ${gameState.stats.intelligence} → ${newIntelligence} (${change})`);
-        }
-        
-        if (statChanges.luck !== undefined) {
-          const newLuck = Math.max(1, gameState.stats.luck + statChanges.luck);
-          const change = statChanges.luck > 0 ? `+${statChanges.luck}` : `${statChanges.luck}`;
-          statMessages.push(`Luck: ${gameState.stats.luck} → ${newLuck} (${change})`);
-        }
-        
-        if (statMessages.length > 0) {
-          finalMessages.push({
-            role: 'system',
-            content: `Status Update: ${statMessages.join(', ')}`,
-            type: 'stat-change',
-            timestamp: new Date().toISOString()
-          } as GameMessage);
-        }
-      }
+  const statChanges = dmResponse.stateChanges.statChanges;
+  const statMessages: string[] = [];
+
+  // Health
+  if (statChanges.health !== undefined) {
+    const original = gameState.stats.health;
+    const changed = Math.max(0, Math.min(100, original + statChanges.health));
+    if (changed !== original) {
+      const change = statChanges.health > 0 ? `+${statChanges.health}` : `${statChanges.health}`;
+      statMessages.push(`Health: ${original} → ${changed} (${change})`);
+    }
+  }
+  // Mana
+  if (statChanges.mana !== undefined) {
+    const original = gameState.stats.mana;
+    const changed = Math.max(0, Math.min(100, original + statChanges.mana));
+    if (changed !== original) {
+      const change = statChanges.mana > 0 ? `+${statChanges.mana}` : `${statChanges.mana}`;
+      statMessages.push(`Mana: ${original} → ${changed} (${change})`);
+    }
+  }
+  // Experience
+  if (statChanges.experience !== undefined) {
+    const original = gameState.stats.experience;
+    const changed = Math.max(0, original + statChanges.experience);
+    if (changed !== original) {
+      const change = statChanges.experience > 0 ? `+${statChanges.experience}` : `${statChanges.experience}`;
+      statMessages.push(`Experience: ${original} → ${changed} (${change})`);
+    }
+  }
+  // Strength
+  if (statChanges.strength !== undefined) {
+    const original = gameState.stats.strength;
+    const changed = Math.max(1, original + statChanges.strength);
+    if (changed !== original) {
+      const change = statChanges.strength > 0 ? `+${statChanges.strength}` : `${statChanges.strength}`;
+      statMessages.push(`Strength: ${original} → ${changed} (${change})`);
+    }
+  }
+  // Dexterity
+  if (statChanges.dexterity !== undefined) {
+    const original = gameState.stats.dexterity;
+    const changed = Math.max(1, original + statChanges.dexterity);
+    if (changed !== original) {
+      const change = statChanges.dexterity > 0 ? `+${statChanges.dexterity}` : `${statChanges.dexterity}`;
+      statMessages.push(`Dexterity: ${original} → ${changed} (${change})`);
+    }
+  }
+  // Intelligence
+  if (statChanges.intelligence !== undefined) {
+    const original = gameState.stats.intelligence;
+    const changed = Math.max(1, original + statChanges.intelligence);
+    if (changed !== original) {
+      const change = statChanges.intelligence > 0 ? `+${statChanges.intelligence}` : `${statChanges.intelligence}`;
+      statMessages.push(`Intelligence: ${original} → ${changed} (${change})`);
+    }
+  }
+  // Luck
+  if (statChanges.luck !== undefined) {
+    const original = gameState.stats.luck;
+    const changed = Math.max(1, original + statChanges.luck);
+    if (changed !== original) {
+      const change = statChanges.luck > 0 ? `+${statChanges.luck}` : `${statChanges.luck}`;
+      statMessages.push(`Luck: ${original} → ${changed} (${change})`);
+    }
+  }
+  // Only show status update if something changed
+  if (statMessages.length > 0) {
+    finalMessages.push({
+      role: 'system',
+      content: `Status Update: ${statMessages.join(', ')}`,
+      type: 'stat-change',
+      timestamp: new Date().toISOString()
+    } as GameMessage);
+  }
+}
       
       // Update the game with final messages
       const finalGame = {
