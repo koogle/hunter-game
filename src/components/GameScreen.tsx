@@ -33,7 +33,34 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     // Set up callbacks for websocket events
     setCallbacks({
       onDMResponseChunk: (chunk: string) => {
+        // Filter out stream markers if they are accidentally sent as content
+        if (chunk === '__STREAM_START__' || chunk === '__STREAM_END__') return;
         setStreamedResponse(prev => prev + chunk);
+      },
+      onSkillCheckNotification: (request) => {
+        if (!request.required || !request.stat || !request.difficultyCategory) return;
+        const content = `Attempting ${request.stat} check (Difficulty: ${request.difficultyCategory})${request.reason ? ` to ${request.reason}` : ''}...`;
+        const skillCheckMsg: GameMessage = {
+          role: 'system',
+          content,
+          type: 'skill-check',
+          timestamp: new Date().toISOString(),
+        };
+        onGameStateUpdate({ ...gameState, messages: [...gameState.messages, skillCheckMsg] });
+      },
+      onSkillCheckResult: (result) => {
+        if (!result.performed || !result.stat || result.roll === undefined || result.difficulty === undefined) return;
+        const outcome = result.success ? 'Success' : 'Failure';
+        const content = `Skill Check: ${result.stat.toUpperCase()} (Rolled ${result.roll} vs DC ${result.difficulty}) - ${outcome}!${result.degree ? ` Degree: ${result.degree}.` : ''}${result.reason ? ` (${result.reason})` : ''}`;
+        const skillCheckResultMsg: GameMessage = {
+          role: 'system',
+          content,
+          type: 'skill-check',
+          timestamp: new Date().toISOString(),
+        };
+        // Potentially, if you want to replace the notification, you'd find it by ID and update.
+        // For simplicity, we're adding a new message for the result.
+        onGameStateUpdate({ ...gameState, messages: [...gameState.messages, skillCheckResultMsg] });
       },
       onGameUpdate: (updatedGameState: GameState) => {
         onGameStateUpdate(updatedGameState);
@@ -57,9 +84,6 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     const emptyLength = Math.max(0, length - filledLength);
     return `${filled.repeat(filledLength)}${empty.repeat(emptyLength)}`;
   };
-
-
-
 
   // Handle special commands like <help> and <reset>
   const handleSpecialCommand = (cmd: string): boolean => {
@@ -306,7 +330,7 @@ Tips:
             <div className="mb-4 leading-relaxed">
               <div className="flex items-start gap-2">
                 <span className="text-green-500 font-bold">DM:</span>
-                <span>{streamedResponse}</span>
+                <span>{typeof streamedResponse === 'string' ? streamedResponse : JSON.stringify(streamedResponse, null, 2)}</span>
               </div>
             </div>
           )}
