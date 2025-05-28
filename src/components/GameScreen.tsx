@@ -12,10 +12,8 @@ interface GameScreenProps {
 export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenProps) {
   const [command, setCommand] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [streamedResponse, setStreamedResponse] = useState("");
   const [tempMessage, setTempMessage] = useState<GameMessage | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
-  const isStreamingDMRRef = useRef(false);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -38,48 +36,23 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
         if (typeof data === "object" && data !== null && "chunk" in data) {
           chunk = data.chunk;
         }
-        // Use a ref to track if we are streaming a DM message
         if (chunk === '__STREAM_START__') {
-          if (isStreamingDMRRef.current) {
-            console.warn("Received __STREAM_START__ while already streaming. Ignoring to prevent duplicate messages.");
-            return;
-          }
-          isStreamingDMRRef.current = true;
-          // Start of stream: add a pending DM message
-          setStreamedResponse("");
-          onGameStateUpdate(prev => ({
-            ...prev,
-            messages: [
-              ...prev.messages,
-              { role: "assistant", content: "", timestamp: new Date().toISOString() }
-            ]
-          }));
           return;
         }
         if (chunk === '__STREAM_END__') {
-          isStreamingDMRRef.current = false;
-          setStreamedResponse(""); // Clear temp state
+          setTempMessage(null);
           return;
         }
         if (typeof chunk !== "string") {
           console.warn("Received non-string chunk in streamedResponse:", chunk, typeof chunk);
           return;
         }
-        console.log("[DM STREAM CHUNK]", chunk);
-        setStreamedResponse(prev => prev + chunk);
         // Update the last DM message in the log
 
-        onGameStateUpdate(prev => {
-          const messages = [...prev.messages];
-          for (let i = messages.length - 1; i >= 0; i--) {
-            if (messages[i].role === "assistant") {
-              messages[i] = { ...messages[i], content: (messages[i].content || "") + chunk };
-              break;
-            }
-          }
-          return { ...prev, messages };
+        setTempMessage(v => {
+          if (!v) return { role: "assistant", content: chunk, timestamp: new Date().toISOString() };
+          return { ...v, content: v.content + chunk };
         });
-
       },
       onSkillCheckNotification: (request) => {
         if (!request.required || !request.stat || !request.difficultyCategory) return;
@@ -105,11 +78,9 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
         onGameStateUpdate(prev => ({ ...prev, messages: [...prev.messages, skillCheckResultMsg] }));
       },
       onGameUpdate: (updatedGameState: GameState) => {
-        isStreamingDMRRef.current = false; // Ensure flag is cleared on full update
         onGameStateUpdate(updatedGameState);
         setIsLoading(false);
-        setStreamedResponse("");
-        setTempMessage(null); // Clear any temporary messages
+        setTempMessage(null);
       }
     });
 
@@ -214,7 +185,6 @@ Tips:
     if (!cmd.trim()) return;
 
     setTempMessage(null);
-    setStreamedResponse("");
 
     // Check for special commands first
     if (handleSpecialCommand(cmd)) {
@@ -344,7 +314,6 @@ Tips:
               );
             }
 
-            // Handle assistant messages (DM responses)
             return (
               <div key={index} className="mb-4 leading-relaxed">
                 <div className="flex items-start gap-2">
@@ -361,22 +330,15 @@ Tips:
           })}
           {/* Display temporary help/reset message */}
           {tempMessage && (
-            <div className="mb-4 leading-relaxed bg-black/50 border border-green-800 p-2 rounded">
+            <div className="mb-4 leading-relaxed">
               <div className="flex items-start gap-2">
                 <span className="text-green-500 font-bold">DM:</span>
                 <span>{tempMessage.content}</span>
               </div>
+            </div>
+          )}
 
-            </div>
-          )}
-          {isLoading && streamedResponse && (
-            <div className="mb-4 leading-relaxed">
-              <div className="flex items-start gap-2">
-                <span className="text-green-500 font-bold">DM:</span>
-                <span>{typeof streamedResponse === 'string' ? streamedResponse : JSON.stringify(streamedResponse, null, 2)}</span>
-              </div>
-            </div>
-          )}
+
           <div ref={logEndRef}></div>
         </div>
         <div className="border-t-2 border-green-500 p-2 flex gap-2 bg-black">
@@ -401,7 +363,6 @@ Tips:
           <div className="text-xl">CHARACTER</div>
         </div>
         <div className="p-4 flex-1 overflow-y-auto bg-black">
-
           <div className="mb-4 border border-green-800 p-2 bg-black/50">
             <div className="mb-1 flex justify-between">
               <span>HP:</span>
@@ -423,8 +384,6 @@ Tips:
             </div>
             <div className="font-mono text-lg overflow-hidden">{createTextBar(gameState.stats.experience, 100)}</div>
           </div>
-
-
           <div className="mb-4 border border-green-800 p-2 bg-black/50">
             <div className="text-center mb-2 text-green-300">ATTRIBUTES</div>
             <div className="grid grid-cols-2 gap-2">
@@ -446,7 +405,6 @@ Tips:
               </div>
             </div>
           </div>
-
           {/* Inventory Section */}
           <div className="border-t-2 border-green-500 pt-4 mt-4">
             <div className="mb-2 text-xl text-center text-green-300">INVENTORY</div>

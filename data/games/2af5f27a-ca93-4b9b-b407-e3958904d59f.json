@@ -56,11 +56,28 @@
       "content": "Status Update: Health: 100 → 100 (0), Mana: 100 → 100 (0), Experience: 0 → 0 (0), Strength: 10 → 10 (0), Dexterity: 10 → 10 (0), Intelligence: 10 → 10 (0), Luck: 10 → 10 (0)",
       "type": "stat-change",
       "timestamp": "2025-05-28T14:03:22.524Z"
+    },
+    {
+      "role": "user",
+      "content": "I roll over",
+      "timestamp": "2025-05-28T14:07:28.710Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You turn onto your side, feeling the cool moss press against your cheek and the subtle hum of runes beneath your fingers. The circle of blue blossoms now frames your vision, their luminous petals leaning closer, as if curious about your movement. The air grows slightly colder, tingling across your exposed skin.\n\nThe translucent figure—childlike and delicate—flinches back as you move, its outline blurring at the edges. It seems to be made of mist and moonlight, barely tethered to this world. Its eyes, still fixed on you, reflect both caution and longing.\n\nAs you settle, the haunting quiet of Valenwood returns. The figure’s lips part, though no sound escapes. Instead, a gentle pressure settles in your mind, like a thought not your own. You sense a question—a silent plea—hovering in the space between you.\n\nSuddenly, a faint, silvery thread of light stretches from the figure’s heart to a nearby rune beneath your hand. The rune glows brighter, and the moss seems to pulse in time with the figure’s breathless presence.\n\nDo you reach out to the figure, speak to it, or do something else?",
+      "type": "normal",
+      "timestamp": "2025-05-28T14:07:38.237Z"
+    },
+    {
+      "role": "system",
+      "content": "Status Update: Health: 100 → 100 (0), Mana: 100 → 100 (0), Experience: 0 → 0 (0), Strength: 10 → 10 (0), Dexterity: 10 → 10 (0), Intelligence: 10 → 10 (0), Luck: 10 → 10 (0)",
+      "type": "stat-change",
+      "timestamp": "2025-05-28T14:07:38.238Z"
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-28T14:03:22.525Z",
+  "lastUpdatedAt": "2025-05-28T14:07:38.239Z",
   "stats": {
     "health": 100,
     "mana": 100,
