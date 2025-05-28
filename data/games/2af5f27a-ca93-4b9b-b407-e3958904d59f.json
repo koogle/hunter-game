@@ -73,11 +73,28 @@
       "content": "Status Update: Health: 100 → 100 (0), Mana: 100 → 100 (0), Experience: 0 → 0 (0), Strength: 10 → 10 (0), Dexterity: 10 → 10 (0), Intelligence: 10 → 10 (0), Luck: 10 → 10 (0)",
       "type": "stat-change",
       "timestamp": "2025-05-28T14:07:38.238Z"
+    },
+    {
+      "role": "user",
+      "content": "I stretch out",
+      "timestamp": "2025-05-28T14:14:42.742Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You extend your limbs, luxuriating in the gentle give of the moss and the coolness of the shaded earth. The act of stretching seems to ripple through the ground itself; the ancient runes beneath you respond with a brief, synchronized glow, their light spilling over the circle of blue blossoms. The silvery thread that connects the spectral child to the rune beside you pulses in time with your movement, as if your presence is somehow strengthening its tenuous hold on this world.\n\nThe ethereal figure floats a little closer, emboldened by your calmness. Its features, though hazy, bear the faint impression of a smile—bittersweet and hopeful. The air around you vibrates with anticipation, the forest holding its breath.\n\nSuddenly, the figure raises a translucent hand, pointing not at you, but toward the ancient stone archway just overhead. The carvings on the arch seem to shimmer in response, and for a heartbeat, you glimpse a scene from another time: children laughing, playing beneath the same arch, their voices echoing in a language you almost understand.\n\nA whisper tickles at the edge of your mind, a single word carried on the wind: \"Remember.\"\n\nThe spectral child waits, its gaze urging you to act. Will you investigate the archway, communicate with the spirit, or do something else?",
+      "type": "normal",
+      "timestamp": "2025-05-28T14:14:50.046Z"
+    },
+    {
+      "role": "system",
+      "content": "Status Update: Health: 100 → 100 (0), Mana: 100 → 100 (0), Experience: 0 → 0 (0), Strength: 10 → 10 (0), Dexterity: 10 → 10 (0), Intelligence: 10 → 10 (0), Luck: 10 → 10 (0)",
+      "type": "stat-change",
+      "timestamp": "2025-05-28T14:14:50.048Z"
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-28T14:07:38.239Z",
+  "lastUpdatedAt": "2025-05-28T14:14:50.049Z",
   "stats": {
     "health": 100,
     "mana": 100,

@@ -139,8 +139,10 @@ export class DungeonMaster {
       { role: 'system', content: 'You are an expert RPG game master.' },
       { role: 'user', content: prompt }
     ];
+    const start = performance.now();
     const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
-    console.log("[DM] isValidAction response", response);
+    const end = performance.now();
+    console.log("[DM] isValidAction response", response, `Took ${end - start} milliseconds`);
     return { valid: response?.valid === true, reason: response?.reason ?? null };
   }
 
@@ -784,67 +786,15 @@ Your role is to narrate the story and describe what the player experiences. Be i
         const statChanges = dmResponse.stateChanges.statChanges;
         const statMessages: string[] = [];
 
-        // Health
-        if (statChanges.health !== undefined) {
-          const original = gameState.stats.health;
-          const changed = Math.max(0, Math.min(100, original + statChanges.health));
-          if (changed !== original) {
-            const change = statChanges.health > 0 ? `+${statChanges.health}` : `${statChanges.health}`;
-            statMessages.push(`Health: ${original} → ${changed} (${change})`);
-          }
-        }
-        // Mana
-        if (statChanges.mana !== undefined) {
-          const original = gameState.stats.mana;
-          const changed = Math.max(0, Math.min(100, original + statChanges.mana));
-          if (changed !== original) {
-            const change = statChanges.mana > 0 ? `+${statChanges.mana}` : `${statChanges.mana}`;
-            statMessages.push(`Mana: ${original} → ${changed} (${change})`);
-          }
-        }
-        // Experience
-        if (statChanges.experience !== undefined) {
-          const original = gameState.stats.experience;
-          const changed = Math.max(0, original + statChanges.experience);
-          if (changed !== original) {
-            const change = statChanges.experience > 0 ? `+${statChanges.experience}` : `${statChanges.experience}`;
-            statMessages.push(`Experience: ${original} → ${changed} (${change})`);
-          }
-        }
-        // Strength
-        if (statChanges.strength !== undefined) {
-          const original = gameState.stats.strength;
-          const changed = Math.max(1, original + statChanges.strength);
-          if (changed !== original) {
-            const change = statChanges.strength > 0 ? `+${statChanges.strength}` : `${statChanges.strength}`;
-            statMessages.push(`Strength: ${original} → ${changed} (${change})`);
-          }
-        }
-        // Dexterity
-        if (statChanges.dexterity !== undefined) {
-          const original = gameState.stats.dexterity;
-          const changed = Math.max(1, original + statChanges.dexterity);
-          if (changed !== original) {
-            const change = statChanges.dexterity > 0 ? `+${statChanges.dexterity}` : `${statChanges.dexterity}`;
-            statMessages.push(`Dexterity: ${original} → ${changed} (${change})`);
-          }
-        }
-        // Intelligence
-        if (statChanges.intelligence !== undefined) {
-          const original = gameState.stats.intelligence;
-          const changed = Math.max(1, original + statChanges.intelligence);
-          if (changed !== original) {
-            const change = statChanges.intelligence > 0 ? `+${statChanges.intelligence}` : `${statChanges.intelligence}`;
-            statMessages.push(`Intelligence: ${original} → ${changed} (${change})`);
-          }
-        }
-        // Luck
-        if (statChanges.luck !== undefined) {
-          const original = gameState.stats.luck;
-          const changed = Math.max(1, original + statChanges.luck);
-          if (changed !== original) {
-            const change = statChanges.luck > 0 ? `+${statChanges.luck}` : `${statChanges.luck}`;
-            statMessages.push(`Luck: ${original} → ${changed} (${change})`);
+        const statKeys = ['health', 'mana', 'experience', 'strength', 'dexterity', 'intelligence', 'luck'] as const;
+        for (const key of statKeys) {
+          if (statChanges[key] !== undefined) {
+            const original = gameState.stats[key];
+            const changed = Math.max(0, original + statChanges[key]);
+            if (Math.abs(changed - original) > 0) {
+              const change = statChanges[key] > 0 ? `+${statChanges[key]}` : `${statChanges[key]}`;
+              statMessages.push(`${key[0].toUpperCase()}${key.slice(1)}: ${original} → ${changed} (${change})`);
+            }
           }
         }
         // Only show status update if something changed

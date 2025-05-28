@@ -37,21 +37,32 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           chunk = data.chunk;
         }
         if (chunk === '__STREAM_START__') {
+          setTempMessage({
+            role: "assistant",
+            content: "", // Start with empty content
+            timestamp: new Date().toISOString()
+          });
           return;
         }
         if (chunk === '__STREAM_END__') {
-          setTempMessage(null);
+          // Do NOT clear tempMessage here. It will be cleared by onGameUpdate
+          // or when a new command is submitted.
           return;
         }
         if (typeof chunk !== "string") {
-          console.warn("Received non-string chunk in streamedResponse:", chunk, typeof chunk);
+          console.warn("Received non-string chunk, ignoring:", chunk);
           return;
         }
-        // Update the last DM message in the log
 
-        setTempMessage(v => {
-          if (!v) return { role: "assistant", content: chunk, timestamp: new Date().toISOString() };
-          return { ...v, content: v.content + chunk };
+        setTempMessage(prev => {
+          // If tempMessage is somehow null (e.g., stream started without __STREAM_START__ or unexpected event order),
+          // initialize it. Otherwise, append.
+          const currentContent = prev?.content || "";
+          return {
+            role: prev?.role || "assistant",
+            timestamp: prev?.timestamp || new Date().toISOString(),
+            content: currentContent + chunk
+          };
         });
       },
       onSkillCheckNotification: (request) => {
@@ -78,9 +89,9 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
         onGameStateUpdate(prev => ({ ...prev, messages: [...prev.messages, skillCheckResultMsg] }));
       },
       onGameUpdate: (updatedGameState: GameState) => {
-        onGameStateUpdate(updatedGameState);
+        onGameStateUpdate(updatedGameState); // This now contains the full message
         setIsLoading(false);
-        setTempMessage(null);
+        setTempMessage(null); // Clear tempMessage as its content is now in the main log
       }
     });
 
@@ -184,7 +195,7 @@ Tips:
   const handleCommand = async (cmd: string) => {
     if (!cmd.trim()) return;
 
-    setTempMessage(null);
+    setTempMessage(null); // Clear any previous temp message before sending new command
 
     // Check for special commands first
     if (handleSpecialCommand(cmd)) {
@@ -313,7 +324,6 @@ Tips:
                 </div>
               );
             }
-
             return (
               <div key={index} className="mb-4 leading-relaxed">
                 <div className="flex items-start gap-2">
@@ -337,8 +347,6 @@ Tips:
               </div>
             </div>
           )}
-
-
           <div ref={logEndRef}></div>
         </div>
         <div className="border-t-2 border-green-500 p-2 flex gap-2 bg-black">
