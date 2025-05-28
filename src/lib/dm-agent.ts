@@ -791,6 +791,8 @@ Your role is to narrate the story and describe what the player experiences. Be i
           if (statChanges[key] !== undefined) {
             const original = gameState.stats[key];
             const changed = Math.max(0, original + statChanges[key]);
+            console.log("Stat change:", key, original, changed, Math.abs(changed - original));
+
             if (Math.abs(changed - original) > 0) {
               const change = statChanges[key] > 0 ? `+${statChanges[key]}` : `${statChanges[key]}`;
               statMessages.push(`${key[0].toUpperCase()}${key.slice(1)}: ${original} → ${changed} (${change})`);
