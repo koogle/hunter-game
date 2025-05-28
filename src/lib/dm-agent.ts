@@ -139,7 +139,6 @@ export class DungeonMaster {
       { role: 'system', content: 'You are an expert RPG game master.' },
       { role: 'user', content: prompt }
     ];
-    console.log("[DM] isValidAction prompt", prompt);
     const response = await openaiService.createStructuredChatCompletion(messages, schema, { model: SMALL_MODEL, temperature: 0 });
     console.log("[DM] isValidAction response", response);
     return { valid: response?.valid === true, reason: response?.reason ?? null };
@@ -178,13 +177,13 @@ export class DungeonMaster {
     action: string,
     gameState: GameState,
     openaiService: OpenAIService
-  ): Promise<{ 
-    valid: boolean; 
-    reason: string | null; 
-    skillCheck: SkillCheckRequest | undefined 
+  ): Promise<{
+    valid: boolean;
+    reason: string | null;
+    skillCheck: SkillCheckRequest | undefined
   }> {
     console.log("[DM] validateAndCheckSkill called", { action, gameState });
-    
+
     const schema = z.object({
       valid: z.boolean(),
       invalidReason: z.union([z.string(), z.null()]),
@@ -198,7 +197,7 @@ export class DungeonMaster {
         z.null()
       ])
     });
-    
+
     const prompt = `Analyze this player action in an RPG context:
 Action: "${action}"
 Game State: ${JSON.stringify(gameState)}
@@ -208,23 +207,23 @@ Determine:
 2. If valid, does it require a skill check? If so, which stat and difficulty?
 
 Respond with your analysis.`;
-    
+
     const messages = [
       { role: 'system', content: 'You are an expert RPG game master who evaluates player actions.' },
       { role: 'user', content: prompt }
     ];
-    
-    const response = await openaiService.createStructuredChatCompletion(messages, schema, { 
-      model: SMALL_MODEL, 
-      temperature: 0 
+
+    const response = await openaiService.createStructuredChatCompletion(messages, schema, {
+      model: SMALL_MODEL,
+      temperature: 0
     });
-    
+
     console.log("[DM] validateAndCheckSkill response", response);
-    
+
     if (!response) {
       return { valid: false, reason: 'Failed to validate action', skillCheck: undefined };
     }
-    
+
     // Build skill check request if needed
     let skillCheck: SkillCheckRequest | undefined;
     if (response.valid && response.requiresSkillCheck && response.skillCheckDetails) {
@@ -235,7 +234,7 @@ Respond with your analysis.`;
         reason: response.skillCheckDetails.reason
       };
     }
-    
+
     return {
       valid: response.valid,
       reason: response.invalidReason,
@@ -353,7 +352,7 @@ Respond with your analysis.`;
         }).optional()
       })
     });
-    
+
     const prompt = `Analyze this DM narrative response and extract any state changes that occurred:
 
 Narrative: "${narrative}"
@@ -366,24 +365,24 @@ Current Game State:
 - Inventory: ${gameState.inventory.map(item => `${item.name} (${item.quantity})`).join(', ') || "Empty"}
 
 Extract any changes to inventory, stats, or quests that are implied or stated in the narrative. Be conservative - only extract changes that are clearly indicated.`;
-    
+
     const messages = [
       { role: 'system', content: 'You are an expert at parsing RPG narratives to extract game state changes. Be conservative and only extract changes that are clearly indicated in the narrative.' },
       { role: 'user', content: prompt }
     ];
-    
-    const response = await openaiService.createStructuredChatCompletion(messages, schema, { 
-      model: SMALL_MODEL, 
-      temperature: 0 
+
+    const response = await openaiService.createStructuredChatCompletion(messages, schema, {
+      model: SMALL_MODEL,
+      temperature: 0
     });
-    
+
     if (!response) {
       return {
         message: narrative,
         stateChanges: {}
       };
     }
-    
+
     return {
       message: narrative,
       stateChanges: response.stateChanges || {}
@@ -447,9 +446,9 @@ Your role is to narrate the story and describe what the player experiences. Be i
           // Only include user and assistant messages, exclude system messages
           // System messages are for UI display only (errors, skill checks, etc.)
           return (msg.role === "user" || msg.role === "assistant") &&
-                 msg.content !== undefined && 
-                 msg.content !== null && 
-                 msg.content.trim() !== "";
+            msg.content !== undefined &&
+            msg.content !== null &&
+            msg.content.trim() !== "";
         })
         .map(msg => ({
           role: msg.role === "user" ? "user" : "assistant",
@@ -654,33 +653,33 @@ Your role is to narrate the story and describe what the player experiences. Be i
     updatedGame: GameState;
   }> {
     const openaiService = OpenAIService.getInstance();
-    
+
     try {
       // Step 1: Combined validation and skill check determination
       const validationResult = await this.validateAndCheckSkill(action, gameState, openaiService);
-      
+
       if (!validationResult.valid) {
         callbacks.onActionValidity?.(validationResult);
-        
+
         // Add error message to game history
         const errorMessage = validationResult.reason || 'Invalid action';
         const updatedMessages = [
           ...gameState.messages,
           { role: 'user', content: action } as GameMessage,
-          { 
-            role: 'system', 
+          {
+            role: 'system',
             content: errorMessage,
             type: 'action-invalid',
             timestamp: new Date().toISOString()
           } as GameMessage,
         ];
-        
+
         const updatedGame = {
           ...gameState,
           messages: updatedMessages,
           lastUpdatedAt: new Date().toISOString()
         };
-        
+
         return {
           skillCheckRequest: undefined,
           skillCheckResult: undefined,
@@ -698,13 +697,13 @@ Your role is to narrate the story and describe what the player experiences. Be i
       if (validationResult.skillCheck && validationResult.skillCheck.required) {
         // Emit skill check notification
         callbacks.onSkillCheckNotification?.(validationResult.skillCheck);
-        
+
         skillCheckResult = this.performSkillCheck(
           validationResult.skillCheck.stat!,
           validationResult.skillCheck.difficultyCategory!,
           gameState
         );
-        
+
         // Emit skill check result immediately
         callbacks.onSkillCheckResult?.(skillCheckResult);
       }
@@ -741,20 +740,20 @@ Your role is to narrate the story and describe what the player experiences. Be i
         type: 'normal',
         timestamp: new Date().toISOString()
       } as GameMessage);
-      
+
       const updatedGame = this.applyStateChanges({
         ...gameState,
         lastUpdatedAt: new Date().toISOString(),
         messages: updatedMessages
       }, dmResponse);
-      
+
       // Add system messages for state changes after applying them
       const finalMessages = [...updatedGame.messages];
-      
+
       // Add inventory change messages if any
       if (dmResponse.stateChanges.inventoryChanges) {
         const { inventoryChanges } = dmResponse.stateChanges;
-        
+
         // Handle added items
         if (inventoryChanges.add && inventoryChanges.add.length > 0) {
           for (const item of inventoryChanges.add) {
@@ -766,7 +765,7 @@ Your role is to narrate the story and describe what the player experiences. Be i
             } as GameMessage);
           }
         }
-        
+
         // Handle removed items
         if (inventoryChanges.remove && inventoryChanges.remove.length > 0) {
           for (const item of inventoryChanges.remove) {
@@ -782,89 +781,89 @@ Your role is to narrate the story and describe what the player experiences. Be i
 
       // Add stat change messages if any
       if (dmResponse.stateChanges.statChanges) {
-  const statChanges = dmResponse.stateChanges.statChanges;
-  const statMessages: string[] = [];
+        const statChanges = dmResponse.stateChanges.statChanges;
+        const statMessages: string[] = [];
 
-  // Health
-  if (statChanges.health !== undefined) {
-    const original = gameState.stats.health;
-    const changed = Math.max(0, Math.min(100, original + statChanges.health));
-    if (changed !== original) {
-      const change = statChanges.health > 0 ? `+${statChanges.health}` : `${statChanges.health}`;
-      statMessages.push(`Health: ${original} → ${changed} (${change})`);
-    }
-  }
-  // Mana
-  if (statChanges.mana !== undefined) {
-    const original = gameState.stats.mana;
-    const changed = Math.max(0, Math.min(100, original + statChanges.mana));
-    if (changed !== original) {
-      const change = statChanges.mana > 0 ? `+${statChanges.mana}` : `${statChanges.mana}`;
-      statMessages.push(`Mana: ${original} → ${changed} (${change})`);
-    }
-  }
-  // Experience
-  if (statChanges.experience !== undefined) {
-    const original = gameState.stats.experience;
-    const changed = Math.max(0, original + statChanges.experience);
-    if (changed !== original) {
-      const change = statChanges.experience > 0 ? `+${statChanges.experience}` : `${statChanges.experience}`;
-      statMessages.push(`Experience: ${original} → ${changed} (${change})`);
-    }
-  }
-  // Strength
-  if (statChanges.strength !== undefined) {
-    const original = gameState.stats.strength;
-    const changed = Math.max(1, original + statChanges.strength);
-    if (changed !== original) {
-      const change = statChanges.strength > 0 ? `+${statChanges.strength}` : `${statChanges.strength}`;
-      statMessages.push(`Strength: ${original} → ${changed} (${change})`);
-    }
-  }
-  // Dexterity
-  if (statChanges.dexterity !== undefined) {
-    const original = gameState.stats.dexterity;
-    const changed = Math.max(1, original + statChanges.dexterity);
-    if (changed !== original) {
-      const change = statChanges.dexterity > 0 ? `+${statChanges.dexterity}` : `${statChanges.dexterity}`;
-      statMessages.push(`Dexterity: ${original} → ${changed} (${change})`);
-    }
-  }
-  // Intelligence
-  if (statChanges.intelligence !== undefined) {
-    const original = gameState.stats.intelligence;
-    const changed = Math.max(1, original + statChanges.intelligence);
-    if (changed !== original) {
-      const change = statChanges.intelligence > 0 ? `+${statChanges.intelligence}` : `${statChanges.intelligence}`;
-      statMessages.push(`Intelligence: ${original} → ${changed} (${change})`);
-    }
-  }
-  // Luck
-  if (statChanges.luck !== undefined) {
-    const original = gameState.stats.luck;
-    const changed = Math.max(1, original + statChanges.luck);
-    if (changed !== original) {
-      const change = statChanges.luck > 0 ? `+${statChanges.luck}` : `${statChanges.luck}`;
-      statMessages.push(`Luck: ${original} → ${changed} (${change})`);
-    }
-  }
-  // Only show status update if something changed
-  if (statMessages.length > 0) {
-    finalMessages.push({
-      role: 'system',
-      content: `Status Update: ${statMessages.join(', ')}`,
-      type: 'stat-change',
-      timestamp: new Date().toISOString()
-    } as GameMessage);
-  }
-}
-      
+        // Health
+        if (statChanges.health !== undefined) {
+          const original = gameState.stats.health;
+          const changed = Math.max(0, Math.min(100, original + statChanges.health));
+          if (changed !== original) {
+            const change = statChanges.health > 0 ? `+${statChanges.health}` : `${statChanges.health}`;
+            statMessages.push(`Health: ${original} → ${changed} (${change})`);
+          }
+        }
+        // Mana
+        if (statChanges.mana !== undefined) {
+          const original = gameState.stats.mana;
+          const changed = Math.max(0, Math.min(100, original + statChanges.mana));
+          if (changed !== original) {
+            const change = statChanges.mana > 0 ? `+${statChanges.mana}` : `${statChanges.mana}`;
+            statMessages.push(`Mana: ${original} → ${changed} (${change})`);
+          }
+        }
+        // Experience
+        if (statChanges.experience !== undefined) {
+          const original = gameState.stats.experience;
+          const changed = Math.max(0, original + statChanges.experience);
+          if (changed !== original) {
+            const change = statChanges.experience > 0 ? `+${statChanges.experience}` : `${statChanges.experience}`;
+            statMessages.push(`Experience: ${original} → ${changed} (${change})`);
+          }
+        }
+        // Strength
+        if (statChanges.strength !== undefined) {
+          const original = gameState.stats.strength;
+          const changed = Math.max(1, original + statChanges.strength);
+          if (changed !== original) {
+            const change = statChanges.strength > 0 ? `+${statChanges.strength}` : `${statChanges.strength}`;
+            statMessages.push(`Strength: ${original} → ${changed} (${change})`);
+          }
+        }
+        // Dexterity
+        if (statChanges.dexterity !== undefined) {
+          const original = gameState.stats.dexterity;
+          const changed = Math.max(1, original + statChanges.dexterity);
+          if (changed !== original) {
+            const change = statChanges.dexterity > 0 ? `+${statChanges.dexterity}` : `${statChanges.dexterity}`;
+            statMessages.push(`Dexterity: ${original} → ${changed} (${change})`);
+          }
+        }
+        // Intelligence
+        if (statChanges.intelligence !== undefined) {
+          const original = gameState.stats.intelligence;
+          const changed = Math.max(1, original + statChanges.intelligence);
+          if (changed !== original) {
+            const change = statChanges.intelligence > 0 ? `+${statChanges.intelligence}` : `${statChanges.intelligence}`;
+            statMessages.push(`Intelligence: ${original} → ${changed} (${change})`);
+          }
+        }
+        // Luck
+        if (statChanges.luck !== undefined) {
+          const original = gameState.stats.luck;
+          const changed = Math.max(1, original + statChanges.luck);
+          if (changed !== original) {
+            const change = statChanges.luck > 0 ? `+${statChanges.luck}` : `${statChanges.luck}`;
+            statMessages.push(`Luck: ${original} → ${changed} (${change})`);
+          }
+        }
+        // Only show status update if something changed
+        if (statMessages.length > 0) {
+          finalMessages.push({
+            role: 'system',
+            content: `Status Update: ${statMessages.join(', ')}`,
+            type: 'stat-change',
+            timestamp: new Date().toISOString()
+          } as GameMessage);
+        }
+      }
+
       // Update the game with final messages
       const finalGame = {
         ...updatedGame,
         messages: finalMessages
       };
-      
+
       return {
         skillCheckRequest: validationResult.skillCheck,
         skillCheckResult,
@@ -879,25 +878,25 @@ Your role is to narrate the story and describe what the player experiences. Be i
       console.error('Error processing player action with streaming:', error);
       const errorMessage = 'Failed to process player action';
       callbacks.onError?.(errorMessage);
-      
+
       // Add error message to game history even when there's an exception
       const updatedMessages = [
         ...gameState.messages,
         { role: 'user', content: action, timestamp: new Date().toISOString() } as GameMessage,
-        { 
-          role: 'system', 
+        {
+          role: 'system',
           content: errorMessage,
           type: 'error',
           timestamp: new Date().toISOString()
         } as GameMessage,
       ];
-      
+
       const updatedGameWithError = {
         ...gameState,
         messages: updatedMessages,
         lastUpdatedAt: new Date().toISOString()
       };
-      
+
       return {
         skillCheckRequest: undefined,
         skillCheckResult: undefined,
@@ -920,10 +919,10 @@ Your role is to narrate the story and describe what the player experiences. Be i
     onStreamChunk?: (chunk: string) => void
   ): Promise<string> {
     const messages = this.createMessages(gameState);
-    
+
     // Add the player action
     messages.push({ role: 'user', content: action });
-    
+
     // Add skill check context if available
     if (skillCheckResult && skillCheckResult.performed) {
       const skillCheckContext = `Skill Check Result: ${skillCheckResult.stat?.toUpperCase()} (${skillCheckResult.statValue}) + d12 (${skillCheckResult.roll}) vs difficulty ${skillCheckResult.difficulty}. Result: ${skillCheckResult.success ? 'Success' : 'Failure'} (degree: ${skillCheckResult.degree}).\n`;
@@ -938,10 +937,10 @@ Your role is to narrate the story and describe what the player experiences. Be i
       });
 
       let fullResponse = '';
-      
+
       // Emit stream start notification
       onStreamChunk?.('__STREAM_START__');
-      
+
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || '';
         if (content) {
@@ -949,10 +948,10 @@ Your role is to narrate the story and describe what the player experiences. Be i
           onStreamChunk?.(content);
         }
       }
-      
+
       // Emit stream end notification
       onStreamChunk?.('__STREAM_END__');
-      
+
       return fullResponse;
     } catch (error) {
       console.error('Error streaming DM response:', error);

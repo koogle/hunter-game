@@ -65,7 +65,7 @@ export const processPlayerAction = async (
   updatedGame: GameState;
 }> => {
   const dm = new DungeonMaster(gameState);
-  
+
   // Create a local emit function that uses the passed io instance or falls back to the global one
   const emit = (event: string, data: any) => {
     const ioInstance = io || websocketServer.io;
@@ -73,16 +73,16 @@ export const processPlayerAction = async (
       console.error('WebSocket server not initialized');
       return;
     }
-    
+
     // Emit to the game room
     ioInstance.to(gameId).emit(event, data);
-    
+
     // Also emit to specific socket if provided
     if (socketId) {
       ioInstance.to(socketId).emit(event, data);
     }
   };
-  
+
   return dm.processActionWithStreaming(action, gameState, {
     onSkillCheckNotification: (request) => emit('skill-check-notification', { gameId, request }),
     onSkillCheckResult: (result) => emit('skill-check-result', { gameId, result }),
@@ -90,23 +90,6 @@ export const processPlayerAction = async (
     onActionValidity: (validity) => emit('action-validity', { gameId, validity }),
     onError: (message) => emit('error', { gameId, message }),
   });
-};
-
-// Generic emit function to replace all the specific emit functions
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const emitToGame = (gameId: string, event: string, data: any, socketId?: string) => {
-  if (!websocketServer.io) {
-    console.error('WebSocket server not initialized');
-    return;
-  }
-
-  // Emit to the game room
-  websocketServer.io.to(gameId).emit(event, data);
-
-  // Also emit to specific socket if provided
-  if (socketId) {
-    websocketServer.io.to(socketId).emit(event, data);
-  }
 };
 
 export default websocketServer;

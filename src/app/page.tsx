@@ -105,12 +105,15 @@ export default function Home() {
           {step === "game" && currentGame && (
             <GameScreen
               gameState={currentGame}
-              onGameStateUpdate={(gameState: GameState) => {
-                if (gameState != null) {
+              onGameStateUpdate={(gameState: GameState | ((prev: GameState) => GameState)) => {
+                if (typeof gameState === "function") {
+                  const updatedGameState = gameState(currentGame);
+                  setCurrentGame(updatedGameState);
+                  fetchGames();
+                } else {
                   setCurrentGame(gameState);
                   fetchGames();
                 }
-                return gameState;
               }}
             />
           )}

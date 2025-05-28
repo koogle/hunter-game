@@ -6,7 +6,7 @@ import { initWebSocketClient, joinGame, leaveGame, sendPlayerAction, setCallback
 
 interface GameScreenProps {
   gameState: GameState;
-  onGameStateUpdate: (gameState: GameState) => void;
+  onGameStateUpdate: (gameState: GameState | ((prev: GameState) => GameState)) => void;
 }
 
 export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenProps) {
@@ -15,6 +15,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
   const [streamedResponse, setStreamedResponse] = useState("");
   const [tempMessage, setTempMessage] = useState<GameMessage | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
+  const isStreamingDMRRef = useRef(false);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,10 +33,53 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
 
     // Set up callbacks for websocket events
     setCallbacks({
-      onDMResponseChunk: (chunk: string) => {
-        // Filter out stream markers if they are accidentally sent as content
-        if (chunk === '__STREAM_START__' || chunk === '__STREAM_END__') return;
+      onDMResponseChunk: (data: string | { chunk: string }) => {
+        let chunk = data;
+        if (typeof data === "object" && data !== null && "chunk" in data) {
+          chunk = data.chunk;
+        }
+        // Use a ref to track if we are streaming a DM message
+        if (chunk === '__STREAM_START__') {
+          if (isStreamingDMRRef.current) {
+            console.warn("Received __STREAM_START__ while already streaming. Ignoring to prevent duplicate messages.");
+            return;
+          }
+          isStreamingDMRRef.current = true;
+          // Start of stream: add a pending DM message
+          setStreamedResponse("");
+          onGameStateUpdate(prev => ({
+            ...prev,
+            messages: [
+              ...prev.messages,
+              { role: "assistant", content: "", timestamp: new Date().toISOString() }
+            ]
+          }));
+          return;
+        }
+        if (chunk === '__STREAM_END__') {
+          isStreamingDMRRef.current = false;
+          setStreamedResponse(""); // Clear temp state
+          return;
+        }
+        if (typeof chunk !== "string") {
+          console.warn("Received non-string chunk in streamedResponse:", chunk, typeof chunk);
+          return;
+        }
+        console.log("[DM STREAM CHUNK]", chunk);
         setStreamedResponse(prev => prev + chunk);
+        // Update the last DM message in the log
+
+        onGameStateUpdate(prev => {
+          const messages = [...prev.messages];
+          for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === "assistant") {
+              messages[i] = { ...messages[i], content: (messages[i].content || "") + chunk };
+              break;
+            }
+          }
+          return { ...prev, messages };
+        });
+
       },
       onSkillCheckNotification: (request) => {
         if (!request.required || !request.stat || !request.difficultyCategory) return;
@@ -46,7 +90,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           type: 'skill-check',
           timestamp: new Date().toISOString(),
         };
-        onGameStateUpdate({ ...gameState, messages: [...gameState.messages, skillCheckMsg] });
+        onGameStateUpdate(prev => ({ ...prev, messages: [...prev.messages, skillCheckMsg] }));
       },
       onSkillCheckResult: (result) => {
         if (!result.performed || !result.stat || result.roll === undefined || result.difficulty === undefined) return;
@@ -58,11 +102,10 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
           type: 'skill-check',
           timestamp: new Date().toISOString(),
         };
-        // Potentially, if you want to replace the notification, you'd find it by ID and update.
-        // For simplicity, we're adding a new message for the result.
-        onGameStateUpdate({ ...gameState, messages: [...gameState.messages, skillCheckResultMsg] });
+        onGameStateUpdate(prev => ({ ...prev, messages: [...prev.messages, skillCheckResultMsg] }));
       },
       onGameUpdate: (updatedGameState: GameState) => {
+        isStreamingDMRRef.current = false; // Ensure flag is cleared on full update
         onGameStateUpdate(updatedGameState);
         setIsLoading(false);
         setStreamedResponse("");
@@ -282,9 +325,9 @@ Tips:
               const style = getSystemMessageStyle(message.type);
               const label = message.type === "error" ? "ERROR:" :
                 message.type === "action-invalid" ? "INVALID:" :
-                  message.type === "skill-check" ? "SKILL CHECK:" : 
-                  message.type === "inventory-change" ? "INVENTORY:" :
-                  message.type === "stat-change" ? "STATUS:" : "SYSTEM:";
+                  message.type === "skill-check" ? "SKILL CHECK:" :
+                    message.type === "inventory-change" ? "INVENTORY:" :
+                      message.type === "stat-change" ? "STATUS:" : "SYSTEM:";
 
               return (
                 <div key={index} className={`mb-4 leading-relaxed ${style.containerClass}`}>
