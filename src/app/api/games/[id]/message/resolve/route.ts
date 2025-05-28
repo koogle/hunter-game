@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
     }, dmResponse);
     return new Response(
       JSON.stringify({
-
         message: dmResponse.message,
         stateChanges: dmResponse.stateChanges,
         skillCheckResult,

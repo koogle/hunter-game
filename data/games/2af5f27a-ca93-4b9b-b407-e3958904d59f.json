@@ -19,11 +19,48 @@
       "content": "Status Update: Health: 100 → 100 (0), Mana: 100 → 100 (0), Experience: 0 → 0 (0), Strength: 10 → 10 (0), Dexterity: 10 → 10 (0), Intelligence: 10 → 10 (0), Luck: 10 → 10 (0)",
       "type": "stat-change",
       "timestamp": "2025-05-28T13:58:54.002Z"
+    },
+    {
+      "role": "user",
+      "content": "i lay out"
+    },
+    {
+      "role": "system",
+      "content": "The action “i lay out” is ambiguous—please clarify what you intend to lay out or describe the action in more detail.",
+      "type": "action-invalid",
+      "timestamp": "2025-05-28T14:01:28.280Z"
+    },
+    {
+      "role": "user",
+      "content": "I lay out on the ground"
+    },
+    {
+      "role": "system",
+      "content": "Action is ambiguous—unclear what you intend by “lay out” (e.g., laying out gear, laying yourself down, arranging something). Please clarify.",
+      "type": "action-invalid",
+      "timestamp": "2025-05-28T14:02:52.164Z"
+    },
+    {
+      "role": "user",
+      "content": "I lay on the ground",
+      "timestamp": "2025-05-28T14:03:15.867Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You stretch out on the forest floor, letting the cushion of moss and tangled roots support your weight. The earth beneath you is cool and alive, pulsing faintly with the ancient magic that infuses Valenwood. The mist thickens slightly around your form, swirling with a faint shimmer where it meets your skin. The runes, now half-hidden by your body, thrum with a delicate energy—like the heartbeat of something vast and slumbering beneath the surface.\n\nAbove, the canopy shifts, sunlight filtering through in scattered gold and green. Your gaze follows the twisting branches, noticing now the remnants of a stone arch overhead—its carvings nearly erased by time, but just visible enough to suggest figures locked in dance or battle.\n\nFor a moment, the world seems to hush. The melody you heard before fades, replaced by the soft whisper of wind and a distant, measured drumming—perhaps the sound of hooves, or the echo of ancient footsteps?\n\nAs you lie there, your senses sharpen. You notice a faint, sweet scent in the air—a mix of wildflowers and something older, almost metallic. The blue blossom beside you shivers again, and you realize it isn’t alone: a cluster of similar flowers has begun to bloom in a gentle circle around your resting place, their petals opening as if drawn by your presence.\n\nSuddenly, from the corner of your eye, you catch movement. A pale, translucent figure—no larger than a child—hovers just beyond the circle of flowers. Its form flickers, uncertain, as if woven from mist and memory. It gazes at you with wide, glowing eyes, waiting.\n\nWhat do you do?",
+      "type": "normal",
+      "timestamp": "2025-05-28T14:03:22.522Z"
+    },
+    {
+      "role": "system",
+      "content": "Status Update: Health: 100 → 100 (0), Mana: 100 → 100 (0), Experience: 0 → 0 (0), Strength: 10 → 10 (0), Dexterity: 10 → 10 (0), Intelligence: 10 → 10 (0), Luck: 10 → 10 (0)",
+      "type": "stat-change",
+      "timestamp": "2025-05-28T14:03:22.524Z"
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-28T13:58:54.002Z",
+  "lastUpdatedAt": "2025-05-28T14:03:22.525Z",
   "stats": {
     "health": 100,
     "mana": 100,
