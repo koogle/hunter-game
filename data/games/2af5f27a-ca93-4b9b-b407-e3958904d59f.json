@@ -135,11 +135,22 @@
       "content": "You break into a quick run, circling the spot where you’d been resting. The forest floor is springy beneath your feet, moss and twisted roots making for an uneven but forgiving track. The blue blossoms sway in your wake, and the mist eddies outward, startled by your sudden motion.\n\nAs you complete a lap, the runes flicker anxiously, their pattern disrupted by your hurried steps. The spectral child, startled, floats higher into the air, its form shimmering with confusion and perhaps a touch of disappointment. The silvery thread snaps taut, then wavers, uncertain.\n\nThe haunting melody falters, replaced by a hush that feels almost disapproving. Even the light filtering through the canopy dims, shadow swallowing the details of the archway and the carvings within it.\n\nYou come to a stop, breath quickened, heart pounding. The sense of anticipation that once filled the clearing now feels muted, as if the forest itself is waiting for you to choose a different course.\n\nThe spirit’s gaze lingers on you, its expression unreadable. The path of glowing runes toward the archway still beckons, though now their light is softer, less urgent.\n\nWhat will you do next?",
       "type": "normal",
       "timestamp": "2025-05-28T14:18:33.915Z"
+    },
+    {
+      "role": "user",
+      "content": "I jump into the air very hard",
+      "timestamp": "2025-05-28T14:21:58.182Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You bend your knees and launch yourself upward, muscles straining as you leap with all your might. For a brief instant, you’re suspended in the dappled sunlight, surrounded by drifting motes of magical mist and the faint glow of runes at your feet. The effort sends a pulse of energy through the ground; the runes flare brightly, then settle.\n\nYou land with a soft thud on the mossy earth, a few startled blue blossoms tossing their petals into the air. The sound echoes oddly in the quiet clearing, and the mist swirls more rapidly, disturbed by your sudden movement.\n\nThe spectral child watches, head tilted in curiosity, but doesn’t react with either approval or fear. The silvery thread that connects it to the rune flickers uncertainly. The path of glowing runes toward the archway remains, patient and persistent, as if inviting you to something greater than simple displays of energy.\n\nA distant rumble—like far-off thunder or the shifting of ancient stone—rolls through the forest, reminding you of the deeper mysteries that lie ahead. The archway stands firm, its carvings catching the light, the vision of laughing children still echoing in your mind.\n\nWhat do you do now?",
+      "type": "normal",
+      "timestamp": "2025-05-28T14:22:05.860Z"
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-05-28T14:18:33.918Z",
+  "lastUpdatedAt": "2025-05-28T14:22:05.863Z",
   "stats": {
     "health": 100,
     "mana": 100,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { GameState, GameMessage } from "@/types/game";
 import { initWebSocketClient, joinGame, leaveGame, sendPlayerAction, setCallbacks } from "@/lib/websocket-client";
 
@@ -30,41 +30,48 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     joinGame(gameState.id);
 
     // Set up callbacks for websocket events
-    setCallbacks({
-      onDMResponseChunk: (data: string | { chunk: string }) => {
-        let chunk = data;
-        if (typeof data === "object" && data !== null && "chunk" in data) {
-          chunk = data.chunk;
-        }
-        if (chunk === '__STREAM_START__') {
-          setTempMessage({
-            role: "assistant",
-            content: "", // Start with empty content
-            timestamp: new Date().toISOString()
-          });
-          return;
-        }
-        if (chunk === '__STREAM_END__') {
-          // Do NOT clear tempMessage here. It will be cleared by onGameUpdate
-          // or when a new command is submitted.
-          return;
-        }
-        if (typeof chunk !== "string") {
-          console.warn("Received non-string chunk, ignoring:", chunk);
-          return;
-        }
-
-        setTempMessage(prev => {
-          // If tempMessage is somehow null (e.g., stream started without __STREAM_START__ or unexpected event order),
-          // initialize it. Otherwise, append.
-          const currentContent = prev?.content || "";
-          return {
-            role: prev?.role || "assistant",
-            timestamp: prev?.timestamp || new Date().toISOString(),
-            content: currentContent + chunk
-          };
+    // Stable chunk handler to avoid duplicate listeners
+    const handleDMResponseChunk = useCallback((data: string | { chunk: string }) => {
+      let chunk = data;
+      if (typeof data === "object" && data !== null && "chunk" in data) {
+        chunk = data.chunk;
+      }
+      if (chunk === '__STREAM_START__') {
+        setTempMessage({
+          role: "assistant",
+          content: "", // Start with empty content
+          timestamp: new Date().toISOString()
         });
-      },
+        return;
+      }
+      if (chunk === '__STREAM_END__') {
+        // Do NOT clear tempMessage here. It will be cleared by onGameUpdate
+        // or when a new command is submitted.
+        return;
+      }
+      if (typeof chunk !== "string") {
+        console.warn("Received non-string chunk, ignoring:", chunk);
+        return;
+      }
+      setTempMessage(prev => {
+        const currentContent = prev?.content || "";
+        return {
+          role: prev?.role || "assistant",
+          timestamp: prev?.timestamp || new Date().toISOString(),
+          content: currentContent + chunk
+        };
+      });
+    }, []);
+
+    // Stable game update handler
+    const handleGameUpdate = useCallback((updatedGameState: GameState) => {
+      onGameStateUpdate(updatedGameState);
+      setIsLoading(false);
+      setTempMessage(null);
+    }, [onGameStateUpdate]);
+
+    setCallbacks({
+      onDMResponseChunk: handleDMResponseChunk,
       onSkillCheckNotification: (request) => {
         if (!request.required || !request.stat || !request.difficultyCategory) return;
         const content = `Attempting ${request.stat} check (Difficulty: ${request.difficultyCategory})${request.reason ? ` to ${request.reason}` : ''}...`;
@@ -101,7 +108,8 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
         leaveGame();
       }
     };
-  }, [gameState.id, onGameStateUpdate, gameState]);
+  // Only re-run when game id or stable handlers change
+  }, [gameState.id, onGameStateUpdate]);
 
   const createTextBar = (value: number, max: number, length = 16, filled = "█", empty = "░") => {
     let filledLength = Math.floor((value / max) * length);
