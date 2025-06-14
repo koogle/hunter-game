@@ -45,6 +45,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     }
     setTempMessage(prev => {
       const currentContent = prev?.content || "";
+      console.log("[GameScreen] handleDMResponseChunk", { chunk, currentContent });
       return {
         role: prev?.role || "assistant",
         timestamp: prev?.timestamp || new Date().toISOString(),
@@ -108,7 +109,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
         leaveGame();
       }
     };
-  // Only re-run when game id or stable handlers change
+    // Only re-run when game id or stable handlers change
   }, [gameState.id, handleDMResponseChunk, handleGameUpdate, handleSkillCheckNotification, handleSkillCheckResult]);
 
   const createTextBar = (value: number, max: number, length = 16, filled = "█", empty = "░") => {

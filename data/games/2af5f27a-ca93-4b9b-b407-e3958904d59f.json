@@ -2,10 +2,129 @@
   "name": "Jakob",
   "scenario": "The Lost Kingdom",
   "customScenario": "In the heart of an ancient, uncharted forest known as Valenwood, whispers of a once-mighty kingdom echo through the thick canopy of emerald leaves. The Lost Kingdom of Eldoria, as it was called, is said to have thrived centuries ago, its splendor rivaling that of the sun itself, before mysteriously vanishing from the annals of history. As your party steps deeper into the forest, the air grows thick with a magical mist that seems to shimmer under the light of the sun, revealing glimpses of crumbling stonework and overgrown archways entwined with vibrant moss and wildflowers. The path beneath your feet is strewn with ancient runes, half-concealed by the roots of giant trees, each step sparking a faint glow and an echo of forgotten incantations.\n\nAt the heart of Valenwood lies the fabled Eldorian Crystal, a source of immense power said to be embedded within the ruins of the royal palace. Surrounding the palace are remnants of the kingdom’s grandeur: majestic statues of forgotten heroes, their faces worn but resolute, and sprawling gardens where the once vibrant flora has become a canvas of nature’s reclamation. Darkened shadows flit between the trees, hinting at lurking dangers—mythical beasts, enchanted guardians of the realm, and the restless spirits of Eldoria’s last defenders. As night falls, the forest comes alive with ethereal lights and haunting melodies, beckoning adventurers to uncover the kingdom’s secrets, confront the malevolent force that caused its demise, and perhaps even bring a flicker of its lost glory back to life. Will your party uncover the truth hidden within the ruins, or will Eldoria’s mysteries claim yet another set of souls? The Lost Kingdom awaits your exploration, filled with promise and peril alike.",
-  "messages": [],
+  "messages": [
+    {
+      "role": "user",
+      "content": "I look around",
+      "timestamp": "2025-06-14T01:47:47.876Z"
+    },
+    {
+      "role": "system",
+      "content": "Skill Check Result: DEXTERITY (10) + d12 (8) vs difficulty 8 → SUCCESS (Δ10)",
+      "type": "skill-check",
+      "timestamp": "2025-06-14T01:47:47.876Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You move with a quiet, deliberate grace through the mist-draped undergrowth, senses heightened by the otherworldly hush that lingers in Valenwood’s ancient heart. Your careful steps avoid the tangled roots and moss-slick stones as you scan your surroundings, letting instinct guide you.\n\nTo your left, shafts of sunlight pierce the emerald canopy, illuminating the remnants of a weathered stone archway half-swallowed by the forest. Vivid wildflowers bloom in its cracks, their colors almost unnaturally bright. As you draw closer, you notice faint runes etched into the arch’s surface—at your touch, they pulse softly, releasing a whisper of cool, arcane energy.\n\nAhead, the path forks. One direction leads deeper into the shadows, where the trees grow thicker, their roots forming natural bridges over a shallow, crystal-clear stream. The other path curves toward a sunlit clearing. There, you glimpse the silhouette of a statue—perhaps a forgotten guardian—standing watch amid the ruins of what might have once been a garden.\n\nYour sharp eyes catch movement—a flash of pale fur and the glint of golden eyes in the underbrush. Some woodland creature, or perhaps something more unusual, is watching you. For now, it seems content to observe, but the forest is alive with secrets and silent invitations.\n\nYou stand at a crossroads: the shadowed stream beneath ancient trees, or the beckoning light of the ruined garden. The air hums with possibility. What will you do?",
+      "type": "normal",
+      "timestamp": "2025-06-14T01:47:55.764Z"
+    },
+    {
+      "role": "user",
+      "content": "I look around",
+      "timestamp": "2025-06-14T01:50:55.921Z"
+    },
+    {
+      "role": "system",
+      "content": "Skill Check Result: DEXTERITY (10) + d12 (1) vs difficulty 5 → SUCCESS (Δ6)",
+      "type": "skill-check",
+      "timestamp": "2025-06-14T01:50:55.921Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You move with practiced caution, your steps light and sure-footed as you slip through the tangled undergrowth. The ancient roots and slick moss offer little challenge to your dexterity; you barely disturb the forest floor, and even the birds overhead remain undisturbed by your presence.\n\nYour keen eyes sweep the area, catching details that might elude a less nimble traveler. To the left, you spot a hidden trail—little more than a faint depression in the earth—winding behind the crumbling archway. It’s camouflaged by ferns and dappled sunlight, but your quick reflexes allow you to sidestep a nearly invisible tripwire of braided vines. Tucked just beyond, you notice the gleam of something metallic half-buried at the base of the arch: a slender, rune-etched dagger, its hilt entwined in moss and roots.\n\nNear the stream, your sharp gaze picks out a series of delicate, hoof-shaped prints in the soft mud—far larger than any deer you’ve seen, and flanked by a curious, swirling sigil pressed into the earth. Whatever left these tracks is no ordinary forest dweller.\n\nIn the clearing, the sunlight dances off the statue’s weathered surface. You notice what others might miss: a faint outline of a shield, and a patch of blue lichen forming an oddly deliberate pattern at its feet. A low hum, almost musical, seems to emanate from the stone itself, resonating in time with the runes nearby.\n\nThe forest holds its breath, waiting for your next move. Will you investigate the metallic glint by the archway, follow the tracks along the stream, or approach the mysterious statue in the sunlight? The choice is yours.",
+      "type": "normal",
+      "timestamp": "2025-06-14T01:51:02.648Z"
+    },
+    {
+      "role": "user",
+      "content": "I look around again",
+      "timestamp": "2025-06-14T02:02:30.467Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You pause, letting the atmosphere of the ancient forest settle around you. The mist seems to swirl in languid patterns as you take in every detail with sharp, searching eyes, seeking anything that might have escaped notice.\n\nThe archway stands silent and enigmatic to your left, its rune-etched stones pulsing faintly with magical residue. Now, you notice that the patterns of moss and wildflowers at its base seem almost intentional, as if shaped by unseen hands—forming a subtle spiral that leads your gaze to the half-buried dagger gleaming in the shadows.\n\nYour attention turns to the stream. The water glimmers with an unnatural clarity, reflecting shifting colors—emerald, sapphire, and gold. The hoofprints and arcane sigil you spotted earlier remain undisturbed, but now you see faint, silvery threads in the air above the water, like the remnants of a spider’s web, vibrating almost imperceptibly with some latent energy.\n\nThe garden clearing draws your gaze again. The statue, partly encased in flowering vines, seems more lifelike in the shifting light. Its eyes, though carved from worn stone, catch the sun in such a way that for a heartbeat, you almost believe they’re watching you in return. The blue lichen at its feet forms a pattern reminiscent of an ancient crest—a crowned tree encircled by stars. At the statue’s base, you now spot a small, weathered plaque, the inscription nearly hidden by moss.\n\nBehind you, the faintest rustle—a branch swaying, or perhaps something moving in the deeper shadows. The sense of being observed grows stronger, but nothing steps forward. The air tastes of old secrets and patient waiting.\n\nYou have several points of interest:  \n- The rune-marked archway and its spiral of flowers  \n- The metallic, rune-etched dagger at its base  \n- The hoofprints and sigil by the stream, with their strange silvery threads  \n- The statue in the clearing, its crest-shaped lichen and hidden inscription  \n- The feeling of being watched from the shadows  \n\nWhat do you wish to do next?",
+      "type": "normal",
+      "timestamp": "2025-06-14T02:02:33.473Z"
+    },
+    {
+      "role": "user",
+      "content": "I look around again",
+      "timestamp": "2025-06-14T02:03:12.948Z"
+    },
+    {
+      "role": "system",
+      "content": "Skill Check Result: INTELLIGENCE (10) + d12 (8) vs difficulty 8 → SUCCESS (Δ10)",
+      "type": "skill-check",
+      "timestamp": "2025-06-14T02:03:12.948Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You steady yourself, drawing a slow breath as you let your senses and intellect attune to the mysteries of Valenwood. The magical mist, the subtle arrangements of flora, the lingering resonance in the air—all of it begins to make sense, as if the pieces of a hidden puzzle are aligning before your mind’s eye.\n\nYour analytical gaze sweeps the surroundings one more time, and with a sudden clarity, patterns emerge:\n\n**The Archway:**  \nThe spiral of flowers and moss at the arch’s base isn’t random—it mirrors an ancient Eldorian symbol for “passage” or “threshold.” The runes on the stone, now pulsing in response to your focused attention, form a phrase: “Only the worthy step through.” The metallic dagger, entwined in roots, is not merely a lost weapon; it’s a ritual implement, meant to be placed into a notch at the archway’s side, a key to unlock its dormant enchantments.\n\n**The Stream:**  \nThe hoofprints and swirling sigil are markers of a guardian spirit—a creature bound to defend the kingdom’s sacred places. The silvery threads you now understand as remnants of a magical barrier, recently disturbed. Something—or someone—has passed this way, breaking the ward. You sense that following these tracks could lead to either danger or revelation.\n\n**The Statue:**  \nThe pattern of blue lichen at the statue’s base is not just a crest, but a map. The crowned tree encircled by stars matches the ancient legend of Eldoria’s royal lineage, said to have hidden their greatest secrets under the roots of the eldest tree in the palace gardens. The inscription, now deciphered through your sharp intellect, reads: “In memory of those who stood watch at the world’s twilight. Seek the heart beneath the crown.”\n\n**The Shadows:**  \nPiecing together the rustle behind you and the feeling of being watched, you realize this is no ordinary animal. The presence is intelligent, cautious—perhaps a guardian or a fellow seeker, waiting to see what you will do next.\n\nYou have unraveled several of the forest’s secrets, each inviting action:  \n- Use the dagger as a key at the archway  \n- Follow the guardian’s tracks beyond the stream  \n- Study the statue’s map and search for the “eldest tree”  \n- Confront or call out to the watcher in the shadows\n\nWhat will you do, now that the lost kingdom’s mysteries begin to reveal themselves?",
+      "type": "normal",
+      "timestamp": "2025-06-14T02:03:16.843Z"
+    },
+    {
+      "role": "user",
+      "content": "I look around again",
+      "timestamp": "2025-06-14T02:04:28.204Z"
+    },
+    {
+      "role": "system",
+      "content": "Skill Check Result: INTELLIGENCE (10) + d12 (3) vs difficulty 8 → SUCCESS (Δ5)",
+      "type": "skill-check",
+      "timestamp": "2025-06-14T02:04:28.204Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You narrow your eyes, drawing upon your keen intellect and letting your gaze sweep across the scene yet again, determined to pierce every veil of illusion and secrecy the forest might offer.\n\nYour analytical mind sifts through subtle cues: the way the mist curls and collects around certain stones, the faint resonance humming through the air, the arrangement of flowers, sigils, and shadows. You recall ancient tales of Eldoria—legends of their wards and hidden pathways—piecing together everything you’ve observed with remarkable clarity.\n\n**A hidden mechanism at the archway** catches your attention. Among the spiraling flowers and moss, you now notice a tiny depression in the stone near the runes, perfectly sized to receive the rune-etched dagger. It’s not just a ceremonial slot, but a cleverly disguised lock—perhaps the key to activating a long-dormant enchantment.\n\n**By the stream,** your eyes trace the hoofprints and swirling sigil, your mind quickly running through old magical texts. The sigil is a warding glyph, but its disruption points not only to a guardian’s passage but also to a weakening of magical barriers. You deduce that if you follow the silver threads upstream, you may find the source of the disturbance—a place where the boundaries between worlds are thin.\n\n**The statue’s map** becomes clearer in your mind. The pattern of lichen, you now realize, is a stylized representation of the surrounding ruins. The “crown” is the statue itself; the “heart” beneath, according to the inscription, could refer to something buried at its base. A cleverly concealed compartment, perhaps, or a root-choked hatch leading downward.\n\n**The watcher in the shadows,** once only a presence, now comes into sharper focus. Your mind catches the outline of a figure—a slender, robed silhouette moving with purpose rather than malice, its eyes reflecting a faint, intelligent glow. This is no wild beast, but a sentient being, perhaps a spectral guardian or a lost soul bound to Eldoria’s fate.\n\nWith your heightened perception, the forest now feels less like an impenetrable mystery and more like a puzzle box, waiting for the right mind to open it. Every clue hums at the edge of revelation, inviting you to choose your next move:\n\n- Will you use the dagger to unlock the archway’s hidden portal?\n- Follow the magical threads to the source of the ward’s disturbance?\n- Search beneath the statue for the “heart” hinted at in the inscription?\n- Or confront the watcher, now more clearly revealed, and seek parley or answers?\n\nYour intellect has opened doors few others could even see. What will you do next?",
+      "type": "normal",
+      "timestamp": "2025-06-14T02:04:33.742Z"
+    },
+    {
+      "role": "user",
+      "content": "I look around",
+      "timestamp": "2025-06-14T02:11:15.321Z"
+    },
+    {
+      "role": "system",
+      "content": "Skill Check Result: INTELLIGENCE (10) + d12 (1) vs difficulty 8 → SUCCESS (Δ3)",
+      "type": "skill-check",
+      "timestamp": "2025-06-14T02:11:15.321Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You take a steadying breath, letting your mind sharpen, your senses strain for meaning in every whisper of wind and flicker of movement. Your intellect, keen and honed, sifts through the tangle of sights and sounds, seeking patterns where others might see only chaos.\n\nAs you scan your surroundings, the very air seems to respond to your focus. The mist parts ever so slightly, and the runes scattered on the stones beneath your feet glimmer in a deliberate rhythm—as if the forest itself acknowledges your insight.\n\n**Near the archway,** you catch something others might overlook: the faintest outline of a door, seamlessly blended into the stone. The runes pulsing along its curve form a sequence—a riddle or password, perhaps, but your mind aligns the symbols with the rhythm of your own heartbeat. You realize: the dagger, when placed in the slot, must be turned in time with these pulses to activate the portal.\n\n**At the stream,** your eyes are drawn to the silvery threads drifting above the water. They twist and tug toward a shadowed hollow in the roots across the stream. You recall a tale of “moon-silver wards” that protect sacred places, and recognize that this hollow is a nexus—a hidden entrance or a spiritual crossing, shielded from mundane sight. If you follow the threads, you may uncover a secret way deeper into Eldoria’s mysteries.\n\n**By the statue,** your intelligence unveils the final piece: the lichen crest, the crowned tree, and the stars form not just a pattern, but a set of coordinates. You spot tiny, deliberate carvings at the statue’s base, marking a spot where the soil has been disturbed more recently than the rest of the ruins. There is something buried there—something placed with purpose and care, waiting for one sharp enough to find it.\n\n**In the shadows,** the watcher lingers still. But now, with your insight, you recognize the subtle shimmer around its form: a glamour, meant to cloak its true nature. This is no mere forest spirit, but an ancient sentinel—perhaps even a remnant of Eldoria’s royal guard, bound by oath and magic.\n\nThe forest’s riddles unfold before you, inviting action at every turn. Your intellect has revealed:\n\n- A hidden portal in the arch, unlockable by a precise ritual\n- A spiritual nexus beyond the stream, accessible by following the magical threads\n- A freshly concealed cache beneath the statue’s mapped coordinates\n- An enchanted sentinel, waiting in the gloom for a challenger—or an ally\n\nWhat will you do, now that the veil has been lifted?",
+      "type": "normal",
+      "timestamp": "2025-06-14T02:11:19.510Z"
+    },
+    {
+      "role": "user",
+      "content": "I look around",
+      "timestamp": "2025-06-14T02:38:49.815Z"
+    },
+    {
+      "role": "assistant",
+      "content": "The ancient forest seems to hold its breath as you stand at its heart, your gaze sweeping the mist-laden realm with unwavering focus. With each successive scan, your senses attune more and more to the subtleties of Valenwood—secrets that would remain forever hidden to the casual eye.\n\n**Every detail you’ve uncovered sharpens in your mind:**\n\n- The archway stands to your left, its rune-inscribed stones pulsing in a steady rhythm. The spiral of flowers and moss at its base now seems to almost beckon you, and the outline of a hidden door glimmers faintly as if waiting for the right touch.\n\n- The stream ahead sings with the soft resonance of old magic. Silvery threads ripple above it, converging on a dark, root-choked hollow—a nexus of spiritual power and hidden passage, the hoofprints and glyphs marking the way of something not entirely of this world.\n\n- The statue in the sunlit clearing is more than a monument: the blue lichen crest, the minuscule carvings at its base, and the disturbed soil point to a cache buried beneath, a legacy of the lost kingdom waiting for discovery.\n\n- From the deepening shadows at the edge of your vision, the watcher’s presence grows more tangible. You sense ancient power and a silent challenge in its stance—a guardian bound by oath, neither friend nor foe until you act.\n\n**But now, as you look again, the world pushes back.**\n\nThe mist grows thicker, swirling at your feet. The runes flicker as if warning you: Valenwood is a realm for the bold, not the hesitant. Too many moments spent searching, and the forest’s patience begins to wane. A chill breeze stirs the branches, carrying with it a low, haunting melody—an echo of voices long lost. You sense, deep in your bones, that to linger forever on the threshold is to invite the ancient magic’s displeasure.\n\nThe clues are laid before you, paths branching in every direction. But the kingdom’s secrets will not wait forever, and the eyes in the darkness watch with growing curiosity—and hunger.\n\nIt is time to act, Jakob.\n\n**What do you do?**",
+      "type": "normal",
+      "timestamp": "2025-06-14T02:38:54.168Z"
+    },
+    {
+      "role": "user",
+      "content": "I look around",
+      "timestamp": "2025-06-14T02:39:40.745Z"
+    },
+    {
+      "role": "assistant",
+      "content": "The forest draws in close around you, Jakob, as if sensing your repeated hesitation. The mist thickens, swirling at your ankles and climbing the ancient trunks, blurring the lines between stone, wood, and shadow. The once gentle glow of the runes beneath your feet flickers, dimming with your indecision; the archway’s pulse slows, the silver threads above the stream begin to unravel, and the haunting melody in the air grows more discordant, almost impatient.\n\nAbove, the leafy canopy darkens, sunlight struggling to pierce the ever-deepening gloom. From the shadows, the watcher’s presence sharpens—no longer a passive observer, but a looming figure whose patience is clearly not infinite. The air grows heavy, pressing against your skin and mind, a silent warning from the ancient heart of Valenwood.\n\nYou sense, with sudden clarity, that the forest’s magic is not limitless. Its secrets are not for the idle or the uncertain. The kingdom’s mysteries close in, the pathways between worlds beginning to fade. If you continue to look and hesitate, you risk losing your chance to shape your destiny here—the Lost Kingdom may swallow you whole, as it has countless souls before.\n\n**The world waits for you to act.**  \nWill you:\n\n- Approach the archway and use the dagger in its runed lock?\n- Investigate the hollow beyond the stream where the ward has been disturbed?\n- Dig beneath the statue’s mapped coordinates, seeking the buried cache?\n- Step toward the watcher and address the ancient sentinel directly?\n\nThe next moment will define your story in Eldoria. The forest’s patience is at its end. **What do you do, Jakob?**",
+      "type": "normal",
+      "timestamp": "2025-06-14T02:39:43.737Z"
+    }
+  ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-06-14T01:39:12.599Z",
+  "lastUpdatedAt": "2025-06-14T02:39:43.739Z",
   "stats": {
     "health": 100,
     "mana": 100,
