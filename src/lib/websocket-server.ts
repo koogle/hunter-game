@@ -64,9 +64,11 @@ export const processPlayerAction = async (
   actionValidity: { valid: boolean; reason: string | null };
   updatedGame: GameState;
 }> => {
+  console.log(`[WebSocketServer] processPlayerAction START - GameID: ${gameId}, Action: "${action}", SocketID: ${socketId || 'N/A'}, Initial Messages: ${gameState.messages.length}`);
   const dm = new DungeonMaster(gameState);
 
   // Create a local emit function that uses the passed io instance or falls back to the global one
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const emit = (event: string, data: any) => {
     const ioInstance = io || websocketServer.io;
     if (!ioInstance) {
@@ -75,6 +77,11 @@ export const processPlayerAction = async (
     }
 
     // Emit to the game room
+    if (event === 'dm-response-chunk') {
+      console.log(`[WebSocketServer] Emitting event: ${event} to GameID: ${gameId}, Chunk: "${data.chunk?.substring(0, 50)}..."`);
+    } else {
+      console.log(`[WebSocketServer] Emitting event: ${event} to GameID: ${gameId}, Data:`, JSON.stringify(data).substring(0, 100));
+    }
     ioInstance.to(gameId).emit(event, data);
   };
 
@@ -84,6 +91,12 @@ export const processPlayerAction = async (
     onStreamChunk: (chunk) => emit('dm-response-chunk', chunk),
     onActionValidity: (validity) => emit('action-validity', validity),
     onError: (message) => emit('error', message),
+  }).then(result => {
+    console.log(`[WebSocketServer] processPlayerAction END - GameID: ${gameId}, Final Messages: ${result.updatedGame.messages.length}`);
+    return result;
+  }).catch(error => {
+    console.error(`[WebSocketServer] processPlayerAction ERROR - GameID: ${gameId}, Error:`, error);
+    throw error;
   });
 };
 

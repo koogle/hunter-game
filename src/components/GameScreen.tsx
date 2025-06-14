@@ -61,6 +61,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     setTempMessage(null);
   }, [onGameStateUpdate]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSkillCheckNotification = useCallback((request: any) => {
     if (!request.required || !request.stat || !request.difficultyCategory) return;
     const content = `Attempting ${request.stat} check (Difficulty: ${request.difficultyCategory})${request.reason ? ` to ${request.reason}` : ''}...`;
@@ -73,6 +74,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     onGameStateUpdate(prev => ({ ...prev, messages: [...prev.messages, skillCheckMsg] }));
   }, [onGameStateUpdate]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSkillCheckResult = useCallback((result: any) => {
     if (!result.performed || !result.stat || result.roll === undefined || result.difficulty === undefined) return;
     const outcome = result.success ? 'Success' : 'Failure';
