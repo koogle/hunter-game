@@ -37,4 +37,4 @@ yarn-error.log*
 next-env.d.ts
 
 # game data
-data/games/*
+data/games
