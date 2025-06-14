@@ -84,11 +84,11 @@ export const processPlayerAction = async (
   };
 
   return dm.processActionWithStreaming(action, gameState, {
-    onSkillCheckNotification: (request) => emit('skill-check-notification', { gameId, request }),
-    onSkillCheckResult: (result) => emit('skill-check-result', { gameId, result }),
-    onStreamChunk: (chunk) => emit('dm-response-chunk', { gameId, chunk }),
-    onActionValidity: (validity) => emit('action-validity', { gameId, validity }),
-    onError: (message) => emit('error', { gameId, message }),
+    onSkillCheckNotification: (request) => emit('skill-check-notification', request),
+    onSkillCheckResult: (result) => emit('skill-check-result', result),
+    onStreamChunk: (chunk) => emit('dm-response-chunk', chunk),
+    onActionValidity: (validity) => emit('action-validity', validity),
+    onError: (message) => emit('error', message),
   });
 };
 

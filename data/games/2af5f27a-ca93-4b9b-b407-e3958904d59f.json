@@ -120,11 +120,28 @@
       "content": "The forest draws in close around you, Jakob, as if sensing your repeated hesitation. The mist thickens, swirling at your ankles and climbing the ancient trunks, blurring the lines between stone, wood, and shadow. The once gentle glow of the runes beneath your feet flickers, dimming with your indecision; the archway’s pulse slows, the silver threads above the stream begin to unravel, and the haunting melody in the air grows more discordant, almost impatient.\n\nAbove, the leafy canopy darkens, sunlight struggling to pierce the ever-deepening gloom. From the shadows, the watcher’s presence sharpens—no longer a passive observer, but a looming figure whose patience is clearly not infinite. The air grows heavy, pressing against your skin and mind, a silent warning from the ancient heart of Valenwood.\n\nYou sense, with sudden clarity, that the forest’s magic is not limitless. Its secrets are not for the idle or the uncertain. The kingdom’s mysteries close in, the pathways between worlds beginning to fade. If you continue to look and hesitate, you risk losing your chance to shape your destiny here—the Lost Kingdom may swallow you whole, as it has countless souls before.\n\n**The world waits for you to act.**  \nWill you:\n\n- Approach the archway and use the dagger in its runed lock?\n- Investigate the hollow beyond the stream where the ward has been disturbed?\n- Dig beneath the statue’s mapped coordinates, seeking the buried cache?\n- Step toward the watcher and address the ancient sentinel directly?\n\nThe next moment will define your story in Eldoria. The forest’s patience is at its end. **What do you do, Jakob?**",
       "type": "normal",
       "timestamp": "2025-06-14T02:39:43.737Z"
+    },
+    {
+      "role": "user",
+      "content": "i look around",
+      "timestamp": "2025-06-14T02:52:07.450Z"
+    },
+    {
+      "role": "system",
+      "content": "Skill Check Result: INTELLIGENCE (10) + d12 (1) vs difficulty 10 → SUCCESS (Δ1)",
+      "type": "skill-check",
+      "timestamp": "2025-06-14T02:52:07.450Z"
+    },
+    {
+      "role": "assistant",
+      "content": "You press your mind into the world around you, seeking answers in every whisper of wind and flicker of light. Though the magical mist presses close and the forest’s patience thins, your sharp intellect—though stretched—pieces together one more subtle clue from your relentless observations.\n\nAs your eyes adjust to the gloom, you notice a faint shimmer near the base of the archway: a nearly invisible glyph that pulses once, as if in recognition of your persistent scrutiny. The rune isn’t just part of the arch’s decoration—it’s a warning sigil, set to veil the portal from those who hesitate. Your insight, though only just enough, lets you decipher a single word from its ancient Eldorian script: “Threshold.”\n\nYou realize, in a moment of clarity, that the archway is both a passage and a test. It will not open to those who only look; it demands intent and action. The dagger, the pulsing runes, the spiral of flowers—all are parts of a ritual waiting to be completed by hands willing to shape fate, not merely ponder it.\n\nThe watcher in the shadows shifts, its eyes glimmering with a mixture of curiosity and wary approval—perhaps sensing that you are, at last, on the cusp of decision.\n\nThe forest’s magic is holding open a narrow window. You stand before the threshold, knowledge in hand. All that remains is to act.\n\n**What will you do?**",
+      "type": "normal",
+      "timestamp": "2025-06-14T02:52:10.421Z"
     }
   ],
   "id": "2af5f27a-ca93-4b9b-b407-e3958904d59f",
   "createdAt": "2025-04-03T01:43:39.417Z",
-  "lastUpdatedAt": "2025-06-14T02:39:43.739Z",
+  "lastUpdatedAt": "2025-06-14T02:52:10.424Z",
   "stats": {
     "health": 100,
     "mana": 100,
