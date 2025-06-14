@@ -76,12 +76,6 @@ export const processPlayerAction = async (
       return;
     }
 
-    // Emit to the game room
-    if (event === 'dm-response-chunk') {
-      console.log(`[WebSocketServer] Emitting event: ${event} to GameID: ${gameId}, Chunk: "${data.chunk?.substring(0, 50)}..."`);
-    } else {
-      console.log(`[WebSocketServer] Emitting event: ${event} to GameID: ${gameId}, Data:`, JSON.stringify(data).substring(0, 100));
-    }
     ioInstance.to(gameId).emit(event, data);
   };
 

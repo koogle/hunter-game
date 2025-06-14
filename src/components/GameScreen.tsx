@@ -45,7 +45,6 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     }
     setTempMessage(prev => {
       const currentContent = prev?.content || "";
-      console.log("[GameScreen] handleDMResponseChunk", { chunk, currentContent });
       return {
         role: prev?.role || "assistant",
         timestamp: prev?.timestamp || new Date().toISOString(),
