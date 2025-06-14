@@ -76,11 +76,6 @@ export const processPlayerAction = async (
 
     // Emit to the game room
     ioInstance.to(gameId).emit(event, data);
-
-    // Also emit to specific socket if provided
-    if (socketId) {
-      ioInstance.to(socketId).emit(event, data);
-    }
   };
 
   return dm.processActionWithStreaming(action, gameState, {
