@@ -19,6 +19,72 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [gameState.messages]);
 
+  // Set up callbacks for websocket events
+  // Stable chunk handler to avoid duplicate listeners
+  const handleDMResponseChunk = useCallback((data: string | { chunk: string }) => {
+    let chunk = data;
+    if (typeof data === "object" && data !== null && "chunk" in data) {
+      chunk = data.chunk;
+    }
+    if (chunk === '__STREAM_START__') {
+      setTempMessage({
+        role: "assistant",
+        content: "", // Start with empty content
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+    if (chunk === '__STREAM_END__') {
+      // Do NOT clear tempMessage here. It will be cleared by onGameUpdate
+      // or when a new command is submitted.
+      return;
+    }
+    if (typeof chunk !== "string") {
+      console.warn("Received non-string chunk, ignoring:", chunk);
+      return;
+    }
+    setTempMessage(prev => {
+      const currentContent = prev?.content || "";
+      return {
+        role: prev?.role || "assistant",
+        timestamp: prev?.timestamp || new Date().toISOString(),
+        content: currentContent + chunk
+      };
+    });
+  }, []);
+
+  // Stable game update handler
+  const handleGameUpdate = useCallback((updatedGameState: GameState) => {
+    onGameStateUpdate(updatedGameState);
+    setIsLoading(false);
+    setTempMessage(null);
+  }, [onGameStateUpdate]);
+
+  const handleSkillCheckNotification = useCallback((request: any) => {
+    if (!request.required || !request.stat || !request.difficultyCategory) return;
+    const content = `Attempting ${request.stat} check (Difficulty: ${request.difficultyCategory})${request.reason ? ` to ${request.reason}` : ''}...`;
+    const skillCheckMsg: GameMessage = {
+      role: 'system',
+      content,
+      type: 'skill-check',
+      timestamp: new Date().toISOString(),
+    };
+    onGameStateUpdate(prev => ({ ...prev, messages: [...prev.messages, skillCheckMsg] }));
+  }, [onGameStateUpdate]);
+
+  const handleSkillCheckResult = useCallback((result: any) => {
+    if (!result.performed || !result.stat || result.roll === undefined || result.difficulty === undefined) return;
+    const outcome = result.success ? 'Success' : 'Failure';
+    const content = `Skill Check: ${result.stat.toUpperCase()} (Rolled ${result.roll} vs DC ${result.difficulty}) - ${outcome}!${result.degree ? ` Degree: ${result.degree}.` : ''}${result.reason ? ` (${result.reason})` : ''}`;
+    const skillCheckResultMsg: GameMessage = {
+      role: 'system',
+      content,
+      type: 'skill-check',
+      timestamp: new Date().toISOString(),
+    };
+    onGameStateUpdate(prev => ({ ...prev, messages: [...prev.messages, skillCheckResultMsg] }));
+  }, [onGameStateUpdate]);
+
   // Initialize websocket connection
   useEffect(() => {
     if (!gameState || !gameState.id) return;
@@ -29,77 +95,11 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     // Join the game room
     joinGame(gameState.id);
 
-    // Set up callbacks for websocket events
-    // Stable chunk handler to avoid duplicate listeners
-    const handleDMResponseChunk = useCallback((data: string | { chunk: string }) => {
-      let chunk = data;
-      if (typeof data === "object" && data !== null && "chunk" in data) {
-        chunk = data.chunk;
-      }
-      if (chunk === '__STREAM_START__') {
-        setTempMessage({
-          role: "assistant",
-          content: "", // Start with empty content
-          timestamp: new Date().toISOString()
-        });
-        return;
-      }
-      if (chunk === '__STREAM_END__') {
-        // Do NOT clear tempMessage here. It will be cleared by onGameUpdate
-        // or when a new command is submitted.
-        return;
-      }
-      if (typeof chunk !== "string") {
-        console.warn("Received non-string chunk, ignoring:", chunk);
-        return;
-      }
-      setTempMessage(prev => {
-        const currentContent = prev?.content || "";
-        return {
-          role: prev?.role || "assistant",
-          timestamp: prev?.timestamp || new Date().toISOString(),
-          content: currentContent + chunk
-        };
-      });
-    }, []);
-
-    // Stable game update handler
-    const handleGameUpdate = useCallback((updatedGameState: GameState) => {
-      onGameStateUpdate(updatedGameState);
-      setIsLoading(false);
-      setTempMessage(null);
-    }, [onGameStateUpdate]);
-
     setCallbacks({
       onDMResponseChunk: handleDMResponseChunk,
-      onSkillCheckNotification: (request) => {
-        if (!request.required || !request.stat || !request.difficultyCategory) return;
-        const content = `Attempting ${request.stat} check (Difficulty: ${request.difficultyCategory})${request.reason ? ` to ${request.reason}` : ''}...`;
-        const skillCheckMsg: GameMessage = {
-          role: 'system',
-          content,
-          type: 'skill-check',
-          timestamp: new Date().toISOString(),
-        };
-        onGameStateUpdate(prev => ({ ...prev, messages: [...prev.messages, skillCheckMsg] }));
-      },
-      onSkillCheckResult: (result) => {
-        if (!result.performed || !result.stat || result.roll === undefined || result.difficulty === undefined) return;
-        const outcome = result.success ? 'Success' : 'Failure';
-        const content = `Skill Check: ${result.stat.toUpperCase()} (Rolled ${result.roll} vs DC ${result.difficulty}) - ${outcome}!${result.degree ? ` Degree: ${result.degree}.` : ''}${result.reason ? ` (${result.reason})` : ''}`;
-        const skillCheckResultMsg: GameMessage = {
-          role: 'system',
-          content,
-          type: 'skill-check',
-          timestamp: new Date().toISOString(),
-        };
-        onGameStateUpdate(prev => ({ ...prev, messages: [...prev.messages, skillCheckResultMsg] }));
-      },
-      onGameUpdate: (updatedGameState: GameState) => {
-        onGameStateUpdate(updatedGameState); // This now contains the full message
-        setIsLoading(false);
-        setTempMessage(null); // Clear tempMessage as its content is now in the main log
-      }
+      onSkillCheckNotification: handleSkillCheckNotification,
+      onSkillCheckResult: handleSkillCheckResult,
+      onGameUpdate: handleGameUpdate,
     });
 
     // Clean up on unmount
@@ -109,7 +109,7 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
       }
     };
   // Only re-run when game id or stable handlers change
-  }, [gameState.id, onGameStateUpdate]);
+  }, [gameState.id, handleDMResponseChunk, handleGameUpdate, handleSkillCheckNotification, handleSkillCheckResult]);
 
   const createTextBar = (value: number, max: number, length = 16, filled = "█", empty = "░") => {
     let filledLength = Math.floor((value / max) * length);
