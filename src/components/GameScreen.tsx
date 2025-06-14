@@ -41,21 +41,12 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
     }
 
     if (chunk === '__STREAM_START__') {
-      setTempMessage({
-        role: "assistant",
-        content: "",
-        timestamp: new Date().toISOString(),
-      });
       setStreamingChunks([]); // Clear chunks at the start
       return;
     }
 
     if (chunk === '__STREAM_END__') {
-      // Finalize the message
-      setTempMessage(prev => {
-        if (!prev) return null;
-        return { ...prev, content: streamingChunks.join('') };
-      });
+      // Stream ended. Final message will arrive via game-update.
       return;
     }
 
@@ -66,13 +57,14 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
 
     // Add chunk to the animated list
     setStreamingChunks(prevChunks => [...prevChunks, chunk]);
-  }, [streamingChunks]);
+  }, []);
 
   // Stable game update handler
   const handleGameUpdate = useCallback((updatedGameState: GameState) => {
     onGameStateUpdate(updatedGameState);
     setIsLoading(false);
     setTempMessage(null);
+    setStreamingChunks([]);
   }, [onGameStateUpdate]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -368,13 +360,7 @@ Tips:
             <div className="mb-4 leading-relaxed">
               <div className="flex items-start gap-2">
                 <span className="text-green-500 font-bold">DM:</span>
-                <div>
-                  {streamingChunks.map((chunk, index) => (
-                    <span key={index} className="fade-in">
-                      {chunk}
-                    </span>
-                  ))}
-                </div>
+                <div>{streamingChunks.join('')}</div>
               </div>
             </div>
           )}

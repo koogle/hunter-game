@@ -1,0 +1,5 @@
+{
+  "watch": ["pages/api", "src/lib"],
+  "ext": "ts,json",
+  "exec": "next dev"
+}
