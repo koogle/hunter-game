@@ -13,45 +13,60 @@ export default function GameScreen({ gameState, onGameStateUpdate }: GameScreenP
   const [command, setCommand] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [tempMessage, setTempMessage] = useState<GameMessage | null>(null);
+  const [streamingChunks, setStreamingChunks] = useState<string[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Debounced scroll effect
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [gameState.messages]);
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    scrollTimeoutRef.current = setTimeout(() => {
+      logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100); // 100ms debounce delay
+
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [gameState.messages, streamingChunks]);
 
   // Set up callbacks for websocket events
-  // Stable chunk handler to avoid duplicate listeners
   const handleDMResponseChunk = useCallback((data: string | { chunk: string }) => {
     let chunk = data;
     if (typeof data === "object" && data !== null && "chunk" in data) {
       chunk = data.chunk;
     }
+
     if (chunk === '__STREAM_START__') {
       setTempMessage({
         role: "assistant",
-        content: "", // Start with empty content
-        timestamp: new Date().toISOString()
+        content: "",
+        timestamp: new Date().toISOString(),
+      });
+      setStreamingChunks([]); // Clear chunks at the start
+      return;
+    }
+
+    if (chunk === '__STREAM_END__') {
+      // Finalize the message
+      setTempMessage(prev => {
+        if (!prev) return null;
+        return { ...prev, content: streamingChunks.join('') };
       });
       return;
     }
-    if (chunk === '__STREAM_END__') {
-      // Do NOT clear tempMessage here. It will be cleared by onGameUpdate
-      // or when a new command is submitted.
-      return;
-    }
+
     if (typeof chunk !== "string") {
       console.warn("Received non-string chunk, ignoring:", chunk);
       return;
     }
-    setTempMessage(prev => {
-      const currentContent = prev?.content || "";
-      return {
-        role: prev?.role || "assistant",
-        timestamp: prev?.timestamp || new Date().toISOString(),
-        content: currentContent + chunk
-      };
-    });
-  }, []);
+
+    // Add chunk to the animated list
+    setStreamingChunks(prevChunks => [...prevChunks, chunk]);
+  }, [streamingChunks]);
 
   // Stable game update handler
   const handleGameUpdate = useCallback((updatedGameState: GameState) => {
@@ -348,8 +363,24 @@ Tips:
               </div>
             );
           })}
-          {/* Display temporary help/reset message */}
-          {tempMessage && (
+          {/* Display temporary streaming message */}
+          {streamingChunks.length > 0 && (
+            <div className="mb-4 leading-relaxed">
+              <div className="flex items-start gap-2">
+                <span className="text-green-500 font-bold">DM:</span>
+                <div>
+                  {streamingChunks.map((chunk, index) => (
+                    <span key={index} className="fade-in">
+                      {chunk}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Display finalized temporary message (e.g., for help) */}
+          {tempMessage && !streamingChunks.length && tempMessage.content && (
             <div className="mb-4 leading-relaxed">
               <div className="flex items-start gap-2">
                 <span className="text-green-500 font-bold">DM:</span>

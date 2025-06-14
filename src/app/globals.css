@@ -146,6 +146,26 @@
   }
 }
 
+@keyframes blink-animation {
+  to {
+    visibility: hidden;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out forwards;
+  display: inline-block;
+}
+
 /* Font */
 .font-vt323 {
   font-family: "VT323", monospace;
