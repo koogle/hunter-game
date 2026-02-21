@@ -1,0 +1,35 @@
+# Hunter Game SSH config
+# Each SSH session launches the game directly.
+
+Port 22
+AddressFamily any
+ListenAddress 0.0.0.0
+
+# Host keys (generated at runtime by entrypoint.sh)
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+
+# Authentication — password-based, no root login
+PermitRootLogin no
+PasswordAuthentication yes
+PermitEmptyPasswords yes
+
+# Force every session to run the game binary
+ForceCommand /usr/local/bin/hunter-game
+
+# Disable things we don't need
+AllowTcpForwarding no
+X11Forwarding no
+AllowAgentForwarding no
+PermitTunnel no
+
+# Keep connections alive
+ClientAliveInterval 30
+ClientAliveCountMax 3
+
+# Allow PTY (required for terminal UI)
+PermitTTY yes
+
+# Print nothing extra
+PrintMotd no
+PrintLastLog no
