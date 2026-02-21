@@ -57,7 +57,7 @@ pub fn draw(frame: &mut Frame, area: Rect, game: &GameState) {
         ));
     frame.render_widget(hp_gauge, enemy_rows[0]);
 
-    let enemy_stats = Paragraph::new(format!("ATK: {}", combat.enemy_damage))
+    let enemy_stats = Paragraph::new(format!("ATK: {}", combat.enemy_damage_dice))
         .style(Style::default().fg(Color::DarkGray));
     frame.render_widget(enemy_stats, enemy_rows[1]);
 

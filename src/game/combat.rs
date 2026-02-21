@@ -1,5 +1,4 @@
-use rand::Rng;
-
+use super::dice::Dice;
 use super::player::Player;
 use super::world::EnemyTemplate;
 
@@ -42,7 +41,7 @@ pub struct CombatState {
     pub enemy_name: String,
     pub enemy_hp: i32,
     pub enemy_max_hp: i32,
-    pub enemy_damage: i32,
+    pub enemy_damage_dice: Dice,
     pub exp_reward: u32,
     pub is_boss: bool,
     pub loot: Option<super::player::Item>,
@@ -58,7 +57,7 @@ impl CombatState {
             enemy_name: template.name.clone(),
             enemy_hp: template.hp,
             enemy_max_hp: template.hp,
-            enemy_damage: template.damage,
+            enemy_damage_dice: template.damage_dice.clone(),
             exp_reward: template.exp_reward,
             is_boss: template.is_boss,
             loot: template.loot.clone(),
@@ -75,38 +74,51 @@ impl CombatState {
 
         match action {
             CombatAction::Attack => {
-                let mut rng = rand::thread_rng();
-                let variance = rng.gen_range(-2..=2);
-                let damage = (player.total_attack() + variance).max(1);
+                // Player rolls: 1d6 + total_attack bonus (weapon + level)
+                let attack_dice = Dice::new(1, 6, player.total_attack());
+                let result = attack_dice.roll();
+                let damage = result.total;
                 self.enemy_hp = (self.enemy_hp - damage).max(0);
-                self.log
-                    .push(format!("You strike the {} for {} damage!", self.enemy_name, damage));
+                self.log.push(format!(
+                    "You attack! ({}) = {} damage!",
+                    result, damage
+                ));
 
                 if self.enemy_hp <= 0 {
                     self.phase = CombatPhase::Victory;
-                    self.log.push(format!("The {} is defeated!", self.enemy_name));
+                    self.log
+                        .push(format!("The {} is defeated!", self.enemy_name));
                     return;
                 }
             }
             CombatAction::Defend => {
                 self.defending = true;
-                self.log.push("You brace yourself, reducing incoming damage.".into());
+                self.log
+                    .push("You brace yourself, reducing incoming damage.".into());
             }
             CombatAction::UsePotion => {
                 if let Some(healed) = player.use_potion() {
-                    self.log.push(format!("You drink a potion and recover {} HP.", healed));
+                    self.log
+                        .push(format!("You drink a potion and recover {} HP.", healed));
                 } else {
                     self.log.push("You have no potions!".into());
                 }
             }
             CombatAction::Flee => {
-                let mut rng = rand::thread_rng();
-                if rng.gen_bool(0.5) {
+                // Roll 1d20 — flee on 11+ (50%)
+                let flee_roll = Dice::new(1, 20, 0).roll();
+                if flee_roll.total >= 11 {
                     self.phase = CombatPhase::Fled;
-                    self.log.push("You manage to escape!".into());
+                    self.log.push(format!(
+                        "You roll to flee ({}) — escaped!",
+                        flee_roll
+                    ));
                     return;
                 } else {
-                    self.log.push("You fail to escape!".into());
+                    self.log.push(format!(
+                        "You roll to flee ({}) — failed!",
+                        flee_roll
+                    ));
                 }
             }
         }
@@ -116,9 +128,8 @@ impl CombatState {
     }
 
     fn enemy_turn(&mut self, player: &mut Player) {
-        let mut rng = rand::thread_rng();
-        let variance = rng.gen_range(-1..=2);
-        let mut damage = (self.enemy_damage + variance).max(1);
+        let result = self.enemy_damage_dice.roll();
+        let mut damage = result.total;
 
         if self.defending {
             damage /= 2;
@@ -127,10 +138,18 @@ impl CombatState {
 
         let reduced = (damage - player.defense).max(1);
         player.hp = (player.hp - reduced).max(0);
-        self.log.push(format!(
-            "The {} attacks you for {} damage!",
-            self.enemy_name, reduced
-        ));
+
+        if self.defending {
+            self.log.push(format!(
+                "The {} attacks! ({}) — blocked! {} damage taken.",
+                self.enemy_name, result, reduced
+            ));
+        } else {
+            self.log.push(format!(
+                "The {} attacks! ({}) = {} damage!",
+                self.enemy_name, result, reduced
+            ));
+        }
 
         if !player.is_alive() {
             self.phase = CombatPhase::Defeat;

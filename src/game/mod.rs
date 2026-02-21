@@ -1,4 +1,5 @@
 pub mod combat;
+pub mod dice;
 pub mod persistence;
 pub mod player;
 pub mod world;
@@ -211,8 +212,15 @@ impl GameState {
             return;
         }
 
-        // Pick a random event
+        // Roll against the tile's encounter chance
         let mut rng = rand::thread_rng();
+        let roll: f64 = rng.r#gen();
+        if roll >= tile.encounter_chance {
+            self.log.push("The area seems quiet... for now.".into());
+            return;
+        }
+
+        // Encounter triggered — pick a random event
         let event = &tile.events[rng.gen_range(0..tile.events.len())];
 
         match event {

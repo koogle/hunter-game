@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use super::dice::Dice;
 use super::player::Item;
 
 // ── Tile events ──────────────────────────────────────────────────────
@@ -8,7 +9,7 @@ use super::player::Item;
 pub struct EnemyTemplate {
     pub name: String,
     pub hp: i32,
-    pub damage: i32,
+    pub damage_dice: Dice,
     pub exp_reward: u32,
     pub loot: Option<Item>,
     pub is_boss: bool,
@@ -35,6 +36,8 @@ pub struct Tile {
     pub description: String,
     pub connections: Vec<usize>,
     pub events: Vec<TileEvent>,
+    /// Chance (0.0–1.0) of an encounter triggering when entering this tile.
+    pub encounter_chance: f64,
 }
 
 // ── Shared world state (persisted, shared across all players) ────────
@@ -60,7 +63,7 @@ pub fn build_world() -> Vec<Tile> {
     use super::player::ItemType;
 
     vec![
-        // 0 — Village Square
+        // 0 — Village Square (safe haven, no combat)
         Tile {
             id: 0,
             name: "Village Square".into(),
@@ -69,6 +72,7 @@ pub fn build_world() -> Vec<Tile> {
                 forest and east toward the river."
                 .into(),
             connections: vec![1, 2],
+            encounter_chance: 0.0,
             events: vec![
                 TileEvent::Rest,
                 TileEvent::Npc {
@@ -88,11 +92,12 @@ pub fn build_world() -> Vec<Tile> {
                 old mine entrance wait to the north."
                 .into(),
             connections: vec![0, 3, 4],
+            encounter_chance: 0.4,
             events: vec![
                 TileEvent::Enemy(EnemyTemplate {
                     name: "Wild Wolf".into(),
                     hp: 15,
-                    damage: 4,
+                    damage_dice: Dice::new(1, 6, 1), // 1d6+1
                     exp_reward: 15,
                     loot: None,
                     is_boss: false,
@@ -105,7 +110,7 @@ pub fn build_world() -> Vec<Tile> {
                 }),
             ],
         },
-        // 2 — River Crossing
+        // 2 — River Crossing (peaceful, low chance)
         Tile {
             id: 2,
             name: "River Crossing".into(),
@@ -114,6 +119,7 @@ pub fn build_world() -> Vec<Tile> {
                 mountain trails climb to the east."
                 .into(),
             connections: vec![0, 5],
+            encounter_chance: 0.15,
             events: vec![
                 TileEvent::ItemPickup(Item {
                     name: "Sturdy Sword".into(),
@@ -133,11 +139,12 @@ pub fn build_world() -> Vec<Tile> {
                 The forest path lies behind you."
                 .into(),
             connections: vec![1, 6],
+            encounter_chance: 0.5,
             events: vec![
                 TileEvent::Enemy(EnemyTemplate {
                     name: "Goblin Scout".into(),
                     hp: 12,
-                    damage: 3,
+                    damage_dice: Dice::new(1, 4, 1), // 1d4+1
                     exp_reward: 12,
                     loot: Some(Item {
                         name: "Goblin Dagger".into(),
@@ -164,12 +171,13 @@ pub fn build_world() -> Vec<Tile> {
                 half-swallowed by ivy."
                 .into(),
             connections: vec![1, 7],
+            encounter_chance: 0.35,
             events: vec![
                 TileEvent::Rest,
                 TileEvent::Enemy(EnemyTemplate {
                     name: "Giant Spider".into(),
                     hp: 18,
-                    damage: 5,
+                    damage_dice: Dice::new(1, 8, 1), // 1d8+1
                     exp_reward: 20,
                     loot: Some(Item {
                         name: "Spider Silk".into(),
@@ -190,11 +198,12 @@ pub fn build_world() -> Vec<Tile> {
                 ruins lie ahead."
                 .into(),
             connections: vec![2, 7],
+            encounter_chance: 0.55,
             events: vec![
                 TileEvent::Enemy(EnemyTemplate {
                     name: "Mountain Bandit".into(),
                     hp: 20,
-                    damage: 6,
+                    damage_dice: Dice::new(1, 8, 2), // 1d8+2
                     exp_reward: 25,
                     loot: Some(Item {
                         name: "Health Potion".into(),
@@ -207,7 +216,7 @@ pub fn build_world() -> Vec<Tile> {
                 TileEvent::Nothing,
             ],
         },
-        // 6 — Deep Mine (Boss)
+        // 6 — Deep Mine (Boss — always triggers)
         Tile {
             id: 6,
             name: "Deep Mine".into(),
@@ -216,10 +225,11 @@ pub fn build_world() -> Vec<Tile> {
                 darkness ahead, its eyes reflecting your torchlight."
                 .into(),
             connections: vec![3],
+            encounter_chance: 1.0,
             events: vec![TileEvent::Enemy(EnemyTemplate {
                 name: "Cave Troll".into(),
                 hp: 50,
-                damage: 10,
+                damage_dice: Dice::new(2, 6, 3), // 2d6+3
                 exp_reward: 100,
                 loot: Some(Item {
                     name: "Troll's Greataxe".into(),
@@ -239,11 +249,12 @@ pub fn build_world() -> Vec<Tile> {
                 A hidden shrine glows faintly to the north."
                 .into(),
             connections: vec![4, 5, 8],
+            encounter_chance: 0.5,
             events: vec![
                 TileEvent::Enemy(EnemyTemplate {
                     name: "Skeleton Warrior".into(),
                     hp: 22,
-                    damage: 7,
+                    damage_dice: Dice::new(1, 10, 2), // 1d10+2
                     exp_reward: 30,
                     loot: Some(Item {
                         name: "Bone Shield".into(),
@@ -256,7 +267,7 @@ pub fn build_world() -> Vec<Tile> {
                 TileEvent::Nothing,
             ],
         },
-        // 8 — Hidden Shrine (Boss)
+        // 8 — Hidden Shrine (Boss — always triggers)
         Tile {
             id: 8,
             name: "Hidden Shrine".into(),
@@ -265,11 +276,12 @@ pub fn build_world() -> Vec<Tile> {
                 guardian still watches over this place..."
                 .into(),
             connections: vec![7],
+            encounter_chance: 1.0,
             events: vec![
                 TileEvent::Enemy(EnemyTemplate {
                     name: "Shrine Guardian".into(),
                     hp: 60,
-                    damage: 12,
+                    damage_dice: Dice::new(2, 8, 3), // 2d8+3
                     exp_reward: 150,
                     loot: Some(Item {
                         name: "Guardian's Amulet".into(),
