@@ -1,5 +1,7 @@
 # ── Build stage ────────────────────────────────────────────────────────
-FROM rust:1.85-slim AS builder
+FROM rust:1.85-alpine AS builder
+
+RUN apk add --no-cache musl-dev
 
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
@@ -8,12 +10,9 @@ COPY src/ src/
 RUN cargo build --release
 
 # ── Runtime stage ─────────────────────────────────────────────────────
-FROM debian:bookworm-slim
+FROM alpine:3.21
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssh-server \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /var/run/sshd
+RUN apk add --no-cache openssh-server
 
 # Copy game binary
 COPY --from=builder /app/target/release/hunter-game /usr/local/bin/hunter-game

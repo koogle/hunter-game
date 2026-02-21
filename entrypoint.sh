@@ -1,17 +1,12 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # Generate host keys if they don't exist (first boot or fresh container)
-if [ ! -f /etc/ssh/ssh_host_ed25519_key ]; then
-    ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ""
-fi
-if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
-    ssh-keygen -t rsa -b 4096 -f /etc/ssh/ssh_host_rsa_key -N ""
-fi
+ssh-keygen -A
 
 # Create the "hunter" user if it doesn't exist
 if ! id -u hunter >/dev/null 2>&1; then
-    useradd -m -s /bin/bash hunter
+    adduser -D -s /bin/sh hunter
     # Set empty password (allows login with just username)
     passwd -d hunter
 fi
