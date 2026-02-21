@@ -1,42 +1,31 @@
-use anyhow::Result;
-use crossterm::{
-    event::{self, Event},
-    terminal,
-};
+use std::io;
 
+use anyhow::Result;
+use crossterm::execute;
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use ratatui::backend::CrosstermBackend;
+use ratatui::Terminal;
+
+mod app;
+mod game;
 mod ui;
 
 fn main() -> Result<()> {
-    println!("=================================");
-    println!("       HUNTER GAME");
-    println!("=================================");
-    println!();
-    println!("A terminal-based text RPG");
-    println!();
-    println!("Press any key to start...");
+    // Setup terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
 
-    // Wait for keypress
-    terminal::enable_raw_mode()?;
-    loop {
-        if event::poll(std::time::Duration::from_millis(100))? {
-            if let Event::Key(_) = event::read()? {
-                break;
-            }
-        }
-    }
-    terminal::disable_raw_mode()?;
+    // Run the game
+    let mut app = app::App::new();
+    let result = app.run(&mut terminal);
 
-    println!();
-    println!("Game starting...");
-    println!();
+    // Restore terminal (always, even on error)
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    terminal.show_cursor()?;
 
-    // Demo image rendering if an image exists
-    if let Err(e) = ui::images::show_title_screen() {
-        println!("(No title image found: {})", e);
-    }
-
-    println!();
-    println!("Thanks for playing!");
-
-    Ok(())
+    result
 }

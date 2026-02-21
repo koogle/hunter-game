@@ -22,5 +22,8 @@ target
 
 
 # Added by cargo
-
 /target
+
+# Game data (player saves, world state) — generated at runtime
+data/
+.DS_Store
