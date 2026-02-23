@@ -5,10 +5,18 @@ use crate::game::player::ItemType;
 use crate::game::GameState;
 
 pub fn draw(frame: &mut Frame, area: Rect, game: &GameState) {
+    let rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(8),   // stats + inventory
+            Constraint::Length(8), // message log
+        ])
+        .split(area);
+
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
-        .split(area);
+        .split(rows[0]);
 
     // Left: player stats
     let stats_text = vec![
@@ -105,4 +113,7 @@ pub fn draw(frame: &mut Frame, area: Rect, game: &GameState) {
         );
         frame.render_widget(list, chunks[1]);
     }
+
+    // Message log
+    super::draw_log(frame, rows[1], game);
 }

@@ -24,14 +24,15 @@ pub fn draw(frame: &mut Frame, area: Rect, _game: &GameState) {
         ])
         .split(area);
 
-    // Logo
+    // Logo — center as a block so HUNTER and GAME stay aligned
     let logo = Paragraph::new(LOGO)
-        .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))
-        .alignment(Alignment::Center);
-    frame.render_widget(logo, chunks[1]);
+        .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD));
+    let logo_width = 21; // width of longest line in LOGO
+    let logo_area = centered_rect(logo_width, chunks[1].height, chunks[1]);
+    frame.render_widget(logo, logo_area);
 
     // Subtitle
-    let subtitle = Paragraph::new("A terminal-based text RPG")
+    let subtitle = Paragraph::new("A journey awaits...")
         .style(Style::default().fg(Color::DarkGray))
         .alignment(Alignment::Center);
     frame.render_widget(subtitle, chunks[2]);

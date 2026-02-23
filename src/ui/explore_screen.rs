@@ -10,6 +10,7 @@ pub fn draw(frame: &mut Frame, area: Rect, game: &GameState) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(5), // tile description
+            Constraint::Length(8), // message log
             Constraint::Min(4),   // actions list
             Constraint::Length(1), // hint bar
         ])
@@ -32,6 +33,9 @@ pub fn draw(frame: &mut Frame, area: Rect, game: &GameState) {
     .block(Block::default().borders(Borders::ALL).title(" Location "))
     .wrap(ratatui::widgets::Wrap { trim: true });
     frame.render_widget(desc, chunks[0]);
+
+    // Message log
+    super::draw_log(frame, chunks[1], game);
 
     // Build option list
     let mut items: Vec<ListItem> = Vec::new();
@@ -65,10 +69,10 @@ pub fn draw(frame: &mut Frame, area: Rect, game: &GameState) {
 
     let list = List::new(items)
         .block(Block::default().borders(Borders::ALL).title(" Actions "));
-    frame.render_widget(list, chunks[1]);
+    frame.render_widget(list, chunks[2]);
 
     // Hint bar
     let hint = Paragraph::new(" ↑↓/jk: select • Enter: confirm • i: inventory • q: quit")
         .style(Style::default().fg(Color::DarkGray));
-    frame.render_widget(hint, chunks[2]);
+    frame.render_widget(hint, chunks[3]);
 }

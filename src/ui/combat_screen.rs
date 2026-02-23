@@ -15,6 +15,7 @@ pub fn draw(frame: &mut Frame, area: Rect, game: &GameState) {
             Constraint::Length(5), // enemy info
             Constraint::Min(4),   // combat log + actions
             Constraint::Length(1), // hint
+            Constraint::Length(8), // message log
         ])
         .split(area);
 
@@ -130,4 +131,7 @@ pub fn draw(frame: &mut Frame, area: Rect, game: &GameState) {
     let hint = Paragraph::new(" ↑↓/jk: select • Enter: confirm")
         .style(Style::default().fg(Color::DarkGray));
     frame.render_widget(hint, chunks[2]);
+
+    // Message log
+    super::draw_log(frame, chunks[3], game);
 }

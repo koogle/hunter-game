@@ -24,7 +24,7 @@ pub fn draw(frame: &mut Frame, game: &GameState) {
     }
 }
 
-/// Shared layout: header bar + main content + message log.
+/// Shared layout: header bar + main content (each screen draws log internally).
 fn draw_with_chrome(
     frame: &mut Frame,
     area: Rect,
@@ -34,15 +34,13 @@ fn draw_with_chrome(
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // header
-            Constraint::Min(8),    // main content
-            Constraint::Length(8), // message log
+            Constraint::Length(3), // header
+            Constraint::Min(16),  // main content (includes log)
         ])
         .split(area);
 
     draw_header(frame, chunks[0], game);
     content_fn(frame, chunks[1], game);
-    draw_log(frame, chunks[2], game);
 }
 
 /// Top bar: game name, HP bar, level/exp.
@@ -92,8 +90,8 @@ fn draw_header(frame: &mut Frame, area: Rect, game: &GameState) {
     frame.render_widget(stats, cols[2]);
 }
 
-/// Bottom message log — shows recent game messages.
-fn draw_log(frame: &mut Frame, area: Rect, game: &GameState) {
+/// Message log — shows recent game messages.
+pub(crate) fn draw_log(frame: &mut Frame, area: Rect, game: &GameState) {
     let visible = area.height.saturating_sub(2) as usize; // minus borders
     let start = game.log.len().saturating_sub(visible);
     let lines: Vec<Line> = game.log[start..]
