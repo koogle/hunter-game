@@ -31,7 +31,7 @@ pub fn draw(frame: &mut Frame, area: Rect, _game: &GameState) {
     frame.render_widget(logo, chunks[1]);
 
     // Subtitle
-    let subtitle = Paragraph::new("A terminal-based text RPG")
+    let subtitle = Paragraph::new("A new journey awaits")
         .style(Style::default().fg(Color::DarkGray))
         .alignment(Alignment::Center);
     frame.render_widget(subtitle, chunks[2]);

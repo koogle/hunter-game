@@ -12,7 +12,7 @@ HostKey /etc/ssh/ssh_host_rsa_key
 # Authentication — password-based, no root login
 PermitRootLogin no
 PasswordAuthentication yes
-PermitEmptyPasswords yes
+PermitEmptyPasswords no
 
 # Force every session to run the game binary
 ForceCommand /usr/local/bin/hunter-game
