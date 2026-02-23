@@ -5,271 +5,367 @@
 
 ---
 
-## Summary / Recommendation
+## Quick Comparison Matrix
 
-For this project (hunter-game), if we want to add LLM-powered NPC dialogue or dungeon narration:
+| Crate | Streaming | Structured Output | Multi-Provider | Stars | Status |
+|---|---|---|---|---|---|
+| `rig` (rig-core) | ✅ | ✅ schemars derive | 20+ providers | ~6,100 | Active |
+| `async-openai` | ✅ SSE | ✅ JSON Schema / BYOT | OpenAI-compatible | ~1,800 | Active |
+| `langchain-rust` | ✅ | ⚠️ Partial | OpenAI, Anthropic, Ollama | ~1,200 | Moderate |
+| `llm-chain` | ⚠️ Unclear | ❌ | OpenAI + local | ~1,600 | Slow |
+| `genai` | ✅ | ✅ JsonSpec | 14+ providers | ~661 | Active |
+| `llm` (graniet) | ✅ | ✅ JSON Schema | 12+ providers | ~312 | Active |
+| `rstructor` | ❌ | ✅ Best-in-class | OpenAI, Anthropic, Grok, Gemini | low | Active |
+| `instructor-rs` | ⚠️ | ✅ derive macro | OpenAI only | ~52 | Stale |
+
+---
+
+## Summary / Recommendation
 
 | Goal | Best choice |
 |------|-------------|
-| Multi-provider + streaming | **`genai`** or **`rig`** |
-| Structured typed output from LLM | **`rstructor`** (most ergonomic) |
-| OpenAI only, full API coverage | **`async-openai`** |
-| Full agentic pipelines | **`rig`** |
-| Low-level / minimalist | **`llm-toolkit`** |
+| Full framework (agents, RAG, streaming, structured) | **`rig`** — 6,100 stars, production-proven |
+| OpenAI only, full API coverage | **`async-openai`** — most faithful to OpenAI spec |
+| Multi-provider + clean streaming API | **`genai`** — best ergonomics per-call |
+| Typed structured extraction (like Python's Instructor) | **`rstructor`** — cleanest derive macro API |
+| Everything in one crate (incl. TTS, agents, chains) | **`llm`** (graniet) |
 
-**Top pick for this game**: `genai` + `rstructor` — genai handles multi-provider streaming, rstructor adds type-safe structured outputs on top.
+**For hunter-game**: `genai` + `rstructor` — genai streams NPC text to the TUI,
+rstructor extracts typed game events (e.g. `CombatEvent`, `NpcDialogue`) from LLM responses.
+
+Or just **`rig`** alone if we later want RAG or tool-calling agents.
 
 ---
 
 ## Libraries
 
-### 1. `genai` (rust-genai)
-
-- **Crate**: `genai`
-- **GitHub**: https://github.com/jeremychone/rust-genai
-- **Providers**: OpenAI, Anthropic, Gemini, Ollama, Groq, xAI/Grok, DeepSeek, Cohere
-- **Streaming**: Yes (SSE + stream support for DeepSeekR1 reasoning tokens)
-- **Structured output**: Via function calling / tool use (JSON schema)
-- **Status**: Actively maintained, clean API
-
-**When to use**: Best for multi-provider chat + streaming. Straightforward API without heavy framework abstractions. The author (Jeremy Chone) also has tutorial content around function calling as structured output.
-
-**Example (function calling for structured output)**:
-```rust
-use genai::chat::{ChatMessage, ChatRequest, Tool};
-use serde_json::json;
-
-let grammar_tool = Tool::new("rate_grammar")
-    .with_description("Rate the grammatical correctness of English text")
-    .with_schema(json!({
-        "type": "object",
-        "properties": {
-            "rating": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 10
-            },
-            "explanation": {
-                "type": "string"
-            }
-        },
-        "required": ["rating", "explanation"]
-    }));
-
-let chat_req = ChatRequest::new(vec![
-    ChatMessage::system("You are a grammar expert."),
-    ChatMessage::user("Rate this text: 'The quick brown fox'"),
-]).append_tool(grammar_tool);
-
-let chat_res = client.exec_chat("gpt-4o-mini", chat_req, None).await?;
-```
-
-**Pros**: Clean API, multi-provider, streaming works well, good tutorial resources
-**Cons**: Structured output is via function calling (no native derive macros), no built-in agent abstractions
-
----
-
-### 2. `rig` (rig-core)
+### 1. `rig` (rig-core)
 
 - **Crate**: `rig-core`
 - **GitHub**: https://github.com/0xPlaygrounds/rig
 - **Website**: https://rig.rs
-- **Providers**: OpenAI, Cohere, and others via plugins
-- **Streaming**: Yes (multi-turn streaming, pipeline streaming)
-- **Structured output**: Yes — `AgentBuilder::schema_output()` added in v0.31
-- **Status**: Actively maintained, production users (Coral Protocol, Dria, Nethermind)
+- **Docs**: https://docs.rs/rig-core
+- **Stars**: ~6,100 (largest in the ecosystem)
+- **Providers**: OpenAI, Anthropic, Google Gemini, Ollama, Cohere, AWS Bedrock, Google Vertex AI, 20+ total
+- **Streaming**: Yes — `StreamingCompletionModel` trait, multi-turn streaming in agents
+- **Structured output**: Yes — `Extractor` with `schemars::JsonSchema` derive macros (cleanest approach)
+- **Status**: Active, production users: St. Jude, Coral Protocol, Neon, Nethermind
 
-**When to use**: Best for full agentic workflows — RAG, tool use, multi-step pipelines, vector store integration. Most batteries-included option.
+**When to use**: Best overall Rust LLM framework. The `Extractor` abstraction is the standout — it auto-generates JSON Schema from Rust structs using derive macros, then handles LLM communication, parsing, and error recovery.
 
-**Key features**:
-- `Agent` type with built-in RAG support
-- Pipeline API for chaining LLM + non-LLM operations
-- Vector store integration (MongoDB, in-memory, Qdrant via plugin)
-- Image + audio generation abstractions
-- Structured output via schema enforcement (v0.31+)
+**Structured output example**:
+```rust
+use rig::providers::openai;
 
-**Pros**: Most feature-complete, production-proven, good abstractions
-**Cons**: More complex API surface, fewer providers than genai
+#[derive(serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
+struct Person {
+    name: Option<String>,
+    age: Option<u8>,
+    profession: Option<String>,
+}
+
+let openai = openai::Client::new(api_key);
+let extractor = openai.extractor::<Person>(openai::GPT_4O).build();
+let person = extractor.extract("John Doe is a 30 year old doctor.").await?;
+```
+
+**Agent example**:
+```rust
+let comedian_agent = client
+    .agent("gpt-4o")
+    .preamble("You are a comedian...")
+    .build();
+
+let response = comedian_agent.prompt("Entertain me!").await?;
+```
+
+**Pros**: Largest community, clean ergonomics, strong extractor pattern, broad provider + vector store support, WASM-compatible core
+**Cons**: Explicitly warns of future breaking changes; more complex for simple use cases
 
 ---
 
-### 3. `async-openai`
+### 2. `async-openai`
 
 - **Crate**: `async-openai`
 - **GitHub**: https://github.com/64bit/async-openai
 - **Docs**: https://docs.rs/async-openai
-- **Providers**: OpenAI (+ OpenAI-compatible APIs)
-- **Streaming**: Yes — SSE on all supported APIs (audio, images, chat, etc.)
-- **Structured output**: Bring-your-own-types via serde, JSON schema via OpenAI's native structured output
-- **Status**: Mature, stable, actively maintained
+- **Stars**: ~1,800
+- **Version**: v0.33.0 (February 2026)
+- **Dependents**: ~1,900 projects
+- **Providers**: OpenAI + any OpenAI-compatible API (Azure OpenAI, Together.ai, etc.)
+- **Streaming**: Yes — SSE on all APIs; exponential backoff on rate limits
+- **Structured output**: JSON Schema via `response_format`, plus BYOT (Bring-Your-Own-Types) via serde
+- **Status**: Mature, most widely used Rust OpenAI client
 
-**When to use**: You're using OpenAI (or a compatible provider like Azure OpenAI, Together.ai, etc.) and want full API coverage with idiomatic Rust types.
+**When to use**: You're using OpenAI or a compatible provider and want full API coverage — audio, video, images, embeddings, fine-tuning, batch, assistants. Granular feature flags for compile time.
 
-**Key features**:
-- Full coverage of OpenAI API surface (audio, images, embeddings, fine-tuning, batch, etc.)
-- Granular feature flags for faster compile times
-- Exponential backoff retries on rate limits
-- Configurable base URL → works with any OpenAI-compatible provider
+**Streaming + structured output example**:
+```rust
+// BYOT pattern for JSON schema structured output with streaming
+let request = json!({
+    "model": "gpt-4o-2024-08-06",
+    "messages": [{"role": "user", "content": "Extract event from: Alice goes to a fair Friday."}],
+    "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "event",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "date": {"type": "string"}
+                },
+                "required": ["name", "date"],
+                "additionalProperties": false
+            },
+            "strict": true
+        }
+    }
+});
 
-**Pros**: Most complete OpenAI API coverage, stable and mature, great for production
-**Cons**: OpenAI-only (not truly multi-provider), no built-in derive macros for structured output
+let mut stream = client.chat().create_stream_byot(request).await?;
+while let Some(result) = stream.next().await { /* handle chunk */ }
+```
+
+**Pros**: Most faithful to OpenAI spec, well-tested by 1,900+ dependents, always current with new OpenAI features
+**Cons**: OpenAI-only (no real multi-provider), no derive macros for schemas, incomplete WASM support
 
 ---
 
-### 4. `rstructor`
+### 3. `genai` (rust-genai)
+
+- **Crate**: `genai`
+- **GitHub**: https://github.com/jeremychone/rust-genai
+- **Docs**: https://docs.rs/genai
+- **Stars**: ~661
+- **Version**: v0.5.0 (January 2026)
+- **Providers**: OpenAI, Anthropic, Gemini, xAI/Grok, Ollama, Groq, DeepSeek, Cohere, Together, Fireworks, Nebius, Mimo, Zai, BigModel (14+)
+- **Streaming**: Yes — `exec_chat_stream()` returns `ChatStream` of `ChatStreamEvent`; v0.5.0 has "more robust internal streaming engine"
+- **Structured output**: `JsonSpec` on `ChatRequest`; function calling/tool use for all providers
+- **Vision**: Yes (OpenAI, Gemini, Anthropic)
+- **Reasoning tokens**: Yes — DeepSeek R1 `reasoning_content`, Gemini Thinking, Anthropic Reasoning Effort
+- **Status**: Actively maintained; powers the AIPACK agentic runtime
+
+**When to use**: Best multi-provider API with the cleanest per-call ergonomics. Ideal when you want a lightweight client without framework overhead, or need cutting-edge model support (new providers added quickly).
+
+**Streaming example**:
+```rust
+use genai::chat::{ChatMessage, ChatRequest};
+use genai::Client;
+
+let client = Client::default();
+let chat_req = ChatRequest::default()
+    .append_message(ChatMessage::user("Tell me a story."));
+
+let mut stream = client.exec_chat_stream("gpt-4o-mini", chat_req, None).await?;
+use genai::chat::printer::print_chat_stream;
+print_chat_stream(stream, None).await?;
+```
+
+**Structured output example**:
+```rust
+use genai::chat::{ChatRequest, JsonSpec};
+
+let json_spec = JsonSpec::new("person_info", serde_json::json!({
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "age":  {"type": "integer"}
+    },
+    "required": ["name", "age"]
+}));
+
+let chat_req = ChatRequest::default()
+    .with_response_format(json_spec)
+    .append_message(ChatMessage::user("Extract: John is 30 years old."));
+```
+
+**Pros**: Clean API, most providers, streaming works across all of them, active development, no heavy framework
+**Cons**: Smaller community than `rig`, no derive macros for structured types (manual JSON schema), no built-in agents/RAG
+
+---
+
+### 4. `llm` (graniet)
+
+- **Crate**: `llm`
+- **GitHub**: https://github.com/graniet/llm
+- **Stars**: ~312
+- **Version**: 1.2.4
+- **Providers**: OpenAI, Anthropic, Ollama, DeepSeek, xAI, Phind, Groq, Google, Cohere, Mistral, HuggingFace, ElevenLabs (12+)
+- **Streaming**: Yes
+- **Structured output**: Yes — JSON Schema in request builder
+- **Voice / TTS / STT**: Yes (ElevenLabs)
+- **Agents**: Yes — reactive agents, shared memory, configurable triggers
+- **Memory**: Yes — sliding window conversation history
+- **Multi-step chains**: Yes — different backends at each step
+- **REST API server**: Yes — OpenAI-compatible format
+- **Status**: Active, 50+ examples in repo
+
+> ⚠️ **Name collision warning**: The `llm` crate name previously belonged to the archived `rustformers/llm` project. This is a completely different, actively maintained library.
+
+**When to use**: You want the most complete single-crate solution — streaming, structured output, agents, memory, TTS, and even a REST API server, all without pulling in a second library.
+
+**Basic example**:
+```rust
+let llm = LLMBuilder::new()
+    .backend(LLMBackend::OpenAI)
+    .api_key(api_key)
+    .model("gpt-4.1-nano")
+    .build()?;
+
+let res = llm.chat(&messages).await?;
+println!("{}", res.text()?);
+```
+
+**Pros**: Most features in one crate, voice/TTS support, built-in agents and memory, 50+ examples
+**Cons**: Smaller community, less battle-tested, name confusion with archived crate, ambitious scope may mean thinner implementations
+
+---
+
+### 5. `rstructor`
 
 - **Crate**: `rstructor`
 - **GitHub**: https://github.com/clifton/rstructor
 - **Docs**: https://docs.rs/rstructor
 - **Providers**: OpenAI, Anthropic, Grok (xAI), Gemini
 - **Streaming**: No
-- **Structured output**: Yes — the main purpose. Derive macros → JSON schema → typed response
-- **Status**: Active (v0.2.9)
+- **Structured output**: Yes — the sole purpose. Derive macros, validation, auto-retry.
+- **Status**: Active
 
-**When to use**: You need guaranteed typed responses from an LLM with validation and auto-retry. The "Pydantic + Instructor" of Rust.
+**When to use**: You need guaranteed typed responses from an LLM with validation and retry. The cleanest API for this use case.
 
-**Example**:
 ```rust
-use rstructor::derive::InstructMacro;
+use rstructor::{Instructor, OpenAIClient};
 use serde::{Deserialize, Serialize};
 
-#[derive(InstructMacro, Serialize, Deserialize, Debug)]
+#[derive(Instructor, Serialize, Deserialize, Debug)]
+#[llm(validate = "validate_npc")]
 struct NpcDialogue {
+    #[llm(description = "The NPC's greeting to the player")]
     greeting: String,
+    #[llm(description = "Optional quest offer")]
     quest_offer: Option<String>,
     mood: Mood,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-enum Mood { Friendly, Suspicious, Hostile }
+fn validate_npc(npc: &NpcDialogue) -> Result<()> {
+    if npc.greeting.is_empty() { return Err("Greeting required".into()); }
+    Ok(())
+}
 
-// rstructor generates JSON schema from the struct,
-// sends it to the LLM, parses + validates the response,
-// and auto-retries on validation failure.
+let client = OpenAIClient::from_env()?.max_retries(3);
+let npc: NpcDialogue = client.generate("Generate dialogue for a suspicious village elder.").await?;
 ```
 
-**Pros**: Best ergonomics for structured output, automatic retries, type-safe
-**Cons**: No streaming, fewer providers than genai
+**Pros**: Best ergonomics for structured extraction, auto-retry with validation, hides all JSON schema complexity
+**Cons**: No streaming, extraction-only (no agents, RAG, chains)
 
 ---
 
-### 5. `instructor-ai`
-
-- **Crate**: `instructor-ai`
-- **GitHub**: https://github.com/instructor-ai/instructor-rs
-- **Website**: https://rust.useinstructor.com
-- **Providers**: OpenAI (via `openai-api-rs`)
-- **Streaming**: Abstracted
-- **Structured output**: Yes — via `InstructMacro` derive macro
-- **Status**: Early stage / maturing, API may change
-
-**When to use**: Official Rust port of the Python Instructor library. Good if your team is familiar with the Python version.
-
-```toml
-[dependencies]
-instructor-ai = "0.1.8"
-instruct-macros = "0.1.8"
-openai-api-rs = "4.1.0"
-```
-
-**Pros**: Familiar to Python instructor users, derive macro API
-**Cons**: Still early, OpenAI-only, API stability not guaranteed
-
----
-
-### 6. `llm` (graniet/llm)
-
-- **Crate**: `llm`
-- **GitHub**: https://github.com/graniet/llm
-- **Providers**: OpenAI, Anthropic, Ollama, DeepSeek, xAI, Groq, Cohere, Mistral, Google, ElevenLabs
-- **Streaming**: Yes
-- **Structured output**: Yes — JSON schema based
-- **Status**: Active
-
-**When to use**: You want a single unified API across the most providers, with both streaming and structured output, plus optional agent/chain capabilities.
-
-**Key features**:
-- Multi-step chains across different backends
-- Memory with sliding window (conversation history)
-- REST API server (OpenAI-compatible format)
-- Vision and reasoning support
-- Builder pattern API
-
-**Pros**: Widest provider support, streaming + structured output in one
-**Cons**: Less mature than async-openai or rig, heavier dependency
-
----
-
-### 7. `langchain-rust`
+### 6. `langchain-rust`
 
 - **Crate**: `langchain-rust`
 - **GitHub**: https://github.com/Abraxas-365/langchain-rust
-- **Providers**: OpenAI, Anthropic, and others
-- **Streaming**: Yes (async/StreamExt)
-- **Structured output**: Limited
-- **Status**: Active (v4.6.0)
+- **Stars**: ~1,200, **Version**: v4.6.0
+- **Streaming**: Yes (async/StreamExt, token usage tracking added v4.6.0)
+- **Structured output**: Partial in stable v4.x; the `langchain-ai-rust` v5.x fork adds JSON schema, but docs.rs build was failing
+- **Status**: Active but slower cadence than `rig`/`genai`
 
-Also: `langchain-ai-rust` (v5.x) — a more feature-complete fork with LangGraph, structured output, and multi-agent support, though docs.rs build was failing as of research date.
+**When to use**: You want LangChain patterns — composable chains, document loaders (PDF, DOCX, HTML), vector stores (Postgres, Qdrant, SQLite, SurrealDB).
 
-**When to use**: If you want LangChain-style concepts (chains, agents, document loaders, memory) in Rust.
-
-**Pros**: Familiar abstractions, document loaders (PDF, DOCX, HTML)
-**Cons**: Structured output limited in v4.x; v5.x not yet stable
+**Pros**: Familiar abstractions, rich document loaders, decent community
+**Cons**: Structured output incomplete, Rust API feels like a Python port, v5.x fork unstable
 
 ---
 
-### 8. `candle` (Hugging Face)
+### 7. `llm-chain`
+
+- **Crate**: `llm-chain`
+- **GitHub**: https://github.com/sobelio/llm-chain
+- **Stars**: ~1,600, slow update cadence
+- **Streaming**: Not prominently documented
+- **Structured output**: Not a native feature
+
+Good for prompt chaining and map-reduce pipelines; not recommended for new projects in 2026 compared to `rig` or `genai`.
+
+---
+
+### 8. `candle` (Hugging Face) — for local inference
 
 - **Crate**: `candle-core`
 - **GitHub**: https://github.com/huggingface/candle
-- **Purpose**: Local model inference (not API calls)
-- **Streaming**: Yes (token-by-token generation)
-- **Structured output**: Via constrained decoding (manual)
+- **Purpose**: Run models locally — LLaMA, Mistral, Phi, Gemma, Falcon
+- **Streaming**: Yes (token-by-token)
+- **Structured output**: Manual (constrained decoding)
 - **Status**: Actively maintained by HuggingFace
 
-**When to use**: You want to run models locally (LLaMA, Mistral, Phi, Gemma, etc.) without API costs. Supports quantization, LoRA, distributed compute.
-
-**Pros**: No API costs, full control, runs models locally
-**Cons**: Requires GPU/CPU resources, much more setup, not suitable for simple API integration
+**When to use**: No API costs, full local control, fine-tuning (LoRA), quantization. Much higher setup cost.
 
 ---
 
-## Feature Comparison
+### 9. `rustformers/llm` — ARCHIVED
 
-| Library | Providers | Streaming | Structured Out | Agents | Maturity |
-|---------|-----------|-----------|----------------|--------|----------|
-| `genai` | 8+ | ✅ | via tools | ❌ | ✅ Stable |
-| `rig` | 2+ (plugins) | ✅ | ✅ (v0.31+) | ✅ | ✅ Production |
-| `async-openai` | OpenAI-compat | ✅ | via serde | ❌ | ✅ Mature |
-| `rstructor` | 4 | ❌ | ✅ Best-in-class | ❌ | 🔄 Active |
-| `instructor-ai` | OpenAI | partial | ✅ | ❌ | 🔬 Early |
-| `llm` (graniet) | 12+ | ✅ | ✅ JSON schema | ✅ | 🔄 Active |
-| `langchain-rust` | Several | ✅ | ⚠️ Limited | ✅ | ✅ Active |
-| `candle` | Local only | ✅ | manual | ❌ | ✅ HF-backed |
+Do not use. Officially archived due to lack of maintainer bandwidth.
+Alternatives for local inference: `mistral.rs` or `Ratchet`.
 
 ---
 
-## For This Project (hunter-game)
+## `genai` vs `llm` (graniet) — Detailed Comparison
 
-The game's `PLAN.md` mentions LLM integration as a future possibility (tile descriptions, NPC dialogue, dynamic narration). Given the existing Rust stack (ratatui, tokio via async):
+| | `genai` | `llm` (graniet) |
+|---|---|---|
+| GitHub stars | **661** | 312 |
+| Version | 0.5.0 (Jan 2026) | 1.2.4 |
+| Commits | 680 | 487 |
+| API style | Direct, explicit per-call | Builder pattern (Stripe-like) |
+| Provider count | **14+** | 12+ |
+| Streaming | ✅ All providers | ✅ |
+| Structured output | JsonSpec (manual schema) | ✅ JSON schema |
+| Vision | ✅ OpenAI, Gemini, Anthropic | ✅ |
+| Audio / TTS | ❌ | ✅ ElevenLabs |
+| Agents | Via AIPACK (separate) | ✅ Built-in |
+| Memory | ❌ | ✅ Sliding window |
+| Multi-step chains | ❌ | ✅ |
+| REST API server | ❌ | ✅ OpenAI-compat |
+| Templates | ❌ | ✅ |
+| Examples | Yes | 50+ |
+| License | Apache-2.0 + MIT | MIT |
 
-### Recommended stack:
+**Choose `genai` when**: You want a lean, focused multi-provider client with the cleanest API. Great as a building block paired with `rstructor`.
+
+**Choose `llm` when**: You want everything in one crate — especially if TTS, built-in agents, or a REST API server are needed.
+
+---
+
+## Cargo.toml Setup
 
 ```toml
+# Option 1: rig (full framework — recommended for complex use cases)
 [dependencies]
-# Multi-provider LLM client with streaming
-genai = "0.1"
+rig-core = "0.9"
+schemars = "0.8"
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
 
-# Structured typed outputs (for NPC dialogue, game events)
-rstructor = "0.2"
+# Option 2: async-openai (OpenAI-focused, mature)
+[dependencies]
+async-openai = "0.33"
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+serde_json = "1"
 
-# Or alternatively, use rig for everything (streaming + structured + agents)
-# rig-core = "0.5"
+# Option 3: genai + rstructor (recommended for hunter-game)
+[dependencies]
+genai = "0.5"
+rstructor = "*"  # check crates.io for latest
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+
+# Option 4: llm graniet (all-in-one)
+[dependencies]
+llm = "1.2"
+tokio = { version = "1", features = ["full"] }
 ```
-
-**Option A — genai + rstructor**: Use genai for streaming NPC text to the UI, rstructor when you need a typed game event (e.g., `CombatEvent { enemy_action: Attack, damage: 5 }`).
-
-**Option B — rig only**: Single dependency, handles both streaming and structured output, better if you later want RAG or tool-calling agents.
 
 ---
 
@@ -278,6 +374,7 @@ rstructor = "0.2"
 - [rust-genai GitHub](https://github.com/jeremychone/rust-genai)
 - [Rig GitHub](https://github.com/0xPlaygrounds/rig)
 - [Rig docs](https://docs.rs/rig-core/latest/rig/)
+- [Rig website](https://rig.rs)
 - [async-openai GitHub](https://github.com/64bit/async-openai)
 - [async-openai docs](https://docs.rs/async-openai)
 - [rstructor GitHub](https://github.com/clifton/rstructor)
